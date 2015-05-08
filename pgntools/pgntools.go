@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May  6 15:38:56 2015 Carlos Linares Lopez>
-  Last update <sábado, 09 mayo 2015 00:17:36 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 09 mayo 2015 01:57:34 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -35,30 +35,41 @@ import (
 // ungrouped regexps -- they are used just to recongize different chunks of a
 // string
 // ----------------------------------------------------------------------------
-var reTags = regexp.MustCompile (`(\[\s*(?P<tagname>\w+)\s*"(?P<tagvalue>[^"]*)"\s*\]\s*)+`)
+// the following regexp matches a string with an arbitrary number of
+// comments
+var reTags = regexp.MustCompile (`(\[\s*\w+\s*"[^"]*"\s*\]\s*)+`)
 
+// the following regexp matches an arbitrary sequence of moves which are
+// identified by a number, a color (symbolized by either one dot for white or
+// three dots for black) and the move in algebraic format. Moves can be followed
+// by an arbitrary number of comments
 var reMoves = regexp.MustCompile (`(?:(\d+)(\.|\.{3})\s*((?:[PNBRQK]?[a-h]?[1-8]?x?(?:[a-h][1-8]|[NBRQK])(?:\=[PNBRQK])?|O(?:-?O){1,2})[\+#]?(?:\s*[\!\?]+)?)\s*({[^{}]*}\s*)*\s*((?:[PNBRQK]?[a-h]?[1-8]?x?(?:[a-h][1-8]|[NBRQK])(?:\=[PNBRQK])?|O(?:-?O){1,2})[\+#]?(?:\s*[\!\?]+)?)\s*({[^{}]*}\s*)*\s*)+`)
 
+// the outcome is one of the following strings "1-0", "0-1" or "1/2-1/2"
 var reOutcome = regexp.MustCompile (`(1\-0|0\-1|1/2\-1/2|\*)`)
 
 // the following regexp is used to parse the description of an entire game,
 // including the tags, list of moves and final outcome. It consists of a
 // concatenation of the previous expressions where an arbitrary number of spaces
-// is allowed
+// is allowed between them
 var reGame = regexp.MustCompile (`\s*(\[\s*(?P<tagname>\w+)\s*"(?P<tagvalue>[^"]*)"\s*\]\s*)+\s*(?:(\d+)(\.|\.{3})\s*((?:[PNBRQK]?[a-h]?[1-8]?x?(?:[a-h][1-8]|[NBRQK])(?:\=[PNBRQK])?|O(?:-?O){1,2})[\+#]?(?:\s*[\!\?]+)?)\s*({[^{}]*}\s*)*\s*((?:[PNBRQK]?[a-h]?[1-8]?x?(?:[a-h][1-8]|[NBRQK])(?:\=[PNBRQK])?|O(?:-?O){1,2})[\+#]?(?:\s*[\!\?]+)?)\s*({[^{}]*}\s*)*\s*)+\s*(1\-0|0\-1|1/2\-1/2|\*)\s*`)
 
 // grouped regexps -- they are used to extract relevant information from a
 // string
 // ----------------------------------------------------------------------------
+
+// the following regexp matches a string with an arbitrary number of
+// comments. Groups are used to extract the tag name and value
 var reGroupTags = regexp.MustCompile (`\[\s*(?P<tagname>\w+)\s*"(?P<tagvalue>[^"]*)"\s*\]\s*`)
 
-var reGroupFullMoves = regexp.MustCompile (`(?:(?P<moveNumber>\d+)(?P<color>\.|\.{3})\s*(?P<moveValue1>(?:[PNBRQK]?[a-h]?[1-8]?x?(?:[a-h][1-8]|[NBRQK])(?:\=[PNBRQK])?|O(?:-?O){1,2})[\+#]?(?:\s*[\!\?]+)?)\s*(?P<comment1>{[^{}]*})?\s*(?P<moveValue2>(?:[PNBRQK]?[a-h]?[1-8]?x?(?:[a-h][1-8]|[NBRQK])(?:\=[PNBRQK])?|O(?:-?O){1,2})[\+#]?(?:\s*[\!\?]+)?)\s*(?P<comment2>{[^{}]*})?\s*)`)
-
+// this regexp is used just to extract the textual description of a single move
+// which might be preceded by a move number and color identification
 var reGroupMoves = regexp.MustCompile (`(?:(?P<moveNumber>\d+)?(?P<color>\.|\.{3})?\s*(?P<moveValue>(?:[PNBRQK]?[a-h]?[1-8]?x?(?:[a-h][1-8]|[NBRQK])(?:\=[PNBRQK])?|O(?:-?O){1,2})[\+#]?(?:\s*[\!\?]+)?)\s*)`)
 
-// note that comments are expected to be matched at the beginning of the string
-// (^) and its occurrence is required to happen precisely once. This makes sense
-// since the whole string is parsed in chunks
+// comments following any move are matched with the following regexp. Note that
+// comments are expected to be matched at the beginning of the string (^) and
+// its occurrence is required to happen precisely once. This makes sense since
+// the whole string is parsed in chunks
 var reGroupComment = regexp.MustCompile (`^(?P<comment>{[^{}]*})\s*`)
 
 // A specific type of comments provided by ficsgames.org is the time elapsed to
@@ -66,6 +77,7 @@ var reGroupComment = regexp.MustCompile (`^(?P<comment>{[^{}]*})\s*`)
 // note that this expression matches the beginning of the string
 var reGroupEMT = regexp.MustCompile (`^{\[%emt (?P<emt>\d+\.\d*)\]}`)
 
+// Groups are used in the following regexp to extract the score of every player
 var reGroupOutcome = regexp.MustCompile (`(?P<score1>1/2|0|1)\-(?P<score2>1/2|0|1)`)
 
 
@@ -73,46 +85,35 @@ var reGroupOutcome = regexp.MustCompile (`(?P<score1>1/2|0|1)\-(?P<score2>1/2|0|
 // ----------------------------------------------------------------------------
 type PgnTag struct {
 
-	// every tag is identified with a name and value
-	name, value string;
+	name, value string;	              // name and value of a single tag
 }
 
 type PgnMove struct {
 
-	// current move number
-	moveNumber int;
-
-	// color: 1=white; -1=black
-	color int;
-	
-	// move value in PGN format
-	moveValue string;
-
-	// elapsed move time
-	emt float32;
-
-	// comments - in case there are various comments, each one is added
-	// after \r\n
-	comments string;
+	moveNumber int;                                  // current move number
+	color int;                                  // color: 1=white; -1=black
+	moveValue string;                           // move value in PGN format
+	emt float32;                                       // elapsed move time
+	comments string; 	  // comments - in case there are various, each
+				      // one is added after a newline character
 }
 
 type PgnOutcome struct {
 
-	// the outcome is qualified with two floating-point numbers with the
-	// score of each player
-	scoreWhite, scoreBlack float32;
+	scoreWhite, scoreBlack float32;                 // score of each player
 }
 
 type PgnGame struct {
 
-	// A game consists of a collection of tags
-	tags []PgnTag;
+	tags []PgnTag;               // A game consists of a collection of tags
+	moves []PgnMove;                      // sequence of moves of this game
+	outcome PgnOutcome;                                    // final outcome
+}
 
-	// a sequence of moves with related information such as comments and emt
-	moves []PgnMove;
+type PgnCollection struct {
 
-	// and an outcome
-	outcome PgnOutcome;
+	slice []PgnGame                                  // collection of games
+	nbGames int;                                  // number of games stored
 }
 
 // Methods
@@ -151,8 +152,14 @@ func (game *PgnGame) GetOutcome () PgnOutcome {
 	return game.outcome
 }
 
-// next, there are a few methods that provide additional support over the
-// information stored in various attributes
+// the following are getters over the attributes of a PgnCollection
+func (games *PgnCollection) GetGames () []PgnGame {
+	return games.slice
+}
+
+func (games *PgnCollection) GetNbGames () int {
+	return games.nbGames
+}
 
 // GetTagValue return the value of a specific tag and nil if it exists or any
 // value and err in case it does not exist
@@ -177,6 +184,11 @@ func (game *PgnGame) GetTagValue (name string) (value string, err error) {
 func (game *PgnGame) ShowHeader () string {
 
 	// first, verify that all necessary tags are available
+	dbGameNo, err := game.GetTagValue ("FICSGamesDBGameNo")
+	if err != nil {
+		log.Fatalf ("FICSGamesDBGameNo not found!")
+	}
+	
 	date, err := game.GetTagValue ("Date")
 	if err != nil {
 		log.Fatalf ("Date not found!")
@@ -228,9 +240,37 @@ func (game *PgnGame) ShowHeader () string {
 		moves /=2
 	}
 
+	var scoreWhite, scoreBlack string;
 	outcome := game.GetOutcome ()
-	
-	return fmt.Sprintf (" | %v %v | %-18v (%4v) | %-18v (%4v) | %v | %v | %2v | %3v-%-3v |", date, time, white, whiteELO, black, blackELO, ECO, timeControl, moves, outcome.scoreWhite, outcome.scoreBlack)
+	if outcome.scoreWhite == 0.5 {
+		scoreWhite, scoreBlack = "½", "½"
+	} else if outcome.scoreWhite == 1 {
+		scoreWhite, scoreBlack = "1", "0"
+	} else {
+		scoreWhite, scoreBlack = "0", "1"
+	}
+
+	return fmt.Sprintf (" | %10v | %v %v | %-18v (%4v) | %-18v (%4v) | %v | %v | %5v |    %v-%-v |", dbGameNo, date, time, white, whiteELO, black, blackELO, ECO, timeControl, moves, scoreWhite, scoreBlack)
+}
+
+// ShowHeaders summarizes the main information stored in the tags of all games
+// in the given collection
+func (games *PgnCollection) ShowHeaders () string {
+
+	// show the header
+	output := " |  DBGameNo  | Date                | White                     | Black                     | ECO | Time  | Moves | Result |\n +------------+---------------------+---------------------------+---------------------------+-----+-------+-------+--------+\n"
+
+	// and now, add to output information of every single game in the given
+	// collection
+	for _, game := range games.slice {
+		output += game.ShowHeader () + "\n"
+	}
+
+	// and add a bottom line
+	output += " +------------+---------------------+---------------------------+---------------------------+-----+-------+-------+--------+"
+
+	// and return the string
+	return output
 }
 
 // functions
@@ -268,11 +308,11 @@ func getTags (pgn string) (tags []PgnTag) {
 // ----------------------------------------------------------------------------
 func getMoves (pgn string) (moves []PgnMove) {
 
-	moveNumber := -1		// initialize the move counter to unknown
-	color := 0;			// initialize the color to unknown
-	var moveValue string;		// move actually parsed in PGN format
-	var emt float64;		// elapsed move time
-	var comments string;		// comments of each move
+	moveNumber := -1              // initialize the move counter to unknown
+	color := 0;                          // initialize the color to unknown
+	var moveValue string;             // move actually parsed in PGN format
+	var emt float64;                                   // elapsed move time
+	var comments string;                           // comments of each move
 	var err error;
 	
 	// process plies in sequence until the whole string is exhausted
@@ -329,7 +369,6 @@ func getMoves (pgn string) (moves []PgnMove) {
 			// is this an emt field?
 			if reGroupEMT.MatchString (pgn) {
 				tagEMT := reGroupEMT.FindStringSubmatchIndex (pgn)
-
 				emt, err = strconv.ParseFloat (pgn[tagEMT[2]:tagEMT[3]], 32)
 				if err != nil {
 					log.Fatalf (" Fatal error while converting emt")
@@ -343,8 +382,6 @@ func getMoves (pgn string) (moves []PgnMove) {
 				}
 				comments += pgn[1+tag[2]:tag[3]-1]
 			}
-			
-			
 			pgn = pgn[tag[1]:]
 		}
 
@@ -460,7 +497,7 @@ func getGameFromString (pgn string, verbose bool) PgnGame {
 // Return the contents of all chess games included the given string in PGN
 // format. In case verbose is given, it shows additional information
 // ----------------------------------------------------------------------------
-func GetGamesFromString (pgn string, verbose bool) (games []PgnGame) {
+func GetGamesFromString (pgn string, verbose bool) (games PgnCollection) {
 
 	// just iterate over the string extracting the information of every game
 	for ;reGame.MatchString (pgn); {
@@ -470,7 +507,8 @@ func GetGamesFromString (pgn string, verbose bool) (games []PgnGame) {
 
 		// Parse this game and add it to the slice of games to return
 		game := getGameFromString (pgn[tag[0]:tag[1]], verbose)
-		games = append (games, game)
+		games.slice = append (games.slice, game)
+		games.nbGames += 1
 
 		// and move forward
 		pgn = pgn[tag[1]:]
@@ -491,7 +529,7 @@ func GetGamesFromString (pgn string, verbose bool) (games []PgnGame) {
 // Return the contents of all chess games in the given file in PGN format. In
 // case verbose is given, it shows additional information
 // ----------------------------------------------------------------------------
-func GetGamesFromFile (pgnfile string, verbose bool) (games []PgnGame) {
+func GetGamesFromFile (pgnfile string, verbose bool) (games PgnCollection) {
 
 	// Open and read the given file and retrieve its contents
 	contents := fstools.Read (pgnfile, -1)

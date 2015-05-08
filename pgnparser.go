@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <sábado, 09 mayo 2015 00:20:34 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 09 mayo 2015 01:32:30 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -102,21 +102,14 @@ func main () {
 	// verify the values parsed
 	verify ()
 
-	// read the pgn file provided by the user and cast it into a string
-	// contents := fstools.Read (pgnfile, -1)
-	// strcontents := string (contents[:len (contents)])
-
-	// and now parse the contents to create a slice of structs that contain
-	// all the information
+	// process the contents of the given file
 	games := pgntools.GetGamesFromFile (pgnfile, verbose)
 
 	// show the headers of all games
 	fmt.Printf ("\n")
-	for _, game := range games {
-		fmt.Println (game.ShowHeader ())
-	}	
+	fmt.Println (games.ShowHeaders ())
 	fmt.Printf ("\n")
-	fmt.Printf (" # Games found: %v\n\n", len (games))
+	fmt.Printf (" # Games found: %v\n\n", games.GetNbGames ())
 }
 
 
