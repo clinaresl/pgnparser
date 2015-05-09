@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May  6 15:38:56 2015 Carlos Linares Lopez>
-  Last update <sábado, 09 mayo 2015 17:01:30 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 09 mayo 2015 17:34:44 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -86,8 +86,11 @@ var reGroupOutcome = regexp.MustCompile (`(?P<score1>1/2|0|1)\-(?P<score2>1/2|0|
 //
 // Return a slice with all tags in the given string. 
 // ----------------------------------------------------------------------------
-func getTags (pgn string) (tags []PgnTag) {
+func getTags (pgn string) (tags map[string]string) {
 
+	// create the map
+	tags = make (map[string]string)
+	
 	// get information about all pgn tags in the given string
 	for _, tag := range reGroupTags.FindAllStringSubmatchIndex (pgn, -1) {
 
@@ -96,9 +99,8 @@ func getTags (pgn string) (tags []PgnTag) {
 		// <begin/end>-string, <begin/end>-tagname, <begin/end>-tagvalue
 		if len (tag) >= 6 {
 
-			// create an instance of a pgntag and add it to the
-			// slice to return
-			tags = append (tags, PgnTag{pgn[tag[2]:tag[3]], pgn[tag[4]:tag[5]]})
+			// add this tag to the map to return
+			tags[pgn[tag[2]:tag[3]]] = pgn[tag[4]:tag[5]]
 		}
 	}
 

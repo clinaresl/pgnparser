@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <sábado, 09 mayo 2015 16:56:49 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 09 mayo 2015 17:35:26 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -110,6 +110,8 @@ func main () {
 	fmt.Println (games.ShowHeaders ())
 	fmt.Printf ("\n")
 	fmt.Printf (" # Games found: %v\n\n", games.GetNbGames ())
+
+	fmt.Println (games.GameToLaTeX ())
 }
 
 

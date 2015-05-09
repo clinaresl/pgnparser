@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <sábado, 09 mayo 2015 17:03:04 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 09 mayo 2015 17:31:18 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -49,7 +49,8 @@ type PgnOutcome struct {
 
 type PgnGame struct {
 
-	tags []PgnTag;               // A game consists of a collection of tags
+	tags map[string]string;      // A game consists of a collection of tags
+	                                               // index by the tag name
 	moves []PgnMove;                      // sequence of moves of this game
 	outcome PgnOutcome;                                    // final outcome
 }
@@ -83,7 +84,7 @@ func (game *PgnGame) String () string {
 }
 
 // the following are getters over the attributes of a PgnGame
-func (game *PgnGame) GetTags () []PgnTag {
+func (game *PgnGame) GetTags () map[string]string {
 	return game.tags
 }
 
@@ -99,16 +100,10 @@ func (game *PgnGame) GetOutcome () PgnOutcome {
 // value and err in case it does not exist
 func (game *PgnGame) GetTagValue (name string) (value string, err error) {
 
-	// usually there are just a few tags, so that a linear search does not
-	// cause any harm
-	for _, tag := range game.tags {
-
-		// in case this tag contains the specified name return it
-		if tag.name == name {
-			return tag.value, nil
-		}
+	if value, ok := game.tags[name]; ok {
+		return value, nil
 	}
-
+	
 	// when getting here, the required tag has not been found
 	return "", errors.New ("tag not found!")
 }
