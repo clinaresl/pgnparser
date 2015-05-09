@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May  6 15:38:56 2015 Carlos Linares Lopez>
-  Last update <sábado, 09 mayo 2015 01:57:34 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 09 mayo 2015 03:56:35 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -126,17 +126,22 @@ func (tag PgnTag) String () string {
 
 func (move PgnMove) String () string {
 	if move.color == 1 {
-		return fmt.Sprintf ("%3v. %v [%v]\n[%v]", move.moveNumber, move.moveValue, move.emt, move.comments)
+		return fmt.Sprintf ("%v. %v", move.moveNumber, move.moveValue)
 	}
-	return fmt.Sprintf ("%3v... %v [%v]\n[%v]", move.moveNumber, move.moveValue, move.emt, move.comments)	
+	return fmt.Sprintf (" %v ", move.moveValue)
 }
 
 func (outcome PgnOutcome) String () string {
 	return fmt.Sprintf ("%v - %v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
+// the following service just prints all the sequence of moves in the given game
 func (game PgnGame) String () string {
-	return fmt.Sprintf ("%v\n%v\n%v", game.tags, game.moves, game.outcome)
+	output := ""
+	for _, move := range game.moves {
+		output += fmt.Sprintf ("%v", move)
+	}
+	return output
 }
 
 // the following are getters over the attributes of a PgnGame
@@ -155,6 +160,10 @@ func (game *PgnGame) GetOutcome () PgnOutcome {
 // the following are getters over the attributes of a PgnCollection
 func (games *PgnCollection) GetGames () []PgnGame {
 	return games.slice
+}
+
+func (games *PgnCollection) GetGame (index int) PgnGame {
+	return games.slice [index]
 }
 
 func (games *PgnCollection) GetNbGames () int {
@@ -269,6 +278,137 @@ func (games *PgnCollection) ShowHeaders () string {
 	// and add a bottom line
 	output += " +------------+---------------------+---------------------------+---------------------------+-----+-------+-------+--------+"
 
+	// and return the string
+	return output
+}
+
+// getLaTeXbody computes the main part of the LaTeX document that shows
+// information of a specific game
+func (game PgnGame) getLaTeXbody () string {
+
+	// first, verify that all necessary tags are available
+	event, err := game.GetTagValue ("Event")
+	if err != nil {
+		log.Fatalf ("Event not found!")
+	}
+	
+	date, err := game.GetTagValue ("Date")
+	if err != nil {
+		log.Fatalf ("Date not found!")
+	}
+	
+	white, err := game.GetTagValue ("White")
+	if err != nil {
+		log.Fatalf ("White not found!")
+	}
+	
+	whiteELO, err := game.GetTagValue ("WhiteElo")
+	if err != nil {
+		log.Fatalf ("WhiteElo not found!")
+	}
+	
+	black, err := game.GetTagValue ("Black")
+	if err != nil {
+		log.Fatalf ("Black not found!")
+	}
+	
+	blackELO, err := game.GetTagValue ("BlackElo")
+	if err != nil {
+		log.Fatalf ("BlackElo not found!")
+	}
+	
+	ECO, err := game.GetTagValue ("ECO")
+	if err != nil {
+		log.Fatalf ("ECO not found!")
+	}
+	
+	timeControl, err := game.GetTagValue ("TimeControl")
+	if err != nil {
+		log.Fatalf ("TimeControl not found!")
+	}
+
+	var scoreWhite, scoreBlack string;
+	outcome := game.GetOutcome ()
+	if outcome.scoreWhite == 0.5 {
+		scoreWhite, scoreBlack = `\textonehalf`, `\textonehalf`
+	} else if outcome.scoreWhite == 1 {
+		scoreWhite, scoreBlack = "1", "0"
+	} else {
+		scoreWhite, scoreBlack = "0", "1"
+	}
+	
+	// now, initialize the output with the main contents of the LaTeX body
+	output := fmt.Sprintf (`\begin{center}
+  {\Large %v (%v)}  
+\end{center}
+
+\hrule
+\noindent
+\WhiteKnightOnWhite %v (%v) \hfill %v\\
+\BlackKnightOnWhite %v (%v) \hfill %v
+\hrule
+
+\vspace{0.5cm}
+
+\newgame
+
+\mainline{%v}\hfill{\textbf{%v}-\textbf{%v}}
+
+\begin{center}
+  \showboard
+\end{center}`, event, timeControl, white, whiteELO, date, black, blackELO, ECO, game, scoreWhite, scoreBlack)
+
+	// and return the string computed so far
+	return output
+}
+
+// GameToLaTeX produces LaTeX code that uses package skak to show the given game
+func (game PgnGame) GameToLaTeX () string {
+
+	// justsubstitute values over a standard template
+	output := fmt.Sprintf (`\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{mathpazo}
+\usepackage{nicefrac}
+\usepackage{skak}
+\def\hrulefill{\leavevmode\leaders\hrule height 10pt\hfill\kern\z@}
+\begin{document}
+
+%v
+
+\end{document}`, game.getLaTeXbody ())
+
+	// and return the string
+	return output
+}
+
+// GameToLaTeX produces LaTeX code that uses package skak to show all games in a
+// given collection
+func (games PgnCollection) GameToLaTeX () string {
+
+	// start with the preamble of the document
+	output := `\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{mathpazo}
+\usepackage{nicefrac}
+\usepackage{skak}
+\def\hrulefill{\leavevmode\leaders\hrule height 10pt\hfill\kern\z@}
+\begin{document}`
+
+	// now, process each game in succession
+	for _, game := range games.slice {
+
+		output += fmt.Sprintf(`%v
+\clearpage
+`, game.getLaTeXbody ())
+	}
+
+	// and end the document
+	output += `
+\end{document}`
+	
 	// and return the string
 	return output
 }
