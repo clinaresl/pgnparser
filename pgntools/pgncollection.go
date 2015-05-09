@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <sábado, 09 mayo 2015 17:00:07 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 09 mayo 2015 17:13:48 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -51,7 +51,7 @@ func (games *PgnCollection) GetNbGames () int {
 }
 
 // ShowHeaders summarizes the main information stored in the tags of all games
-// in the given collection
+// in the given collection and show it in textual form
 func (games *PgnCollection) ShowHeaders () string {
 
 	// show the header
