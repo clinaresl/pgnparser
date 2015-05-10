@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <sábado, 09 mayo 2015 17:35:26 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 10 mayo 2015 02:19:18 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -40,6 +40,7 @@ var EXIT_SUCCESS int = 0		// exit with success
 var EXIT_FAILURE int = 1		// exit with failure
 
 var pgnfile string       		// base directory
+var latexTemplate string		// file with the latex template
 var verbose bool			// has verbose output been requested?
 var version bool			// has version info been requested?
 
@@ -54,6 +55,9 @@ func init () {
 
 	// Flag to store the pgn file to parse
 	flag.StringVar (&pgnfile, "file", "", "pgn file to parse. This utility adheres to the format of ficsgames.org")
+
+	// Flag to store the file with the LaTeX template
+	flag.StringVar (&latexTemplate, "template", "", "file with a LaTeX template to use. If given, a file with the same name used in 'file' and extension '.tex' is automatically generated. This template acknowledges placeholders of the form '%name'. Acknowledged placeholders are PGN tags and, additionally, 'moves' which is substituted by the list of moves of each game")
 
 	// other optional parameters are verbose and version
 	flag.BoolVar (&verbose, "verbose", false, "provides verbose output")
@@ -111,7 +115,20 @@ func main () {
 	fmt.Printf ("\n")
 	fmt.Printf (" # Games found: %v\n\n", games.GetNbGames ())
 
-	fmt.Println (games.GameToLaTeX ())
+	// in case a LaTeX template has been given, then generate a LaTeX file
+	// with the same name than the pgn file (and in the same location) with
+	// extension '.tex'
+	if latexTemplate != "" {
+
+		// compute the contents to write to the file
+		contents := games.GamesToLaTeXFromFile (latexTemplate)
+
+		// now, write this contents to the specified file
+		_, err := fstools.Write (pgnfile + ".tex", []byte (contents))
+		if err != nil {
+			log.Fatalf (" An error was issued when writing data to the LaTeX file")
+		}
+	}
 }
 
 

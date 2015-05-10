@@ -1,0 +1,32 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{mathpazo}
+\usepackage{skak}
+
+\def\hrulefill{\leavevmode\leaders\hrule height 10pt\hfill\kern\z@}
+
+\begin{document}
+
+\begin{center}
+  {\Large %Event (%TimeControl)}  
+\end{center}
+
+\hrule
+\noindent
+\WhiteKnightOnWhite %White (%WhiteElo) \hfill %Date\\
+\BlackKnightOnWhite %Black (%BlackElo) \hfill %ECO
+\hrule
+
+\vspace{0.5cm}
+
+\newgame
+
+\mainline{%moves}\hfill{\textbf{%Result}}
+
+\begin{center}
+  \showboard
+\end{center}
+
+\end{document}

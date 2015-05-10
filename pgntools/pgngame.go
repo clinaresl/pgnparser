@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <sábado, 09 mayo 2015 17:31:18 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 10 mayo 2015 01:09:44 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -22,8 +22,20 @@ import (
 	"errors"		// for signaling errors
 	"fmt"			// printing msgs	
 	"log"			// logging services
+	"regexp"                // pgn files are parsed with a regexp
 	"strconv"		// to convert from strings to other types
+
+	// import a user package to manage paths
+	"bitbucket.org/clinares/pgnparser/fstools"
 )
+
+// global variables
+// ----------------------------------------------------------------------------
+
+// the following regexp matches any placeholder appearing in a LaTeX
+// file
+var reGroupPlaceholder = regexp.MustCompile (`%[\w\d]+`)
+
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -58,11 +70,18 @@ type PgnGame struct {
 // Methods
 // ----------------------------------------------------------------------------
 
-// the following methods overwrite the string output method
+// String
+//
+// produces a string with information of this tag
+// ----------------------------------------------------------------------------
 func (tag PgnTag) String () string {
 	return fmt.Sprintf ("%v: %v", tag.name, tag.value)
 }
 
+// String
+// 
+// produces a string with information of this move
+// ----------------------------------------------------------------------------
 func (move PgnMove) String () string {
 	if move.color == 1 {
 		return fmt.Sprintf ("%v. %v", move.moveNumber, move.moveValue)
@@ -70,11 +89,18 @@ func (move PgnMove) String () string {
 	return fmt.Sprintf (" %v ", move.moveValue)
 }
 
+// String
+//
+// produces a string with information of this outcome
+// ----------------------------------------------------------------------------
 func (outcome PgnOutcome) String () string {
 	return fmt.Sprintf ("%v - %v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
-// the following service just prints all the sequence of moves in the given game
+// String
+//
+// produces a string with the list of moves of this game
+// ----------------------------------------------------------------------------
 func (game *PgnGame) String () string {
 	output := ""
 	for _, move := range game.moves {
@@ -83,21 +109,35 @@ func (game *PgnGame) String () string {
 	return output
 }
 
-// the following are getters over the attributes of a PgnGame
+// GetTags
+//
+// Return the tags of this game
+// ----------------------------------------------------------------------------
 func (game *PgnGame) GetTags () map[string]string {
 	return game.tags
 }
 
+// GetMoves
+//
+// Return a list of the moves of this game
+// ----------------------------------------------------------------------------
 func (game *PgnGame) GetMoves () []PgnMove {
 	return game.moves
 }
 
+// GetOutcome
+//
+// Return an instance of PgnOutcome with the result of this game
+// ----------------------------------------------------------------------------
 func (game *PgnGame) GetOutcome () PgnOutcome {
 	return game.outcome
 }
 
-// GetTagValue return the value of a specific tag and nil if it exists or any
-// value and err in case it does not exist
+// GetTagValue
+// 
+// return the value of a specific tag and nil if it exists or any value and err
+// in case it does not exist
+// ----------------------------------------------------------------------------
 func (game *PgnGame) GetTagValue (name string) (value string, err error) {
 
 	if value, ok := game.tags[name]; ok {
@@ -108,8 +148,10 @@ func (game *PgnGame) GetTagValue (name string) (value string, err error) {
 	return "", errors.New ("tag not found!")
 }
 
-// ShowHeader summarizes the main information stored in the tags of a specific
-// game
+// ShowHeader
+// 
+// return a string with a summary of the main information stored in this game
+// ----------------------------------------------------------------------------
 func (game *PgnGame) ShowHeader () string {
 
 	// first, verify that all necessary tags are available
@@ -182,107 +224,61 @@ func (game *PgnGame) ShowHeader () string {
 	return fmt.Sprintf (" | %10v | %v %v | %-18v (%4v) | %-18v (%4v) | %v | %v | %5v |    %v-%-v |", dbGameNo, date, time, white, whiteELO, black, blackELO, ECO, timeControl, moves, scoreWhite, scoreBlack)
 }
 
-// getLaTeXbody computes the main part of the LaTeX document that shows
-// information of a specific game
-func (game *PgnGame) getLaTeXbody () string {
+// replacePlaceholders
+//
+// returns the result of replacing all placeholders in template with their
+// value. Placeholders are identified with the string '%<name>'. All tag names
+// specified in this game are acknowledged. Additionally, '%moves' is
+// substituted by the list of moves
+// ----------------------------------------------------------------------------
+func (game *PgnGame) replacePlaceholders (template string) string {
 
-	// first, verify that all necessary tags are available
-	event, err := game.GetTagValue ("Event")
-	if err != nil {
-		log.Fatalf ("Event not found!")
-	}
-	
-	date, err := game.GetTagValue ("Date")
-	if err != nil {
-		log.Fatalf ("Date not found!")
-	}
-	
-	white, err := game.GetTagValue ("White")
-	if err != nil {
-		log.Fatalf ("White not found!")
-	}
-	
-	whiteELO, err := game.GetTagValue ("WhiteElo")
-	if err != nil {
-		log.Fatalf ("WhiteElo not found!")
-	}
-	
-	black, err := game.GetTagValue ("Black")
-	if err != nil {
-		log.Fatalf ("Black not found!")
-	}
-	
-	blackELO, err := game.GetTagValue ("BlackElo")
-	if err != nil {
-		log.Fatalf ("BlackElo not found!")
-	}
-	
-	ECO, err := game.GetTagValue ("ECO")
-	if err != nil {
-		log.Fatalf ("ECO not found!")
-	}
-	
-	timeControl, err := game.GetTagValue ("TimeControl")
-	if err != nil {
-		log.Fatalf ("TimeControl not found!")
-	}
+	return reGroupPlaceholder.ReplaceAllStringFunc(template,
+		func (name string) string {
 
-	var scoreWhite, scoreBlack string;
-	outcome := game.GetOutcome ()
-	if outcome.scoreWhite == 0.5 {
-		scoreWhite, scoreBlack = `\textonehalf`, `\textonehalf`
-	} else if outcome.scoreWhite == 1 {
-		scoreWhite, scoreBlack = "1", "0"
-	} else {
-		scoreWhite, scoreBlack = "0", "1"
-	}
-	
-	// now, initialize the output with the main contents of the LaTeX body
-	output := fmt.Sprintf (`\begin{center}
-  {\Large %v (%v)}  
-\end{center}
+			// get rid of the leading '%' character
+			placeholder := name[1:]
+			
+			// most placeholders are just tag names. However,
+			// 'moves' is also acknowledged
+			if placeholder == "moves" {
+				return fmt.Sprintf ("%v", game)
+			}
 
-\hrule
-\noindent
-\WhiteKnightOnWhite %v (%v) \hfill %v\\
-\BlackKnightOnWhite %v (%v) \hfill %v
-\hrule
-
-\vspace{0.5cm}
-
-\newgame
-
-\mainline{%v}\hfill{\textbf{%v}-\textbf{%v}}
-
-\begin{center}
-  \showboard
-\end{center}`, event, timeControl, white, whiteELO, date, black, blackELO, ECO, game, scoreWhite, scoreBlack)
-
-	// and return the string computed so far
-	return output
+			// otherwise, return the value of this tag
+			return game.tags [placeholder]
+		})
 }
 
-// GameToLaTeX produces LaTeX code that uses package skak to show the given game
-func (game *PgnGame) GameToLaTeX () string {
+// GameToLaTeXFromString
+//
+// produces LaTeX code using the specified template with information of this
+// game. The string acknowledges various placeholders which have the format
+// '%<name>'. All tag names specified in this game are
+// acknowledged. Additionally, '%moves' is substituted by the list of moves
+// ----------------------------------------------------------------------------
+func (game *PgnGame) GameToLaTeXFromString (template string) string {
 
-	// justsubstitute values over a standard template
-	output := fmt.Sprintf (`\documentclass{article}
-\usepackage[utf8]{inputenc}
-\usepackage[english]{babel}
-\usepackage{mathpazo}
-\usepackage{nicefrac}
-\usepackage{skak}
-\def\hrulefill{\leavevmode\leaders\hrule height 10pt\hfill\kern\z@}
-\begin{document}
-
-%v
-
-\end{document}`, game.getLaTeXbody ())
-
-	// and return the string
-	return output
+	// just substitute values over the given template and return the result
+	return game.replacePlaceholders (template)
 }
 
+// GameToLaTeXFromFile
+//
+// produces LaTeX code using the template stored in the specified file with
+// information of this game. The string acknowledges various placeholders which
+// have the format '%<name>'. All tag names specified in this game are
+// acknowledged. Additionally, '%moves' is substituted by the list of moves
+// ----------------------------------------------------------------------------
+func (game *PgnGame) GameToLaTeXFromFile (templateFile string) string {
+
+	// Open and read the given file and retrieve its contents
+	contents := fstools.Read (templateFile, -1)
+	template := string (contents[:len (contents)])
+
+	// and now, just return the results of parsing these contents
+	return game.GameToLaTeXFromString (template)
+}
 
 
 /* Local Variables: */

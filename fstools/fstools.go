@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Jun 19 13:36:57 2014 Carlos Linares Lopez>
-  Last update <viernes, 08 mayo 2015 22:50:26 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 10 mayo 2015 02:15:13 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -19,6 +19,7 @@
 package fstools
 
 import (
+	"errors"		// for signaling errors
 	"log"			// logging services
 	"os"			// access to env variables
 	"path"			// path manipulation
@@ -110,12 +111,15 @@ func IsRegular (path string) (isregular bool, fileinfo os.FileInfo) {
 func Read (path string, maxlen int32) (contents []byte) {
 
 	var err error
-	
+
 	// open the file in read access
 	file, err := os.Open(path); if err != nil {
 		log.Fatal(err)
 	}
 
+	// make sure the file is closed anyway
+	defer file.Close ()
+	
 	// read the file in chunks of MAXLEN until EOF is reached or maxlen
 	// bytes have been read
 	var count int
@@ -128,13 +132,41 @@ func Read (path string, maxlen int32) (contents []byte) {
 		}
 	}
 	
-	// close the file
-	file.Close ()
-
 	// and return the data
 	return contents
 }
 
+// Write
+// 
+// write the contents specified in the given file. It returns the number of
+// bytes written and nil if everything went fine. Otherwise, it returns any
+// number and an error
+// ----------------------------------------------------------------------------
+func Write (path string, contents []byte) (nbytes int, err error) {
+
+	// check if the file exists
+	if _, err = os.Stat(path); err == nil {
+		return 0, errors.New ("the file already exists")
+	}
+
+	// now, open the file in read/write mode
+	file, err := os.Create(path); if err != nil {
+		log.Fatalf ("it was not possible to create the file")
+	}
+
+	// make sure the file is closed before leaving
+	defer file.Close ()
+
+	// and now write the contents into this file
+	nbytes, err = file.Write(contents); if err != nil {
+		log.Fatalf ("it was not possible to write to the file")
+	}
+
+	// syncing ...
+	file.Sync ()
+
+	return nbytes, nil
+}
 
 
 /* Local Variables: */
