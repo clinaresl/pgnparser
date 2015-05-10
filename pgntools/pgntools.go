@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May  6 15:38:56 2015 Carlos Linares Lopez>
-  Last update <domingo, 10 mayo 2015 00:41:33 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 10 mayo 2015 15:37:55 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -16,6 +16,8 @@
   Login   <clinares@atlas>
 */
 
+// This package provides a number of simple services for accessing and handling
+// chess games in PGN format
 package pgntools
 
 import (
@@ -82,10 +84,7 @@ var reGroupOutcome = regexp.MustCompile (`(?P<score1>1/2|0|1)\-(?P<score2>1/2|0|
 // functions
 // ----------------------------------------------------------------------------
 
-// getTags
-//
 // Return a slice with all tags in the given string. 
-// ----------------------------------------------------------------------------
 func getTags (pgn string) (tags map[string]string) {
 
 	// create the map
@@ -107,13 +106,10 @@ func getTags (pgn string) (tags map[string]string) {
 	return
 }
 
-// getMoves
-//
 // Return a slice of PgnMove with the information in the string 'pgn' which
 // shall consist of a legal transcription of legal PGN moves that might be
 // annotated (an arbitrary number of times) or not. 'emt' annotations are also
 // acknowledged and their information is added to the slice of PgnMove
-// ----------------------------------------------------------------------------
 func getMoves (pgn string) (moves []PgnMove) {
 
 	moveNumber := -1              // initialize the move counter to unknown
@@ -204,11 +200,8 @@ func getMoves (pgn string) (moves []PgnMove) {
 	return
 }
 
-// getOutcome
-//
 // Return an instance of PgnOutcome with the score of each player as specified
 // in the given string
-// ----------------------------------------------------------------------------
 func getOutcome (pgn string) (outcome PgnOutcome) {
 
 	// get information about the outcome as given in pgn
@@ -236,12 +229,9 @@ func getOutcome (pgn string) (outcome PgnOutcome) {
 	return
 }
 
-// getGameFromString
-//
 // Return the contents of a chess game from the full transcription of a chess
 // game given in a string in PGN format. In case verbose is given, it shows
 // additional information
-// ----------------------------------------------------------------------------
 func getGameFromString (pgn string, verbose bool) PgnGame {
 
 	// create variables to store different sections of a single PGN game
@@ -300,11 +290,10 @@ func getGameFromString (pgn string, verbose bool) PgnGame {
 	return PgnGame {tags, moves, outcome}
 }
 
-// GetGamesFromString
-//
 // Return the contents of all chess games included the given string in PGN
-// format. In case verbose is given, it shows additional information
-// ----------------------------------------------------------------------------
+// format as an instance of PgnCollection.
+//
+// In case verbose is given, it shows additional information
 func GetGamesFromString (pgn string, verbose bool) (games PgnCollection) {
 
 	// just iterate over the string extracting the information of every game
@@ -332,11 +321,10 @@ func GetGamesFromString (pgn string, verbose bool) (games PgnCollection) {
 	return
 }
 
-// GetGamesFromFile
+// Return the contents of all chess games in the given file in PGN format as an
+// instance of PgnCollection
 //
-// Return the contents of all chess games in the given file in PGN format. In
-// case verbose is given, it shows additional information
-// ----------------------------------------------------------------------------
+// In case verbose is given, it shows additional information
 func GetGamesFromFile (pgnfile string, verbose bool) (games PgnCollection) {
 
 	// Open and read the given file and retrieve its contents

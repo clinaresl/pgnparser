@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <domingo, 10 mayo 2015 02:17:07 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 10 mayo 2015 15:33:35 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -33,38 +33,54 @@ import (
 
 // the following regexps are used just to locate the main body of the
 // LaTeX template
+
+// It is used to locate the beginning of the document of the LaTeX template
 var reBeginDocument = regexp.MustCompile (`\\begin{document}`)
+
+// It is used to locate the beginning of the document of the LaTeX template
 var reEndDocument = regexp.MustCompile (`\\end{document}`)
 
 // typedefs
 // ----------------------------------------------------------------------------
+
+// A PgnCollection consists of an arbitrary number of PgnGames along with a
+// count of the number of games stored in it ---this is given to check for
+// consistency so that the difference between nbGames and len (slice) shall be
+// always null
 type PgnCollection struct {
 
-	slice []PgnGame                                  // collection of games
-	nbGames int;                                  // number of games stored
+	slice []PgnGame
+	nbGames int;
 }
 
 // Methods
 // ----------------------------------------------------------------------------
 
 // the following are getters over the attributes of a PgnCollection
+
+// Return all games as instances of PgnGame that are stored in this particular
+// collection
 func (games *PgnCollection) GetGames () []PgnGame {
 	return games.slice
 }
 
+// Return the index-th game stored in this particular collection
 func (games *PgnCollection) GetGame (index int) PgnGame {
 	return games.slice [index]
 }
 
+// Return the number of games stored in this particular collection. It returns
+// the internal count of games as opposed to the length of the slice that
+// actually stores the games
 func (games *PgnCollection) GetNbGames () int {
 	return games.nbGames
 }
 
-// ShowHeaders
-// 
-// returns a string with a summary of the information of all games
-// stored in this collection
-// ----------------------------------------------------------------------------
+// Returns a string with a summary of the information of all games stored in
+// this collection. The summary is shown as an ASCII table with heading and
+// bottom lines.
+//
+// In case any required data is not found, a fatal error is raised
 func (games *PgnCollection) ShowHeaders () string {
 
 	// show the header
@@ -83,9 +99,7 @@ func (games *PgnCollection) ShowHeaders () string {
 	return output
 }
 
-// GamesToLaTeXFromString
-// 
-// produces LaTeX code using the specified template with information
+// Produces LaTeX code using the specified template with information
 // of all games in this collection. The string acknowledges various
 // placeholders which have the format '%<name>'. All tag names
 // specified in this game are acknowledged. Additionally, '%moves' is
@@ -96,7 +110,6 @@ func (games *PgnCollection) ShowHeaders () string {
 // preamble. The preamble is then shown only once and the main body is
 // repeated with as many games are found in this collection, all of
 // them separated by `\clearpage`
-// ----------------------------------------------------------------------------
 func (games *PgnCollection) GamesToLaTeXFromString (template string) string {
 
 	// locate the begin of the document
@@ -133,15 +146,12 @@ func (games *PgnCollection) GamesToLaTeXFromString (template string) string {
 	return output
 }
 
-// GamesToLaTeXFromFile
-//
-// produces LaTeX code using the template stored in the specified file
+// Produces LaTeX code using the template stored in the specified file
 // with information of all games in this collection. The string
 // acknowledges various placeholders which have the format
 // '%<name>'. All tag names specified in this game are
 // acknowledged. Additionally, '%moves' is substituted by the list of
 // moves
-// ----------------------------------------------------------------------------
 func (games *PgnCollection) GamesToLaTeXFromFile (templateFile string) string {
 
 	// Open and read the given file and retrieve its contents

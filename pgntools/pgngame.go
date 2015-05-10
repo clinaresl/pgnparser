@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <domingo, 10 mayo 2015 01:09:44 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 10 mayo 2015 15:49:45 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -32,56 +32,70 @@ import (
 // global variables
 // ----------------------------------------------------------------------------
 
-// the following regexp matches any placeholder appearing in a LaTeX
-// file
+// The following regexp matches any placeholder appearing in a LaTeX
+// file. Placeholder have the form '%name' where 'name' consists of any
+// combination of alpha and numeric characters.
 var reGroupPlaceholder = regexp.MustCompile (`%[\w\d]+`)
 
 
 // typedefs
 // ----------------------------------------------------------------------------
+
+// A PGN tag consists of a pair <name, value>
 type PgnTag struct {
 
-	name, value string;	              // name and value of a single tag
+	name, value string;
 }
 
+// A PGN move consist of a single ply. For each move the move number, color and
+// actual move value (in algebraic form) is stored. Additionally, in case that
+// the elapsed move time was present in the PGN file, it is also stored
+// here.
+//
+// Finally, any combination of moves after the move are combined into the
+// same field (comments). In case various comments were given they are then
+// separated by '\n'.
 type PgnMove struct {
 
-	moveNumber int;                                  // current move number
-	color int;                                  // color: 1=white; -1=black
-	moveValue string;                           // move value in PGN format
-	emt float32;                                       // elapsed move time
-	comments string; 	  // comments - in case there are various, each
-				      // one is added after a newline character
+	moveNumber int;
+	color int;
+	moveValue string;
+	emt float32;
+	comments string;
 }
 
+// The outcome of a chess game consists of the score obtained by every player as
+// two float32 numbers such that their sum equals 1. Plausible outcomes are (0,
+// 1), (1, 0) and (0.5, 0.5)
 type PgnOutcome struct {
 
-	scoreWhite, scoreBlack float32;                 // score of each player
+	scoreWhite, scoreBlack float32;
 }
 
+// A game consists just of a map that stores information of all PGN tags, the
+// sequence of moves and finally the outcome.
 type PgnGame struct {
 
-	tags map[string]string;      // A game consists of a collection of tags
-	                                               // index by the tag name
-	moves []PgnMove;                      // sequence of moves of this game
-	outcome PgnOutcome;                                    // final outcome
+	tags map[string]string;
+	moves []PgnMove;
+	outcome PgnOutcome;
 }
 
 // Methods
 // ----------------------------------------------------------------------------
 
-// String
-//
-// produces a string with information of this tag
-// ----------------------------------------------------------------------------
+// Produces a string with information of this tag
 func (tag PgnTag) String () string {
 	return fmt.Sprintf ("%v: %v", tag.name, tag.value)
 }
 
-// String
-// 
-// produces a string with information of this move
-// ----------------------------------------------------------------------------
+// Produces a string with information of this move.
+//
+// The main rationale behind this method is that when applied successively to
+// the moves of a particular game (given as a instance of PgnGame), the full
+// sequence has to be shown in algebraic form. This means, that only white moves
+// are preceded by the move number, while black's moves are just inserted
+// without the move number.
 func (move PgnMove) String () string {
 	if move.color == 1 {
 		return fmt.Sprintf ("%v. %v", move.moveNumber, move.moveValue)
@@ -89,18 +103,18 @@ func (move PgnMove) String () string {
 	return fmt.Sprintf (" %v ", move.moveValue)
 }
 
-// String
-//
-// produces a string with information of this outcome
+// Produces a string with information of this outcome as a pair of
+// floating-point numbers
 // ----------------------------------------------------------------------------
 func (outcome PgnOutcome) String () string {
 	return fmt.Sprintf ("%v - %v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
-// String
+// Produces a string with the list of moves of this game.
 //
-// produces a string with the list of moves of this game
-// ----------------------------------------------------------------------------
+// This method successively invokes the String () service provided by PgnMove
+// over every move of this particular game. As a result, a full transcription of
+// the game is returned in the output string
 func (game *PgnGame) String () string {
 	output := ""
 	for _, move := range game.moves {
@@ -109,35 +123,24 @@ func (game *PgnGame) String () string {
 	return output
 }
 
-// GetTags
-//
-// Return the tags of this game
-// ----------------------------------------------------------------------------
+// Return the tags of this game as a map from tag names to tag values. Although
+// tag values are given between double quotes, these are not shown.
 func (game *PgnGame) GetTags () map[string]string {
 	return game.tags
 }
 
-// GetMoves
-//
-// Return a list of the moves of this game
-// ----------------------------------------------------------------------------
+// Return a list of the moves of this game as a slice of PgnMove
 func (game *PgnGame) GetMoves () []PgnMove {
 	return game.moves
 }
 
-// GetOutcome
-//
 // Return an instance of PgnOutcome with the result of this game
-// ----------------------------------------------------------------------------
 func (game *PgnGame) GetOutcome () PgnOutcome {
 	return game.outcome
 }
 
-// GetTagValue
-// 
-// return the value of a specific tag and nil if it exists or any value and err
+// Return the value of a specific tag and nil if it exists or any value and err
 // in case it does not exist
-// ----------------------------------------------------------------------------
 func (game *PgnGame) GetTagValue (name string) (value string, err error) {
 
 	if value, ok := game.tags[name]; ok {
@@ -148,10 +151,9 @@ func (game *PgnGame) GetTagValue (name string) (value string, err error) {
 	return "", errors.New ("tag not found!")
 }
 
-// ShowHeader
-// 
-// return a string with a summary of the main information stored in this game
-// ----------------------------------------------------------------------------
+// Return a string with a summary of the main information stored in this game
+//
+// In case any required data is not found, a fatal error is raised
 func (game *PgnGame) ShowHeader () string {
 
 	// first, verify that all necessary tags are available
@@ -224,13 +226,10 @@ func (game *PgnGame) ShowHeader () string {
 	return fmt.Sprintf (" | %10v | %v %v | %-18v (%4v) | %-18v (%4v) | %v | %v | %5v |    %v-%-v |", dbGameNo, date, time, white, whiteELO, black, blackELO, ECO, timeControl, moves, scoreWhite, scoreBlack)
 }
 
-// replacePlaceholders
-//
 // returns the result of replacing all placeholders in template with their
 // value. Placeholders are identified with the string '%<name>'. All tag names
 // specified in this game are acknowledged. Additionally, '%moves' is
-// substituted by the list of moves
-// ----------------------------------------------------------------------------
+// substituted by the list of moves func (game *PgnGame) replacePlaceholders
 func (game *PgnGame) replacePlaceholders (template string) string {
 
 	return reGroupPlaceholder.ReplaceAllStringFunc(template,
@@ -250,26 +249,20 @@ func (game *PgnGame) replacePlaceholders (template string) string {
 		})
 }
 
-// GameToLaTeXFromString
-//
-// produces LaTeX code using the specified template with information of this
+// Produces LaTeX code using the specified template with information of this
 // game. The string acknowledges various placeholders which have the format
 // '%<name>'. All tag names specified in this game are
 // acknowledged. Additionally, '%moves' is substituted by the list of moves
-// ----------------------------------------------------------------------------
 func (game *PgnGame) GameToLaTeXFromString (template string) string {
 
 	// just substitute values over the given template and return the result
 	return game.replacePlaceholders (template)
 }
 
-// GameToLaTeXFromFile
-//
-// produces LaTeX code using the template stored in the specified file with
+// Produces LaTeX code using the template stored in the specified file with
 // information of this game. The string acknowledges various placeholders which
 // have the format '%<name>'. All tag names specified in this game are
 // acknowledged. Additionally, '%moves' is substituted by the list of moves
-// ----------------------------------------------------------------------------
 func (game *PgnGame) GameToLaTeXFromFile (templateFile string) string {
 
 	// Open and read the given file and retrieve its contents
