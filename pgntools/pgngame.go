@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <martes, 19 mayo 2015 01:16:48 Carlos Linares Lopez (clinares)>
+  Last update <martes, 19 mayo 2015 01:40:37 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -181,19 +181,27 @@ func (game *PgnGame) StringWithComments () string {
 			// otherwise, just show the actual move
 			output += fmt.Sprintf ("%v ", move.moveValue)
 		}
-		
-		// in case this move contains a comment
-		if move.comments != "" {
 
-			// then end the current variation with a closing curly
-			// bracket, and add the comment
-			output += fmt.Sprintf(`} %v `, move.comments)
+		// if this move contains either a comment or the emt
+		if move.emt != -1 || move.comments != "" {
+
+			output += "} "
+
+			// now, in case emt is present, show it
+			if move.emt != -1 {
+				output += fmt.Sprintf (`({\it %v}) `, move.emt)
+			}
+
+			// if a comment is present, show it as well
+			if move.comments != "" {
+
+				output += fmt.Sprintf("%v ", move.comments)
+			}
 		}
-
-		// in case a mainline has to be started in the next iteration
-		// make this true
-		newMainLine = (move.comments != "")
 		
+		// and check whether a new mainline has to be started in the
+		// next iteration
+		newMainLine = (move.emt != -1 || move.comments != "")
 	}
 	return output
 }
