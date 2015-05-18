@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <domingo, 10 mayo 2015 15:49:45 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 18 mayo 2015 22:26:04 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -151,68 +151,54 @@ func (game *PgnGame) GetTagValue (name string) (value string, err error) {
 	return "", errors.New ("tag not found!")
 }
 
+// getAndCheckTag is a helper function whose purpose is just to retrieve the
+// value of a given tag. In cse an error happened (most likely because it does
+// not exist) then a fatal error is issued and execution is stopped
+func (game* PgnGame) getAndCheckTag (tagname string) string {
+
+	value, err := game.GetTagValue (tagname)
+
+	// in an error was found, then issue a fatal error
+	if err != nil {
+		log.Fatalf (fmt.Sprintf ("'%v' not found!", tagname))
+	}
+
+	// otherwise, return the value of this tagname
+	return value
+}
+
 // Return a string with a summary of the main information stored in this game
 //
 // In case any required data is not found, a fatal error is raised
 func (game *PgnGame) ShowHeader () string {
 
 	// first, verify that all necessary tags are available
-	dbGameNo, err := game.GetTagValue ("FICSGamesDBGameNo")
-	if err != nil {
-		log.Fatalf ("FICSGamesDBGameNo not found!")
-	}
-	
-	date, err := game.GetTagValue ("Date")
-	if err != nil {
-		log.Fatalf ("Date not found!")
-	}
-	
-	time, err := game.GetTagValue ("Time")
-	if err != nil {
-		log.Fatalf ("Time not found!")
-	}
-	
-	white, err := game.GetTagValue ("White")
-	if err != nil {
-		log.Fatalf ("White not found!")
-	}
-	
-	whiteELO, err := game.GetTagValue ("WhiteElo")
-	if err != nil {
-		log.Fatalf ("WhiteElo not found!")
-	}
-	
-	black, err := game.GetTagValue ("Black")
-	if err != nil {
-		log.Fatalf ("Black not found!")
-	}
-	
-	blackELO, err := game.GetTagValue ("BlackElo")
-	if err != nil {
-		log.Fatalf ("BlackElo not found!")
-	}
-	
-	ECO, err := game.GetTagValue ("ECO")
-	if err != nil {
-		log.Fatalf ("ECO not found!")
-	}
-	
-	timeControl, err := game.GetTagValue ("TimeControl")
-	if err != nil {
-		log.Fatalf ("TimeControl not found!")
-	}
+	dbGameNo    := game.getAndCheckTag ("FICSGamesDBGameNo")
+	date        := game.getAndCheckTag ("Date")
+	time        := game.getAndCheckTag ("Time")
+	white       := game.getAndCheckTag ("White")
+	whiteELO    := game.getAndCheckTag ("WhiteElo")
+	black       := game.getAndCheckTag ("Black")
+	blackELO    := game.getAndCheckTag ("BlackElo")
+	ECO         := game.getAndCheckTag ("ECO")
+	timeControl := game.getAndCheckTag ("TimeControl")
+	plyCount    := game.getAndCheckTag ("PlyCount")
 
-	plyCount, err := game.GetTagValue ("PlyCount")
-	if err != nil {
-		log.Fatalf ("PlyCount not found!")
-	}
+	// now, compute the number of moves from the number of plies. If the
+	// number of plies is even, then the number of moves is half the number
+	// of plies, otherwise, add 1
 	moves, err := strconv.Atoi (plyCount)
+	if err != nil {
+		log.Fatalf (fmt.Sprintf (" It was not possible to convert '%v' into an integer", plyCount))
+	}
 	if 2*(moves/2) < moves {
 		moves = moves/2 + 1
 	} else {
 		moves /=2
 	}
 
+	// Finally, convert the information of the outcome in this PgnGame to a
+	// convenient string representation
 	var scoreWhite, scoreBlack string;
 	outcome := game.GetOutcome ()
 	if outcome.scoreWhite == 0.5 {
@@ -223,6 +209,7 @@ func (game *PgnGame) ShowHeader () string {
 		scoreWhite, scoreBlack = "0", "1"
 	}
 
+	// and now create a string with information of this game
 	return fmt.Sprintf (" | %10v | %v %v | %-18v (%4v) | %-18v (%4v) | %v | %v | %5v |    %v-%-v |", dbGameNo, date, time, white, whiteELO, black, blackELO, ECO, timeControl, moves, scoreWhite, scoreBlack)
 }
 
