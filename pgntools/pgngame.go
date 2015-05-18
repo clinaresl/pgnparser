@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <martes, 19 mayo 2015 01:10:56 Carlos Linares Lopez (clinares)>
+  Last update <martes, 19 mayo 2015 01:16:48 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -115,11 +115,7 @@ func (move PgnMove) getColorPrefix () (prefix string) {
 	return
 }
 
-// Produces a LaTeX string with the list of moves of this game.
-//
-// This method successively invokes the String () service provided by PgnMove
-// over every move of this particular game. As a result, a full transcription of
-// the game is returned in the output string
+// Produces a LaTeX string with a plain list of the moves of this game
 func (game *PgnGame) StringPlain () string {
 
 	// Initialization
@@ -146,9 +142,9 @@ func (game *PgnGame) StringPlain () string {
 // Produces a LaTeX string with the list of moves of this game along with the
 // different annotations.
 //
-// This method successively invokes the String () service provided by PgnMove
-// until a comment is found. If a "literal" command is found, it is just added
-// to the output. Other "special" comments are:
+// This method successively processes the moves in this PgnGame until a comment
+// is found. If a "literal" command is found, it is just added to the
+// output. Other "special" comments are:
 //
 // 1. %emt which show the elapsed move time
 // 
