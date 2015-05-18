@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Jun 19 13:36:57 2014 Carlos Linares Lopez>
-  Last update <domingo, 10 mayo 2015 12:52:47 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 18 mayo 2015 22:51:03 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -72,6 +72,10 @@ func IsDir (path string) (isdir bool, filedir *os.File, fileinfo os.FileInfo) {
 	if filedir, err = os.Open (path); err!= nil {
 		return false, nil, nil
 	}
+
+	// make sure the file is closed anyway
+	defer file.Close ()
+	
 	if fileinfo, err = filedir.Stat (); err != nil {
 		return false, filedir, nil
 	}
