@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <lunes, 18 mayo 2015 22:26:04 Carlos Linares Lopez (clinares)>
+  Last update <martes, 19 mayo 2015 01:10:56 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -35,7 +35,7 @@ import (
 // The following regexp matches any placeholder appearing in a LaTeX
 // file. Placeholder have the form '%name' where 'name' consists of any
 // combination of alpha and numeric characters.
-var reGroupPlaceholder = regexp.MustCompile (`%[\w\d]+`)
+var reGroupPlaceholder = regexp.MustCompile (`%[\w\d_]+`)
 
 
 // typedefs
@@ -57,7 +57,7 @@ type PgnTag struct {
 // separated by '\n'.
 type PgnMove struct {
 
-	moveNumber int;
+	number int;
 	color int;
 	moveValue string;
 	emt float32;
@@ -89,18 +89,9 @@ func (tag PgnTag) String () string {
 	return fmt.Sprintf ("%v: %v", tag.name, tag.value)
 }
 
-// Produces a string with information of this move.
-//
-// The main rationale behind this method is that when applied successively to
-// the moves of a particular game (given as a instance of PgnGame), the full
-// sequence has to be shown in algebraic form. This means, that only white moves
-// are preceded by the move number, while black's moves are just inserted
-// without the move number.
+// Produces a string with the actual content of this move
 func (move PgnMove) String () string {
-	if move.color == 1 {
-		return fmt.Sprintf ("%v. %v", move.moveNumber, move.moveValue)
-	}
-	return fmt.Sprintf (" %v ", move.moveValue)
+	return fmt.Sprintf ("%v ", move.moveValue)
 }
 
 // Produces a string with information of this outcome as a pair of
@@ -110,15 +101,103 @@ func (outcome PgnOutcome) String () string {
 	return fmt.Sprintf ("%v - %v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
-// Produces a string with the list of moves of this game.
+// getColorPrefix is a helper function that returns the prefix of the color of
+// the receiving move. In case it is white's turn then '.' is returned;
+// otherwise '...' is returned
+func (move PgnMove) getColorPrefix () (prefix string) {
+	if move.color == 1 {
+		prefix = "."
+	} else if move.color == -1 {
+		prefix = "..."
+	} else {
+		log.Fatalf (fmt.Sprintf (" Unknown color in move '%v'", move))
+	}
+	return
+}
+
+// Produces a LaTeX string with the list of moves of this game.
 //
 // This method successively invokes the String () service provided by PgnMove
 // over every move of this particular game. As a result, a full transcription of
 // the game is returned in the output string
-func (game *PgnGame) String () string {
-	output := ""
+func (game *PgnGame) StringPlain () string {
+
+	// Initialization
+	output := `\mainline{`
+
+	// Iterate over all moves
 	for _, move := range game.moves {
-		output += fmt.Sprintf ("%v", move)
+
+		// in case it is white's turn then precede this move by the move
+		// counter and the prefixo of the color
+		if move.color == 1 {		
+			output += fmt.Sprintf ("%v. %v", move.number, move)
+		} else {
+
+			// otherwise, just show the actual move
+			output += fmt.Sprintf (" %v", move)
+		}
+	}
+
+	// add the closing curly brack and return the result
+	return output + "}"
+}
+
+// Produces a LaTeX string with the list of moves of this game along with the
+// different annotations.
+//
+// This method successively invokes the String () service provided by PgnMove
+// until a comment is found. If a "literal" command is found, it is just added
+// to the output. Other "special" comments are:
+//
+// 1. %emt which show the elapsed move time
+// 
+// 2. %show which generates a LaTeX command for showing the current board
+func (game *PgnGame) StringWithComments () string {
+
+	// the variable newMainLine is used to determine whether the next move
+	// should start with a LaTeX command \mainline. Obviously, this is
+	// initially true
+	newMainLine := true 
+
+	// Initialization
+	output := ""
+
+	// Iterate over all moves
+	for _, move := range game.moves {
+
+		// before printing this move, check if a new mainline has to be
+		// started (e.g., because the previous move ended with a
+		// comment
+		if newMainLine {
+			output += `\mainline{ `
+		}
+
+		// now in case either we are starting a new mainline or it is
+		// white's move, then show all the details of the move including
+		// counter and color prefix
+		if (newMainLine || move.color == 1) {
+			
+			// now, show the actual move with all details
+			output += fmt.Sprintf ("%v%v %v ", move.number, move.getColorPrefix (), move.moveValue)
+		} else {
+
+			// otherwise, just show the actual move
+			output += fmt.Sprintf ("%v ", move.moveValue)
+		}
+		
+		// in case this move contains a comment
+		if move.comments != "" {
+
+			// then end the current variation with a closing curly
+			// bracket, and add the comment
+			output += fmt.Sprintf(`} %v `, move.comments)
+		}
+
+		// in case a mainline has to be started in the next iteration
+		// make this true
+		newMainLine = (move.comments != "")
+		
 	}
 	return output
 }
@@ -228,7 +307,9 @@ func (game *PgnGame) replacePlaceholders (template string) string {
 			// most placeholders are just tag names. However,
 			// 'moves' is also acknowledged
 			if placeholder == "moves" {
-				return fmt.Sprintf ("%v", game)
+				return fmt.Sprintf ("%v", game.StringPlain ())
+			} else if placeholder == "moves_comments" {
+				return fmt.Sprintf ("%v", game.StringWithComments ())
 			}
 
 			// otherwise, return the value of this tag
