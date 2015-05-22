@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <domingo, 10 mayo 2015 02:19:18 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 21 mayo 2015 14:04:16 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -31,6 +31,9 @@ import (
 
 	// also use several tools for handling games in pgn format
 	"bitbucket.org/clinares/pgnparser/pgntools"
+
+	// import the parser of propositional formulae
+	"bitbucket.org/clinares/pgnparser/pfparser"
 )
 
 // global variables
@@ -129,6 +132,8 @@ func main () {
 			log.Fatalf (" An error was issued when writing data to the LaTeX file")
 		}
 	}
+
+	pfparser.Parse ("Cadena")
 }
 
 
