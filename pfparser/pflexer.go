@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May 23 13:10:40 2015 Carlos Linares Lopez>
-  Last update <sábado, 23 mayo 2015 16:44:20 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 24 mayo 2015 01:37:49 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -65,7 +65,7 @@ type tokenType int
 // nil). Hence, values should satisfy the relational interface
 type tokenItem struct {
 	tokenType tokenType
-	tokenValue RelationalInterface
+	tokenValue RelationalEvaluator
 }
 
 
@@ -191,9 +191,9 @@ func nextToken (pformula *string) (token tokenItem, err error) {
 		switch (*pformula)[tag[2]:tag[3]] {
 
 		case "and":
-			logop = leq
+			logop = and
 		case "or":
-			logop = lt
+			logop = or
 		default:
 			log.Fatalf ("Unknown logical operator '%s'", (*pformula)[tag[2]:tag[3]])
 		}

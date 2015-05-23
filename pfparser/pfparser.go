@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <sábado, 23 mayo 2015 16:31:16 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 24 mayo 2015 01:49:03 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -48,7 +48,6 @@
 package pfparser
 
 import (
-	"errors"		// for signaling errors
 	"log"			// logging services
 )
 
@@ -312,6 +311,70 @@ func (expression LogicalExpression) Evaluate () LogicalInterface {
 // Functions
 // ----------------------------------------------------------------------------
 
+// Look for a relational group at the beginning of the given string. If found,
+// it returns a logical evaluator and nil; otherwise, an error is raised
+func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
+
+	var firstToken, secondToken, thirdToken tokenItem
+	var relOperator RelationalOperator
+	
+	// every relational group consists of two constants related by a
+	// relational operator. Constants can be either integers or strings
+
+	// get the next token ...
+	firstToken, err = nextToken (pformula); if err != nil {
+		return nil, err
+	}
+
+	// ... and check it is a constant
+	if firstToken.tokenType != constInteger && firstToken.tokenType != constString {
+
+		// if not, raise a parsing error
+		log.Fatalf (" A constant was expected just before %q", *pformula)
+	}
+
+	// now, get the next token ...
+	secondToken, err = nextToken (pformula); if err != nil {
+		return nil, err
+	}
+
+	// ... and verify this is a relational operator
+	switch secondToken.tokenType {
+
+	case leq:
+		relOperator = LEQ
+	case lt:
+		relOperator = LT
+	case eq:
+		relOperator = EQ
+	case neq:
+		relOperator = NEQ
+	case gt:
+		relOperator = GT
+	case geq:
+		relOperator = GEQ
+	default:
+		log.Fatalf (" A relational operator was expected just before %q", *pformula)
+	}
+
+	// get the third token ...
+	thirdToken, err = nextToken (pformula); if err != nil {
+		return nil, err
+	}
+
+	// ... and check it is a constant
+	if thirdToken.tokenType != constInteger && thirdToken.tokenType != constString {
+
+		// if not, raise a parsing error
+		log.Fatalf (" A constant was expected just before %q", *pformula)
+	}
+
+	// at this point, everything went fine
+	return RelationalExpression{relOperator,
+		[2]RelationalEvaluator{firstToken.tokenValue,
+			thirdToken.tokenValue}}, nil
+}
+
 // This function effectively parses the contents of the string given in pformula
 // and returns a valid LogicalEvaluator (ie., an expression that can be properly
 // evaluated) and nil if no errors were found or an invalid LogicalEvaluator and
@@ -388,25 +451,66 @@ func Parse (pformula string) (result LogicalEvaluator, err error) {
 	
 	// return expression36, errors.New ("Not implemented yet!")
 
+	var logEvaluator LogicalEvaluator = nil
+	var logOperator LogicalOperator
+	
 	log.Printf (" pformula: %v\n", pformula)
 
 	// iterate for ever until the end of formula is found
 	for ;; {
 
-		// get the next token
+		// INVARIANT: at the beginning of every iteration a relational
+		// group should be captured and every iteration is ended with
+		// either a logical operator or EOF (end of formula)
+
+		// if we already have a logical evaluator (either a relational
+		// group previously processed or a composite expression of
+		// relational and logical operators)
+		if logEvaluator != nil {
+
+			// then update logEvaluator to include the previous
+			// logEvaluator and the next relational group
+			var rightEvaluator, err = relationalGroup (&pformula); if err != nil {
+				return nil, err
+			}
+
+			logEvaluator = LogicalExpression{logOperator,
+				[2]LogicalEvaluator{logEvaluator, rightEvaluator}}
+		} else {
+
+			// otherwise, initialize the logEvaluator to the first
+			// relational group in the formula
+			logEvaluator, err = relationalGroup (&pformula); if err != nil {
+				return nil, err
+			}
+		}
+		log.Println (logEvaluator)
+		log.Printf (" current string: '%v'\n", pformula)
+
+		// now, either we have end of formula or a logical operator
 		newToken, err := nextToken (&pformula); if err != nil {
 			return nil, err
 		}
-		log.Printf ("New Token: %v\n", newToken)
-		log.Printf ("\tString: %v\n", pformula)
 
 		// in case the end of formula has been found, then exit
 		if newToken.tokenType == eof {
 			break
 		}
+
+		// otherwise, check a logical operator has been recognized
+		switch newToken.tokenType {
+
+		case and:
+			logOperator = AND
+		case or:
+			logOperator = OR
+		default:
+			log.Fatalf (" A logical operator was expected just before %q", pformula)
+		}
+		
 	}
 
-	return nil, errors.New ("Not implemented yet!")
+	return logEvaluator, nil
 }
 
 

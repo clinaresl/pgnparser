@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <sábado, 23 mayo 2015 16:40:09 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 24 mayo 2015 01:51:18 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -133,17 +133,26 @@ func main () {
 		}
 	}
 
-	LogicalEvaluator1, err1 := pfparser.Parse ("10 < 100 and 100 < 1000")
+	LogicalEvaluator0, err0 := pfparser.Parse ("10 >= 100")
+	if err0 != nil {
+		log.Println (err0)
+	}
+	log.Println (LogicalEvaluator0)
+	log.Printf (" Evaluation of expression #0: %v\n\n", LogicalEvaluator0.Evaluate ())
+
+	LogicalEvaluator1, err1 := pfparser.Parse ("10 >= 100 or 100 <= 1000")
 	if err1 != nil {
 		log.Println (err1)
 	}
 	log.Println (LogicalEvaluator1)
+	log.Printf (" Evaluation of expression #1: %v\n\n", LogicalEvaluator1.Evaluate ())
 
 	LogicalEvaluator2, err2 := pfparser.Parse ("'roberto' >= 'dario' and 'dario' != 'adriana'")
 	if err2 != nil {
 		log.Println (err2)
 	}
-	log.Println (LogicalEvaluator2)	
+	log.Println (LogicalEvaluator2)
+	log.Printf (" Evaluation of expression #0: %v\n\n", LogicalEvaluator2.Evaluate ())
 }
 
 
