@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <jueves, 21 mayo 2015 14:04:16 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 23 mayo 2015 16:40:09 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -133,7 +133,17 @@ func main () {
 		}
 	}
 
-	pfparser.Parse ("Cadena")
+	LogicalEvaluator1, err1 := pfparser.Parse ("10 < 100 and 100 < 1000")
+	if err1 != nil {
+		log.Println (err1)
+	}
+	log.Println (LogicalEvaluator1)
+
+	LogicalEvaluator2, err2 := pfparser.Parse ("'roberto' >= 'dario' and 'dario' != 'adriana'")
+	if err2 != nil {
+		log.Println (err2)
+	}
+	log.Println (LogicalEvaluator2)	
 }
 
 

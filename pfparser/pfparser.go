@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <sábado, 23 mayo 2015 01:41:21 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 23 mayo 2015 16:31:16 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -50,27 +50,7 @@ package pfparser
 import (
 	"errors"		// for signaling errors
 	"log"			// logging services
-	"regexp"                // pgn files are parsed with a regexp
 )
-
-// global variables
-// ----------------------------------------------------------------------------
-
-// the following regexps are used just to recognize different tokens
-// that can appear in a propositional formula
-
-// -- variables
-var reVariable = regexp.MustCompile (`^\s*%(?P<varname>[a-zA-Z0-9_]+)`)
-
-// -- strings
-var reString = regexp.MustCompile (`^\s*"(?P<string>[^"]+)"`)
-
-// -- integers
-var reInteger = regexp.MustCompile (`^\s*(?P<integer>[0-9]+)`)
-
-// the following regexp recognize binary operators
-var reOperator = regexp.MustCompile (`^\s*(?P<operator>(<=|<|=|!=|>=|>))`)
-
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -338,75 +318,95 @@ func (expression LogicalExpression) Evaluate () LogicalInterface {
 // an error otherwise
 func Parse (pformula string) (result LogicalEvaluator, err error) {
 
-	// --- experiments with Relational Expressions
+	// // --- experiments with Relational Expressions
 	
-	var a ConstInteger = 100
-	var b ConstInteger = 10
+	// var a ConstInteger = 100
+	// var b ConstInteger = 10
 	
-	expression1 := RelationalExpression{LEQ, [2]RelationalEvaluator{a, b}}
-	expression2 := RelationalExpression{LT, [2]RelationalEvaluator{a, b}}
-	expression3 := RelationalExpression{EQ, [2]RelationalEvaluator{a, b}}
-	expression4 := RelationalExpression{NEQ, [2]RelationalEvaluator{a, b}}
-	expression5 := RelationalExpression{GT, [2]RelationalEvaluator{a, b}}
-	expression6 := RelationalExpression{GEQ, [2]RelationalEvaluator{a, b}}
+	// expression1 := RelationalExpression{LEQ, [2]RelationalEvaluator{a, b}}
+	// expression2 := RelationalExpression{LT, [2]RelationalEvaluator{a, b}}
+	// expression3 := RelationalExpression{EQ, [2]RelationalEvaluator{a, b}}
+	// expression4 := RelationalExpression{NEQ, [2]RelationalEvaluator{a, b}}
+	// expression5 := RelationalExpression{GT, [2]RelationalEvaluator{a, b}}
+	// expression6 := RelationalExpression{GEQ, [2]RelationalEvaluator{a, b}}
 
-	log.Printf (" %v <= %v: %v", a, b, expression1.Evaluate ())
-	log.Printf (" %v <  %v: %v", a, b, expression2.Evaluate ())
-	log.Printf (" %v == %v: %v", a, b, expression3.Evaluate ())
-	log.Printf (" %v != %v: %v", a, b, expression4.Evaluate ())
-	log.Printf (" %v >  %v: %v", a, b, expression5.Evaluate ())
-	log.Printf (" %v >= %v: %v", a, b, expression6.Evaluate ())
-	log.Println ()
+	// log.Printf (" %v <= %v: %v", a, b, expression1.Evaluate ())
+	// log.Printf (" %v <  %v: %v", a, b, expression2.Evaluate ())
+	// log.Printf (" %v == %v: %v", a, b, expression3.Evaluate ())
+	// log.Printf (" %v != %v: %v", a, b, expression4.Evaluate ())
+	// log.Printf (" %v >  %v: %v", a, b, expression5.Evaluate ())
+	// log.Printf (" %v >= %v: %v", a, b, expression6.Evaluate ())
+	// log.Println ()
 	
-	var c ConstString = "dario"
-	var d ConstString = "roberto"
+	// var c ConstString = "dario"
+	// var d ConstString = "roberto"
 
-	expression11 := RelationalExpression{LEQ, [2]RelationalEvaluator{c, d}}
-	expression12 := RelationalExpression{LT, [2]RelationalEvaluator{c, d}}
-	expression13 := RelationalExpression{EQ, [2]RelationalEvaluator{c, d}}
-	expression14 := RelationalExpression{NEQ, [2]RelationalEvaluator{c, d}}
-	expression15 := RelationalExpression{GT, [2]RelationalEvaluator{c, d}}
-	expression16 := RelationalExpression{GEQ, [2]RelationalEvaluator{c, d}}
+	// expression11 := RelationalExpression{LEQ, [2]RelationalEvaluator{c, d}}
+	// expression12 := RelationalExpression{LT, [2]RelationalEvaluator{c, d}}
+	// expression13 := RelationalExpression{EQ, [2]RelationalEvaluator{c, d}}
+	// expression14 := RelationalExpression{NEQ, [2]RelationalEvaluator{c, d}}
+	// expression15 := RelationalExpression{GT, [2]RelationalEvaluator{c, d}}
+	// expression16 := RelationalExpression{GEQ, [2]RelationalEvaluator{c, d}}
 
-	log.Printf (" %v <= %v: %v", c, d, expression11.Evaluate ())
-	log.Printf (" %v <  %v: %v", c, d, expression12.Evaluate ())
-	log.Printf (" %v == %v: %v", c, d, expression13.Evaluate ())
-	log.Printf (" %v != %v: %v", c, d, expression14.Evaluate ())
-	log.Printf (" %v >  %v: %v", c, d, expression15.Evaluate ())
-	log.Printf (" %v >= %v: %v", c, d, expression16.Evaluate ())
-	log.Println ()
+	// log.Printf (" %v <= %v: %v", c, d, expression11.Evaluate ())
+	// log.Printf (" %v <  %v: %v", c, d, expression12.Evaluate ())
+	// log.Printf (" %v == %v: %v", c, d, expression13.Evaluate ())
+	// log.Printf (" %v != %v: %v", c, d, expression14.Evaluate ())
+	// log.Printf (" %v >  %v: %v", c, d, expression15.Evaluate ())
+	// log.Printf (" %v >= %v: %v", c, d, expression16.Evaluate ())
+	// log.Println ()
 	
-	// --- experiments with Logical Expressions
+	// // --- experiments with Logical Expressions
 	
-	var e TypeBool = true
-	var f TypeBool = true
+	// var e TypeBool = true
+	// var f TypeBool = true
 
-	expression21 := LogicalExpression{AND, [2]LogicalEvaluator{e, f}}
-	expression22 := LogicalExpression{OR, [2]LogicalEvaluator{e, f}}
+	// expression21 := LogicalExpression{AND, [2]LogicalEvaluator{e, f}}
+	// expression22 := LogicalExpression{OR, [2]LogicalEvaluator{e, f}}
 
-	log.Printf (" %v AND %v: %v", e, f, expression21.Evaluate ())
-	log.Printf (" %v OR  %v: %v", e, f, expression22.Evaluate ())
-	log.Println ()
+	// log.Printf (" %v AND %v: %v", e, f, expression21.Evaluate ())
+	// log.Printf (" %v OR  %v: %v", e, f, expression22.Evaluate ())
+	// log.Println ()
 
-	// --- experiments with both Relational and Logical Expressions
+	// // --- experiments with both Relational and Logical Expressions
 
-	expression31 := LogicalExpression{AND, [2]LogicalEvaluator{expression1, expression2}}
-	expression32 := LogicalExpression{OR,  [2]LogicalEvaluator{expression1, expression2}}
-	expression33 := LogicalExpression{AND, [2]LogicalEvaluator{expression3, expression4}}
-	expression34 := LogicalExpression{OR,  [2]LogicalEvaluator{expression3, expression4}}
-	expression35 := LogicalExpression{AND, [2]LogicalEvaluator{expression5, expression6}}
-	expression36 := LogicalExpression{OR,  [2]LogicalEvaluator{expression5, expression6}}
+	// expression31 := LogicalExpression{AND, [2]LogicalEvaluator{expression1, expression2}}
+	// expression32 := LogicalExpression{OR,  [2]LogicalEvaluator{expression1, expression2}}
+	// expression33 := LogicalExpression{AND, [2]LogicalEvaluator{expression3, expression4}}
+	// expression34 := LogicalExpression{OR,  [2]LogicalEvaluator{expression3, expression4}}
+	// expression35 := LogicalExpression{AND, [2]LogicalEvaluator{expression5, expression6}}
+	// expression36 := LogicalExpression{OR,  [2]LogicalEvaluator{expression5, expression6}}
 
-	log.Printf (" %v <= %v AND %v < %v: %v", a, b, a, b, expression31.Evaluate ())
-	log.Printf (" %v <= %v OR  %v < %v: %v", a, b, a, b, expression32.Evaluate ())
-	log.Printf (" %v == %v AND %v != %v: %v", a, b, a, b, expression33.Evaluate ())
-	log.Printf (" %v == %v OR  %v != %v: %v", a, b, a, b, expression34.Evaluate ())
-	log.Printf (" %v >  %v AND %v >= %v: %v", a, b, a, b, expression35.Evaluate ())
-	log.Printf (" %v >  %v OR  %v >= %v: %v", a, b, a, b, expression36.Evaluate ())
+	// log.Printf (" %v <= %v AND %v < %v: %v", a, b, a, b, expression31.Evaluate ())
+	// log.Printf (" %v <= %v OR  %v < %v: %v", a, b, a, b, expression32.Evaluate ())
+	// log.Printf (" %v == %v AND %v != %v: %v", a, b, a, b, expression33.Evaluate ())
+	// log.Printf (" %v == %v OR  %v != %v: %v", a, b, a, b, expression34.Evaluate ())
+	// log.Printf (" %v >  %v AND %v >= %v: %v", a, b, a, b, expression35.Evaluate ())
+	// log.Printf (" %v >  %v OR  %v >= %v: %v", a, b, a, b, expression36.Evaluate ())
 	
-	// --- exit	
+	// // --- exit	
 	
-	return expression1, errors.New ("Not implemented yet!")
+	// return expression36, errors.New ("Not implemented yet!")
+
+	log.Printf (" pformula: %v\n", pformula)
+
+	// iterate for ever until the end of formula is found
+	for ;; {
+
+		// get the next token
+		newToken, err := nextToken (&pformula); if err != nil {
+			return nil, err
+		}
+		log.Printf ("New Token: %v\n", newToken)
+		log.Printf ("\tString: %v\n", pformula)
+
+		// in case the end of formula has been found, then exit
+		if newToken.tokenType == eof {
+			break
+		}
+	}
+
+	return nil, errors.New ("Not implemented yet!")
 }
 
 
