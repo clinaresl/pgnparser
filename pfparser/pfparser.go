@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <sábado, 23 mayo 2015 01:07:46 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 23 mayo 2015 01:41:21 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -304,7 +304,7 @@ func (expression RelationalExpression) Evaluate () LogicalInterface {
 // The evaluation of a logical expression is done in two steps: first,
 // both children are evaluated and then the logical operator is
 // applied.
-func (expression LogicalExpression) Evaluate () TypeBool {
+func (expression LogicalExpression) Evaluate () LogicalInterface {
 
 	var result TypeBool = false
 
@@ -332,11 +332,11 @@ func (expression LogicalExpression) Evaluate () TypeBool {
 // Functions
 // ----------------------------------------------------------------------------
 
-// This function effectively parses the contents of the string given
-// in pformula and returns a valid RelationalExpression and nil if no
-// errors were found or an invalid RelationalExpression and an error
-// otherwise
-func Parse (pformula string) (result RelationalExpression, err error) {
+// This function effectively parses the contents of the string given in pformula
+// and returns a valid LogicalEvaluator (ie., an expression that can be properly
+// evaluated) and nil if no errors were found or an invalid LogicalEvaluator and
+// an error otherwise
+func Parse (pformula string) (result LogicalEvaluator, err error) {
 
 	// --- experiments with Relational Expressions
 	
