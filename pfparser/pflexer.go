@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May 23 13:10:40 2015 Carlos Linares Lopez>
-  Last update <domingo, 24 mayo 2015 01:37:49 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 24 mayo 2015 01:56:36 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -33,7 +33,7 @@ import (
 // the following regexps are used just to recognize different tokens
 // that can appear in a propositional formula
 
-// -- end of formula
+// -- EOF: end of formula
 var reEOF = regexp.MustCompile (`^\s*$`)
 
 // -- integers
@@ -104,9 +104,8 @@ func nextToken (pformula *string) (token tokenItem, err error) {
 	// -- EOF - End of Formula
 	// --------------------------------------------------------------------
 	if reEOF.MatchString (*pformula) {
-		log.Println ("The end of formula has been recognized")
-
 		return tokenItem{eof, nil}, nil
+		
 	} else if reInteger.MatchString (*pformula) {
 
 		// -- Integer constants
@@ -117,7 +116,7 @@ func nextToken (pformula *string) (token tokenItem, err error) {
 
 		// convert this group to an integer value
 		value, err := strconv.Atoi ((*pformula)[tag[2]:tag[3]]); if err != nil {
-			return tokenItem{eof, nil}, errors.New ("It was not possible an integer")
+			return tokenItem{eof, nil}, errors.New ("It was not possible to process an integer")
 		}
 		
 		// move forward in the propositional formula
@@ -152,7 +151,7 @@ func nextToken (pformula *string) (token tokenItem, err error) {
 		// process the string and extract the relevant group
 		tag := reRelationalOperator.FindStringSubmatchIndex (*pformula)
 
-		// derive the type of relational operator
+		// derive the type of the relational operator
 		var relOp tokenType
 		switch (*pformula)[tag[2]:tag[3]] {
 
@@ -205,9 +204,10 @@ func nextToken (pformula *string) (token tokenItem, err error) {
 		return tokenItem {logop, nil}, nil
 	}
 
-	// at this point, a syntax error happened, so that any token
-	// is returned in conjunction with an error that points to the
-	// position in the string where the error was found
+	// at this point, a syntax error happened, so that an
+	// arbitrary token is returned in conjunction with an error
+	// that points to the position in the string where the error
+	// was found
 	return tokenItem{and, nil}, errors.New (fmt.Sprintf("Syntax error in '%v'", *pformula))
 }
 

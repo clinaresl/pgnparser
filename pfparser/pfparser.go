@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <domingo, 24 mayo 2015 01:49:03 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 24 mayo 2015 02:10:43 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -84,7 +84,7 @@ type RelationalOperator int
 type LogicalOperator int
 
 // The result of a relational expression is an instance of a boolean
-// type which is renamed as a TypeBool
+// type which is renamed as TypeBool
 type TypeBool bool
 
 // A relational evaluator is an interface that requires the ability to
@@ -137,92 +137,91 @@ const (
 // Methods
 // ----------------------------------------------------------------------------
 
-// Compare this integer with the one specified in right and return
-// whether the first is less than the second
+// Compare this integer with the one specified in right and return whether the
+// first is less than the second
 func (constant ConstInteger) Less (right RelationalInterface) TypeBool {
 
 	var value ConstInteger
 	var ok bool
 	
 	value, ok = right.(ConstInteger); if !ok {
-		log.Fatal (" Type mismatch in ConstInteger.Less")
+		log.Fatal ("Type mismatch")
 	}
 
 	return int32 (constant) < int32 (value)
 }
 
-// Compare this integer with the one specified in right and return
-// whether the first is equal to the second
+// Compare this integer with the one specified in right and return whether the
+// first is equal to the second
 func (constant ConstInteger) Equal (right RelationalInterface) TypeBool {
 
 	var value ConstInteger
 	var ok bool
 	
 	value, ok = right.(ConstInteger); if !ok {
-		log.Fatal (" Type mismatch in ConstInteger.Equal")
+		log.Fatal ("Type mismatch")
 	}
 
 	return int32 (constant) == int32 (value)
 }
 
-// Compare this string with the one specified in right and return
-// whether the first is less than the second
+// Compare this string with the one specified in right and return whether the
+// first is less than the second
 func (constant ConstString) Less (right RelationalInterface) TypeBool {
 
 	var value ConstString
 	var ok bool
 	
 	value, ok = right.(ConstString); if !ok {
-		log.Fatal (" Type mismatch in ConstString.Less")
+		log.Fatal ("Type mismatch")
 	}
 
 	return string (constant) < string (value)
 }
 
-// Compare this string with the one specified in right and return
-// whether the first is equal to the second
+// Compare this string with the one specified in right and return whether the
+// first is equal to the second
 func (constant ConstString) Equal (right RelationalInterface) TypeBool {
 
 	var value ConstString
 	var ok bool
 	
 	value, ok = right.(ConstString); if !ok {
-		log.Fatal (" Type mismatch in ConstString.Equal")
+		log.Fatal ("Type mismatch")
 	}
 
 	return string (constant) == string (value)
 }
 
-// Perform the logical AND of this instance with the one in right and
-// return the result
+// Perform the logical AND of this instance with the one in right and return the
+// result
 func (operand TypeBool) And (right LogicalInterface) TypeBool {
 
 	var value TypeBool
 	var ok bool
 
 	value, ok = right.(TypeBool); if !ok {
-		log.Fatal (" Type mismatch in TypeBool.And")
+		log.Fatal ("Type mismatch")
 	}
 	
 	return TypeBool (bool (operand) && bool (value))
 }
 
-// Perform the logical OR of this instance with the one in right and
-// return the result
+// Perform the logical OR of this instance with the one in right and return the
+// result
 func (operand TypeBool) Or (right LogicalInterface) TypeBool {
 
 	var value TypeBool
 	var ok bool
 
 	value, ok = right.(TypeBool); if !ok {
-		log.Fatal (" Type mismatch in TypeBool.Or")
+		log.Fatal ("Type mismatch")
 	}
 	
 	return TypeBool (bool (operand) || bool (value))
 }
 
-// The following methods implement the evaluation procedure over
-// different types
+// The following methods implement the evaluation procedure over different types
 
 // The evaluation of a constant integer returns the same constant integer
 func (constant ConstInteger) Evaluate () RelationalInterface {
@@ -239,9 +238,8 @@ func (constant TypeBool) Evaluate () LogicalInterface {
 	return constant
 }
 
-// The evaluation of a relational expression is done in two steps:
-// first, both children are evaluated and then the relational operator
-// is applied.
+// The evaluation of a relational expression is done in two steps: first, both
+// children are evaluated and then the relational operator is applied.
 func (expression RelationalExpression) Evaluate () LogicalInterface {
 
 	var result TypeBool = false
@@ -250,8 +248,8 @@ func (expression RelationalExpression) Evaluate () LogicalInterface {
 	lchild := expression.children [0].Evaluate ()
 	rchild := expression.children [1].Evaluate ()
 
-	// and now, depending upon the type of relational operator,
-	// apply the right combination of Equal and Less
+	// and now, depending upon the type of relational operator, apply the
+	// right combination of Equal and Less
 	switch expression.root {
 
 	case LEQ:
@@ -273,16 +271,15 @@ func (expression RelationalExpression) Evaluate () LogicalInterface {
 		result = rchild.Less (lchild) || rchild.Equal (lchild)
 
 	default:
-		log.Fatal (" Unknown relational operator!")
+		log.Fatal ("Unknown relational operator!")
 	}
 
 	// and return the result computed so far
 	return result
 }
 
-// The evaluation of a logical expression is done in two steps: first,
-// both children are evaluated and then the logical operator is
-// applied.
+// The evaluation of a logical expression is done in two steps: first, both
+// children are evaluated and then the logical operator is applied.
 func (expression LogicalExpression) Evaluate () LogicalInterface {
 
 	var result TypeBool = false
@@ -290,8 +287,8 @@ func (expression LogicalExpression) Evaluate () LogicalInterface {
 	// first, evaluate both children
 	lchild, rchild := expression.children [0].Evaluate (), expression.children [1].Evaluate ()
 
-	// and now, depending upon the type of the logical operator,
-	// apply the right combination of AND and OR
+	// and now, depending upon the type of the logical operator, apply the
+	// right combination of AND and OR
 	switch expression.root {
 
 	case AND:
@@ -301,7 +298,7 @@ func (expression LogicalExpression) Evaluate () LogicalInterface {
 		result = lchild.Or (rchild)
 
 	default:
-		log.Fatal (" Unknown logical operator")
+		log.Fatal ("Unknown logical operator")
 	}
 
 	// and return the result computed so far
@@ -330,7 +327,7 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 	if firstToken.tokenType != constInteger && firstToken.tokenType != constString {
 
 		// if not, raise a parsing error
-		log.Fatalf (" A constant was expected just before %q", *pformula)
+		log.Fatalf ("A constant was expected just before %q", *pformula)
 	}
 
 	// now, get the next token ...
@@ -354,7 +351,7 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 	case geq:
 		relOperator = GEQ
 	default:
-		log.Fatalf (" A relational operator was expected just before %q", *pformula)
+		log.Fatalf ("A relational operator was expected just before %q", *pformula)
 	}
 
 	// get the third token ...
@@ -366,10 +363,11 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 	if thirdToken.tokenType != constInteger && thirdToken.tokenType != constString {
 
 		// if not, raise a parsing error
-		log.Fatalf (" A constant was expected just before %q", *pformula)
+		log.Fatalf ("A constant was expected just before %q", *pformula)
 	}
 
-	// at this point, everything went fine
+	// at this point, everything went fine - return a relational expression
+	// (which is known tu fulfill the LogicalEvaluator interface and nil)
 	return RelationalExpression{relOperator,
 		[2]RelationalEvaluator{firstToken.tokenValue,
 			thirdToken.tokenValue}}, nil
@@ -380,76 +378,6 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 // evaluated) and nil if no errors were found or an invalid LogicalEvaluator and
 // an error otherwise
 func Parse (pformula string) (result LogicalEvaluator, err error) {
-
-	// // --- experiments with Relational Expressions
-	
-	// var a ConstInteger = 100
-	// var b ConstInteger = 10
-	
-	// expression1 := RelationalExpression{LEQ, [2]RelationalEvaluator{a, b}}
-	// expression2 := RelationalExpression{LT, [2]RelationalEvaluator{a, b}}
-	// expression3 := RelationalExpression{EQ, [2]RelationalEvaluator{a, b}}
-	// expression4 := RelationalExpression{NEQ, [2]RelationalEvaluator{a, b}}
-	// expression5 := RelationalExpression{GT, [2]RelationalEvaluator{a, b}}
-	// expression6 := RelationalExpression{GEQ, [2]RelationalEvaluator{a, b}}
-
-	// log.Printf (" %v <= %v: %v", a, b, expression1.Evaluate ())
-	// log.Printf (" %v <  %v: %v", a, b, expression2.Evaluate ())
-	// log.Printf (" %v == %v: %v", a, b, expression3.Evaluate ())
-	// log.Printf (" %v != %v: %v", a, b, expression4.Evaluate ())
-	// log.Printf (" %v >  %v: %v", a, b, expression5.Evaluate ())
-	// log.Printf (" %v >= %v: %v", a, b, expression6.Evaluate ())
-	// log.Println ()
-	
-	// var c ConstString = "dario"
-	// var d ConstString = "roberto"
-
-	// expression11 := RelationalExpression{LEQ, [2]RelationalEvaluator{c, d}}
-	// expression12 := RelationalExpression{LT, [2]RelationalEvaluator{c, d}}
-	// expression13 := RelationalExpression{EQ, [2]RelationalEvaluator{c, d}}
-	// expression14 := RelationalExpression{NEQ, [2]RelationalEvaluator{c, d}}
-	// expression15 := RelationalExpression{GT, [2]RelationalEvaluator{c, d}}
-	// expression16 := RelationalExpression{GEQ, [2]RelationalEvaluator{c, d}}
-
-	// log.Printf (" %v <= %v: %v", c, d, expression11.Evaluate ())
-	// log.Printf (" %v <  %v: %v", c, d, expression12.Evaluate ())
-	// log.Printf (" %v == %v: %v", c, d, expression13.Evaluate ())
-	// log.Printf (" %v != %v: %v", c, d, expression14.Evaluate ())
-	// log.Printf (" %v >  %v: %v", c, d, expression15.Evaluate ())
-	// log.Printf (" %v >= %v: %v", c, d, expression16.Evaluate ())
-	// log.Println ()
-	
-	// // --- experiments with Logical Expressions
-	
-	// var e TypeBool = true
-	// var f TypeBool = true
-
-	// expression21 := LogicalExpression{AND, [2]LogicalEvaluator{e, f}}
-	// expression22 := LogicalExpression{OR, [2]LogicalEvaluator{e, f}}
-
-	// log.Printf (" %v AND %v: %v", e, f, expression21.Evaluate ())
-	// log.Printf (" %v OR  %v: %v", e, f, expression22.Evaluate ())
-	// log.Println ()
-
-	// // --- experiments with both Relational and Logical Expressions
-
-	// expression31 := LogicalExpression{AND, [2]LogicalEvaluator{expression1, expression2}}
-	// expression32 := LogicalExpression{OR,  [2]LogicalEvaluator{expression1, expression2}}
-	// expression33 := LogicalExpression{AND, [2]LogicalEvaluator{expression3, expression4}}
-	// expression34 := LogicalExpression{OR,  [2]LogicalEvaluator{expression3, expression4}}
-	// expression35 := LogicalExpression{AND, [2]LogicalEvaluator{expression5, expression6}}
-	// expression36 := LogicalExpression{OR,  [2]LogicalEvaluator{expression5, expression6}}
-
-	// log.Printf (" %v <= %v AND %v < %v: %v", a, b, a, b, expression31.Evaluate ())
-	// log.Printf (" %v <= %v OR  %v < %v: %v", a, b, a, b, expression32.Evaluate ())
-	// log.Printf (" %v == %v AND %v != %v: %v", a, b, a, b, expression33.Evaluate ())
-	// log.Printf (" %v == %v OR  %v != %v: %v", a, b, a, b, expression34.Evaluate ())
-	// log.Printf (" %v >  %v AND %v >= %v: %v", a, b, a, b, expression35.Evaluate ())
-	// log.Printf (" %v >  %v OR  %v >= %v: %v", a, b, a, b, expression36.Evaluate ())
-	
-	// // --- exit	
-	
-	// return expression36, errors.New ("Not implemented yet!")
 
 	var logEvaluator LogicalEvaluator = nil
 	var logOperator LogicalOperator
@@ -484,8 +412,6 @@ func Parse (pformula string) (result LogicalEvaluator, err error) {
 				return nil, err
 			}
 		}
-		log.Println (logEvaluator)
-		log.Printf (" current string: '%v'\n", pformula)
 
 		// now, either we have end of formula or a logical operator
 		newToken, err := nextToken (&pformula); if err != nil {
@@ -505,9 +431,8 @@ func Parse (pformula string) (result LogicalEvaluator, err error) {
 		case or:
 			logOperator = OR
 		default:
-			log.Fatalf (" A logical operator was expected just before %q", pformula)
+			log.Fatalf ("A logical operator was expected just before %q", pformula)
 		}
-		
 	}
 
 	return logEvaluator, nil

@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <domingo, 24 mayo 2015 01:51:18 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 24 mayo 2015 02:11:19 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -96,7 +96,7 @@ func verify () {
 
 	// verify that the pgn file given exists and is accessible
 	isregular, _ := fstools.IsRegular (pgnfile); if !isregular {
-		log.Fatalf (" the pgn file '%s' does not exist or is not accessible",
+		log.Fatalf ("the pgn file '%s' does not exist or is not accessible",
 			pgnfile)
 	}
 }
@@ -129,30 +129,37 @@ func main () {
 		// now, write this contents to the specified file
 		_, err := fstools.Write (pgnfile + ".tex", []byte (contents))
 		if err != nil {
-			log.Fatalf (" An error was issued when writing data to the LaTeX file")
+			log.Fatalf ("An error was issued when writing data to the LaTeX file")
 		}
 	}
 
-	LogicalEvaluator0, err0 := pfparser.Parse ("10 >= 100")
+	LogicalEvaluator0, err0 := pfparser.Parse ("10 >= 1")
 	if err0 != nil {
-		log.Println (err0)
+		log.Fatalf ("%v\n", err0)
 	}
 	log.Println (LogicalEvaluator0)
 	log.Printf (" Evaluation of expression #0: %v\n\n", LogicalEvaluator0.Evaluate ())
 
 	LogicalEvaluator1, err1 := pfparser.Parse ("10 >= 100 or 100 <= 1000")
 	if err1 != nil {
-		log.Println (err1)
+		log.Fatalf ("%v\n", err1)
 	}
 	log.Println (LogicalEvaluator1)
 	log.Printf (" Evaluation of expression #1: %v\n\n", LogicalEvaluator1.Evaluate ())
 
 	LogicalEvaluator2, err2 := pfparser.Parse ("'roberto' >= 'dario' and 'dario' != 'adriana'")
 	if err2 != nil {
-		log.Println (err2)
+		log.Fatalf ("%v\n", err2)
 	}
 	log.Println (LogicalEvaluator2)
 	log.Printf (" Evaluation of expression #0: %v\n\n", LogicalEvaluator2.Evaluate ())
+
+	LogicalEvaluator3, err3 := pfparser.Parse ("'roberto' >= 'dario' and 'dario' != 'adriana' or 'dario'>'monica'")
+	if err3 != nil {
+		log.Fatalf ("%v\n", err3)
+	}
+	log.Println (LogicalEvaluator3)
+	log.Printf (" Evaluation of expression #0: %v\n\n", LogicalEvaluator3.Evaluate ())
 }
 
 
