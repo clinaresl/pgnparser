@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <domingo, 24 mayo 2015 02:10:43 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 24 mayo 2015 19:17:57 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -49,6 +49,7 @@ package pfparser
 
 import (
 	"log"			// logging services
+	"errors"		// for raising errors
 )
 
 // typedefs
@@ -314,12 +315,12 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 
 	var firstToken, secondToken, thirdToken tokenItem
 	var relOperator RelationalOperator
-	
+
 	// every relational group consists of two constants related by a
 	// relational operator. Constants can be either integers or strings
 
 	// get the next token ...
-	firstToken, err = nextToken (pformula); if err != nil {
+	firstToken, err = nextToken (pformula, true); if err != nil {
 		return nil, err
 	}
 
@@ -327,11 +328,11 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 	if firstToken.tokenType != constInteger && firstToken.tokenType != constString {
 
 		// if not, raise a parsing error
-		log.Fatalf ("A constant was expected just before %q", *pformula)
+		log.Fatalf ("[1] A constant was expected just before %q", *pformula)
 	}
 
 	// now, get the next token ...
-	secondToken, err = nextToken (pformula); if err != nil {
+	secondToken, err = nextToken (pformula, true); if err != nil {
 		return nil, err
 	}
 
@@ -355,7 +356,7 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 	}
 
 	// get the third token ...
-	thirdToken, err = nextToken (pformula); if err != nil {
+	thirdToken, err = nextToken (pformula, true); if err != nil {
 		return nil, err
 	}
 
@@ -363,7 +364,7 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 	if thirdToken.tokenType != constInteger && thirdToken.tokenType != constString {
 
 		// if not, raise a parsing error
-		log.Fatalf ("A constant was expected just before %q", *pformula)
+		log.Fatalf ("[2] A constant was expected just before %q", *pformula)
 	}
 
 	// at this point, everything went fine - return a relational expression
@@ -373,23 +374,51 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 			thirdToken.tokenValue}}, nil
 }
 
+// A group consists of either a relational group or a parenthesized
+// formula. This function is in charge of returning a logical evaluator which
+// contains the following group and nil if no error was found; otherwise, nil
+// and an error is returned.
+//
+// It receives the current depth to increment it in case a parenthesized formula
+// has been found
+func nextGroup (pformula *string, depth int) (result LogicalEvaluator, err error) {
+
+	// first, get the following token but without consuming it!
+	newToken, err := nextToken (pformula, false); if err != nil {
+		return nil, err
+	}
+
+	// now, in case it is an opening parenthesis ...
+	if newToken.tokenType == openParen {
+
+		// first, consume the parenthesis
+		nextToken (pformula, true)
+		
+		// and invoke the parse function (recursively, this is mutual
+		// recursion) incrementing the depth and return the result
+		return Parse (pformula, 1 + depth)
+	}
+
+	// otherwise, only relational groups are allowed
+	return relationalGroup (pformula)
+}
+
 // This function effectively parses the contents of the string given in pformula
 // and returns a valid LogicalEvaluator (ie., an expression that can be properly
 // evaluated) and nil if no errors were found or an invalid LogicalEvaluator and
 // an error otherwise
-func Parse (pformula string) (result LogicalEvaluator, err error) {
+func Parse (pformula *string, depth int) (result LogicalEvaluator, err error) {
 
 	var logEvaluator LogicalEvaluator = nil
 	var logOperator LogicalOperator
 	
-	log.Printf (" pformula: %v\n", pformula)
-
 	// iterate for ever until the end of formula is found
 	for ;; {
 
-		// INVARIANT: at the beginning of every iteration a relational
-		// group should be captured and every iteration is ended with
-		// either a logical operator or EOF (end of formula)
+		// INVARIANT: at the beginning of every iteration either an
+		// opening parenthesis or a relational group should be captured
+		// and every iteration is ended with either a logical operator,
+		// EOF (end of formula) or a closing parenthesis
 
 		// if we already have a logical evaluator (either a relational
 		// group previously processed or a composite expression of
@@ -398,7 +427,7 @@ func Parse (pformula string) (result LogicalEvaluator, err error) {
 
 			// then update logEvaluator to include the previous
 			// logEvaluator and the next relational group
-			var rightEvaluator, err = relationalGroup (&pformula); if err != nil {
+			var rightEvaluator, err = nextGroup (pformula, depth); if err != nil {
 				return nil, err
 			}
 
@@ -408,19 +437,40 @@ func Parse (pformula string) (result LogicalEvaluator, err error) {
 
 			// otherwise, initialize the logEvaluator to the first
 			// relational group in the formula
-			logEvaluator, err = relationalGroup (&pformula); if err != nil {
+			logEvaluator, err = nextGroup (pformula, depth); if err != nil {
 				return nil, err
 			}
 		}
 
 		// now, either we have end of formula or a logical operator
-		newToken, err := nextToken (&pformula); if err != nil {
+		newToken, err := nextToken (pformula, true); if err != nil {
 			return nil, err
 		}
 
-		// in case the end of formula has been found, then exit
+		// in case the end of formula has been found, ...
 		if newToken.tokenType == eof {
-			break
+
+			// check the depth (this amounts to check that
+			// parenthesis were properly balanced in the original
+			// string)
+			if depth == 0 {
+				break
+			} else {
+				return nil, errors.New ("Unbalanced parenthesis")
+			}
+		}
+
+		// in case a closing parenthesis is found ...
+		if newToken.tokenType == closeParen {
+
+			// check that current depth is strictly positive (this
+			// amounts to check that parenthesis were properly
+			// balanced in the original string)
+			if depth > 0 {
+				break
+			} else {
+				return nil, errors.New ("Unbalanced parenthesis")
+			}
 		}
 
 		// otherwise, check a logical operator has been recognized

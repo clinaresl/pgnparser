@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <domingo, 24 mayo 2015 02:11:19 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 24 mayo 2015 19:22:15 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -133,33 +133,61 @@ func main () {
 		}
 	}
 
-	LogicalEvaluator0, err0 := pfparser.Parse ("10 >= 1")
+	expression0 := "(10>=1)"
+	LogicalEvaluator0, err0 := pfparser.Parse (&expression0, 0)
 	if err0 != nil {
 		log.Fatalf ("%v\n", err0)
 	}
 	log.Println (LogicalEvaluator0)
 	log.Printf (" Evaluation of expression #0: %v\n\n", LogicalEvaluator0.Evaluate ())
 
-	LogicalEvaluator1, err1 := pfparser.Parse ("10 >= 100 or 100 <= 1000")
+	expression1:= "10 >= 100 or 100 <= 1000"
+	LogicalEvaluator1, err1 := pfparser.Parse (&expression1, 0)
 	if err1 != nil {
 		log.Fatalf ("%v\n", err1)
 	}
 	log.Println (LogicalEvaluator1)
 	log.Printf (" Evaluation of expression #1: %v\n\n", LogicalEvaluator1.Evaluate ())
 
-	LogicalEvaluator2, err2 := pfparser.Parse ("'roberto' >= 'dario' and 'dario' != 'adriana'")
+	expression2 := "'roberto' >= 'dario' and 'dario' != 'adriana'"
+	LogicalEvaluator2, err2 := pfparser.Parse (&expression2, 0)
 	if err2 != nil {
 		log.Fatalf ("%v\n", err2)
 	}
 	log.Println (LogicalEvaluator2)
-	log.Printf (" Evaluation of expression #0: %v\n\n", LogicalEvaluator2.Evaluate ())
+	log.Printf (" Evaluation of expression #2: %v\n\n", LogicalEvaluator2.Evaluate ())
 
-	LogicalEvaluator3, err3 := pfparser.Parse ("'roberto' >= 'dario' and 'dario' != 'adriana' or 'dario'>'monica'")
+	expression3 := "'roberto' >= 'dario' and 'dario' != 'adriana' or 'dario'>'monica'"
+	LogicalEvaluator3, err3 := pfparser.Parse (&expression3, 0)
 	if err3 != nil {
 		log.Fatalf ("%v\n", err3)
 	}
 	log.Println (LogicalEvaluator3)
-	log.Printf (" Evaluation of expression #0: %v\n\n", LogicalEvaluator3.Evaluate ())
+	log.Printf (" Evaluation of expression #3: %v\n\n", LogicalEvaluator3.Evaluate ())
+
+	expression4 := " 3 <= 4 or 5<2 and 3>=2"
+	LogicalEvaluator4, err4 := pfparser.Parse (&expression4, 0)
+	if err4 != nil {
+		log.Fatalf ("%v\n", err4)
+	}
+	log.Println (LogicalEvaluator4)
+	log.Printf (" Evaluation of expression #4: %v\n\n", LogicalEvaluator4.Evaluate ())
+
+	expression5 := " ( 3 <= 4 or 5<2 )and 3>=2"
+	LogicalEvaluator5, err5 := pfparser.Parse (&expression5, 0)
+	if err5 != nil {
+		log.Fatalf ("%v\n", err5)
+	}
+	log.Println (LogicalEvaluator5)
+	log.Printf (" Evaluation of expression #5: %v\n\n", LogicalEvaluator5.Evaluate ())
+
+	expression6 := " 3 <= 4 or (5<2 and 3>=2)"
+	LogicalEvaluator6, err6 := pfparser.Parse (&expression6, 0)
+	if err6 != nil {
+		log.Fatalf ("%v\n", err6)
+	}
+	log.Println (LogicalEvaluator6)
+	log.Printf (" Evaluation of expression #6: %v\n\n", LogicalEvaluator6.Evaluate ())
 }
 
 

@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May 23 13:10:40 2015 Carlos Linares Lopez>
-  Last update <domingo, 24 mayo 2015 01:56:36 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 24 mayo 2015 19:07:43 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -30,11 +30,17 @@ import (
 // global variables
 // ----------------------------------------------------------------------------
 
-// the following regexps are used just to recognize different tokens
-// that can appear in a propositional formula
+// the following regexps are used just to recognize different tokens that can
+// appear in a propositional formula
 
 // -- EOF: end of formula
 var reEOF = regexp.MustCompile (`^\s*$`)
+
+// -- opening parenthesis
+var reOpenParen = regexp.MustCompile (`^\s*\(`)
+
+// -- closing parenthesis
+var reCloseParen = regexp.MustCompile (`^\s*\)`)
 
 // -- integers
 var reInteger = regexp.MustCompile (`^\s*(?P<value>[0-9]+)`)
@@ -55,14 +61,13 @@ var reLogicalOperator = regexp.MustCompile (`^\s*(?P<operator>(and|or|AND|OR))`)
 // typedefs
 // ----------------------------------------------------------------------------
 
-// the type of a token is represented with an integer that is matched
-// against consts (either digits or strings) or operators (both
-// relational and logical)
+// the type of a token is represented with an integer that is matched against
+// consts (either digits or strings) or operators (both relational and logical)
 type tokenType int
 
-// a token is either a constant or an operator. Only in case it is a
-// constant, its value is computed (otherwise, it shall be
-// nil). Hence, values should satisfy the relational interface
+// a token is either a constant or an operator. Only in case it is a constant,
+// its value is computed (otherwise, it shall be nil). Hence, values should
+// satisfy the relational interface
 type tokenItem struct {
 	tokenType tokenType
 	tokenValue RelationalEvaluator
@@ -72,9 +77,10 @@ type tokenItem struct {
 // consts
 // ----------------------------------------------------------------------------
 
-// The type of a token can be any of the following: integer and string
-// constants or relational or logical operators. Additionally, EOF
-// (end of formula) is used as a token also to signal termination
+// The type of a token can be any of the following: integer and string constants
+// or relational or logical operators. Additionally, EOF (end of formula) is
+// used as a token also to signal termination and parenthesis can be used to
+// nest formulas
 const (
 	constInteger tokenType = 1 << iota	// integer constants
 	constString				// string constants
@@ -87,24 +93,58 @@ const (
 	gt
 	geq
 	eof					// end of formula
+	openParen				// parenthesis
+	closeParen
 )
 
 // functions
 // ----------------------------------------------------------------------------
 
-// Return the next token in the propositional formula given in
-// pformula and nil if any is successfully recognized, otherwise
-// return nil and a syntax error. Additionally, the function modifies
-// the string to point to the chunk to process in the next invocation
-func nextToken (pformula *string) (token tokenItem, err error) {
+// Return the next token in the propositional formula given in pformula and nil
+// if any is successfully recognized, otherwise return nil and a syntax
+// error. Additionally, if consume is true, the function modifies the string to
+// point to the chunk to process in the next invocation
+func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 
-	// just apply regular expressions successively until one
-	// matches
+	// just apply regular expressions successively until one matches
 
 	// -- EOF - End of Formula
 	// --------------------------------------------------------------------
 	if reEOF.MatchString (*pformula) {
+
+		if consume {
+			*pformula = ""
+		}
+		
 		return tokenItem{eof, nil}, nil
+		
+	} else if reOpenParen.MatchString (*pformula) {
+
+		// -- Opening parenthesis
+		// ------------------------------------------------------------
+		if consume {
+
+			// process the string to locate the position of the
+			// parenthesis and move forward
+			tag := reOpenParen.FindStringSubmatchIndex (*pformula)
+			*pformula = (*pformula)[tag[1]:]
+		}
+		
+		return tokenItem{openParen, nil}, nil
+		
+	} else if reCloseParen.MatchString (*pformula) {
+
+		// -- Closing parenthesis
+		// ------------------------------------------------------------
+		if consume {
+
+			// process the string to locate the position of the
+			// parenthesis and move forward
+			tag := reCloseParen.FindStringSubmatchIndex (*pformula)
+			*pformula = (*pformula)[tag[1]:]
+		}
+		
+		return tokenItem{closeParen, nil}, nil
 		
 	} else if reInteger.MatchString (*pformula) {
 
@@ -119,8 +159,10 @@ func nextToken (pformula *string) (token tokenItem, err error) {
 			return tokenItem{eof, nil}, errors.New ("It was not possible to process an integer")
 		}
 		
-		// move forward in the propositional formula
-		*pformula = (*pformula)[tag[3]:]
+		// move forward in the propositional formula if required
+		if consume {
+			*pformula = (*pformula)[tag[3]:]
+		}
 
 		// and return a valid token
 		return tokenItem{constInteger, ConstInteger (value)}, nil
@@ -137,8 +179,10 @@ func nextToken (pformula *string) (token tokenItem, err error) {
 		// single quotes are automatically removed
 		value := (*pformula)[1+tag[2]:tag[3]-1]
 		
-		// move forward in the propositional formula
-		*pformula = (*pformula)[tag[3]:]
+		// move forward in the propositional formula if required
+		if consume {
+			*pformula = (*pformula)[tag[3]:]
+		}
 
 		// and return a valid token
 		return tokenItem{constString, ConstString (value)}, nil
@@ -171,8 +215,10 @@ func nextToken (pformula *string) (token tokenItem, err error) {
 			log.Fatalf ("Unknown relational operator '%s'", (*pformula)[tag[2]:tag[3]])
 		}
 
-		// move forward in the propositional formula
-		*pformula = (*pformula)[tag[1]:]
+		// move forward in the propositional formula if required
+		if consume {
+			*pformula = (*pformula)[tag[1]:]
+		}
 
 		// and return a valid token
 		return tokenItem {relOp, nil}, nil
@@ -198,7 +244,9 @@ func nextToken (pformula *string) (token tokenItem, err error) {
 		}
 
 		// move forward in the propositional formula
-		*pformula = (*pformula)[tag[1]:]
+		if consume {
+			*pformula = (*pformula)[tag[1]:]
+		}
 
 		// and return a valid token
 		return tokenItem {logop, nil}, nil
