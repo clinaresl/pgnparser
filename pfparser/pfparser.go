@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <domingo, 24 mayo 2015 19:17:57 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 25 mayo 2015 00:41:17 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -16,15 +16,14 @@
   Login   <clinares@atlas>
 */
 
-// Implementation of a parser of propositional formulae with a
-// remarkable exception: instead of propositions, binary predicates
-// over variables and constants are allowed. Although variables and
-// constants are allowed, this is not predicate logic since it does
-// not acknowledge the usage of quantifiers.
+// Implementation of a parser of propositional formulæ with a remarkable
+// exception: instead of propositions, binary predicates over variables and
+// constants are allowed. Although variables and constants are allowed, this is
+// not predicate logic since it does not acknowledge the usage of quantifiers.
 //
-// Variables are preceded with the character '%'. The constants that
-// are currently supported are integers and strings and, indeed,
-// variables can only take values of these types
+// Variables are preceded with the character '%'. The constants that are
+// currently supported are integers and strings and, indeed, variables can only
+// take values of these types
 //
 // Example:
 //
@@ -33,13 +32,15 @@
 //      (%name == "Adriana")) AND
 //     (%age > 2))
 //
-// As shown in the example above, parenthesis are allowed as well to
-// modify the precedence rules which are applied by default as
-// follows:
+// As shown in the example above, parenthesis are allowed as well to modify the
+// precedence rules which are applied by default as follows:
 //
-// 1. OR has less precedence than AND so it is applied before it
+// 1. AND has precedence over OR
 // 
-// 2. AND has more precedence than OR.
+// 2. Operators with the same precedence are evaluated from left to right
+//
+// 3. These precedence rules can be modified using parenthesized formulæ: The
+// most nested expressions are evaluated before others
 //
 // Note that NOT is not implemented since all binary operators can be
 // reversed as desired. The binary operations recognized by this

@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May 23 13:10:40 2015 Carlos Linares Lopez>
-  Last update <domingo, 24 mayo 2015 19:07:43 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 25 mayo 2015 00:02:19 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -200,9 +200,9 @@ func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 		switch (*pformula)[tag[2]:tag[3]] {
 
 		case "<":
-			relOp = leq
-		case "<=":
 			relOp = lt
+		case "<=":
+			relOp = leq
 		case "=":
 			relOp = eq
 		case "!=":
