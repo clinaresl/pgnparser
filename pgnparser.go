@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <domingo, 24 mayo 2015 23:30:19 Carlos Linares Lopez (clinares)>
+  Last update <martes, 26 mayo 2015 11:08:27 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -33,7 +33,7 @@ import (
 	"bitbucket.org/clinares/pgnparser/pgntools"
 
 	// import the parser of propositional formulae
-	"bitbucket.org/clinares/pgnparser/pfparser"
+	// "bitbucket.org/clinares/pgnparser/pfparser"
 )
 
 // global variables

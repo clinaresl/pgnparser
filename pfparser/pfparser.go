@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <lunes, 25 mayo 2015 00:41:17 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 31 mayo 2015 09:56:20 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -432,8 +432,31 @@ func Parse (pformula *string, depth int) (result LogicalEvaluator, err error) {
 				return nil, err
 			}
 
-			logEvaluator = LogicalExpression{logOperator,
-				[2]LogicalEvaluator{logEvaluator, rightEvaluator}}
+			// handle the precedence of AND over OR. In case the
+			// previous logical evaluator was OR and this one is
+			// AND, move AND below OR so that it is computed first
+
+			// therefore, check the previous expression was a
+			// logical expression. In case it was not then a
+			// relational expression is assumed and in this case,
+			// the check does not make sense
+			logExpression, ok := logEvaluator.(LogicalExpression)
+			if ok && logExpression.root == OR && logOperator == AND {
+
+				// Yeah, the previous one was a logical
+				// expression with an OR and the last logical
+				// operator retrieved was AND so reorder the
+				// operators in the final logical evaluator
+				logEvaluator = LogicalExpression{logExpression.root,
+					[2]LogicalEvaluator{logExpression.children[0],
+						LogicalExpression{logOperator,
+							[2]LogicalEvaluator{logExpression.children[1],
+							rightEvaluator}}}}
+			} else {
+			
+				logEvaluator = LogicalExpression{logOperator,
+					[2]LogicalEvaluator{logEvaluator, rightEvaluator}}
+			}
 		} else {
 
 			// otherwise, initialize the logEvaluator to the first

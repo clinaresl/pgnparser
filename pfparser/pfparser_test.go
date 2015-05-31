@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May 24 23:26:09 2015 Carlos Linares Lopez>
-  Last update <lunes, 25 mayo 2015 00:43:11 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 25 mayo 2015 00:47:31 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -76,7 +76,6 @@ func TestUnparenthesized (t *testing.T) {
 
 	// ---- two relational expressions
 	for expression1, value1 := range expected {
-
 		for expression2, value2 := range expected {
 
 			// OR
@@ -89,9 +88,7 @@ func TestUnparenthesized (t *testing.T) {
 	
 	// ---- three relational expressions
 	for expression1, value1 := range expected {
-
 		for expression2, value2 := range expected {
-
 			for expression3, value3 := range expected {
 
 				// OR
