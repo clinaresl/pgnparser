@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May 24 23:26:09 2015 Carlos Linares Lopez>
-  Last update <lunes, 25 mayo 2015 00:47:31 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 31 mayo 2015 17:51:52 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -45,10 +45,10 @@ func assert (t *testing.T, pformula string, expected TypeBool) {
 	}	
 }
 
-func TestUnparenthesized (t *testing.T) {
+func TestIntegerUnparenthesized (t *testing.T) {
 
-	// create a map that associates simple relational expressions
-	// to their expected result
+	// create a map that associates simple relational expressions to their
+	// expected result using integer constants
 	expected := map[string]bool {
 		"10 <  1" : false,
 		"10 <= 1" : false,
@@ -65,8 +65,6 @@ func TestUnparenthesized (t *testing.T) {
 		"10 >  10" : false,
 	}
 	
-	// tests using constant integers
-
 	// -- simple relational expressions
 	for expression, value := range expected {
 		assert (t, expression, TypeBool (value))
@@ -107,10 +105,132 @@ func TestUnparenthesized (t *testing.T) {
 			}
 		}
 	}
+
+	// --- four relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+			for expression3, value3 := range expected {
+				for expression4, value4 := range expected {
+
+					// OR
+					assert (t, expression1 + " or " + expression2 + " or " + expression3 + " or " + expression4,
+						TypeBool (value1 || value2 || value3 || value4))
+
+					// AND
+					assert (t, expression1 + " and " + expression2 + " and " + expression3 + " and " + expression4,
+						TypeBool (value1 && value2 && value3 && value4))
+
+					// OR/AND
+					assert (t, expression1 + " or " + expression2 + " or " + expression3 + " and " + expression4,
+						TypeBool (value1 || value2 || value3 && value4))
+					assert (t, expression1 + " or " + expression2 + " and " + expression3 + " or " + expression4,
+						TypeBool (value1 || value2 && value3 || value4))
+					assert (t, expression1 + " and " + expression2 + " or " + expression3 + " or " + expression4,
+						TypeBool (value1 && value2 || value3 || value4))
+					assert (t, expression1 + " or " + expression2 + " and " + expression3 + " and " + expression4,
+						TypeBool (value1 || value2 && value3 && value4))
+					assert (t, expression1 + " and " + expression2 + " or " + expression3 + " and " + expression4,
+						TypeBool (value1 && value2 || value3 && value4))
+					assert (t, expression1 + " and " + expression2 + " and " + expression3 + " or " + expression4,
+						TypeBool (value1 && value2 && value3 || value4))
+				}
+			}
+		}
+	}
+}
+
+func TestStringUnparenthesized (t *testing.T) {
+
+	// create a map that associates simple relational expressions to their
+	// expected result using integer constants
+	expected := map[string]bool {
+		"'dario' <  'adriana'" : false,
+		"'dario' <= 'adriana'" : false,
+		"'dario' =  'adriana'" : false,
+		"'dario' != 'adriana'" : true ,
+		"'dario' >= 'adriana'" : true ,
+		"'dario' >  'adriana'" : true ,
+		
+		"'dario' <  'dario'" : false,
+		"'dario' <= 'dario'" : true ,
+		"'dario' =  'dario'" : true ,
+		"'dario' != 'dario'" : false,
+		"'dario' >= 'dario'" : true ,
+		"'dario' >  'dario'" : false,
+	}
 	
-	// tests using constant strings
-	assert (t, "'roberto' >= 'dario' and 'dario' != 'adriana'", true)
-	assert (t, "'roberto' >= 'dario' and 'dario' != 'adriana' or 'dario'>'monica'", true)
+	// -- simple relational expressions
+	for expression, value := range expected {
+		assert (t, expression, TypeBool (value))
+	}
+	
+	// -- compound relational expressions
+
+	// ---- two relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+
+			// OR
+			assert (t, expression1 + " or " + expression2, TypeBool (value1 || value2))
+
+			// AND
+			assert (t, expression1 + " and " + expression2, TypeBool (value1 && value2))
+		}
+	}
+	
+	// ---- three relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+			for expression3, value3 := range expected {
+
+				// OR
+				assert (t, expression1 + " or " + expression2 + " or " + expression3,
+					TypeBool (value1 || value2 || value3))
+
+				// AND
+				assert (t, expression1 + " and " + expression2 + " and " + expression3,
+					TypeBool (value1 && value2 && value3))
+
+				// OR/AND
+				assert (t, expression1 + " or " + expression2 + " and " + expression3,
+					TypeBool (value1 || value2 && value3))
+				assert (t, expression1 + " and " + expression2 + " or " + expression3,
+					TypeBool (value1 && value2 || value3))
+			}
+		}
+	}
+
+	// --- four relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+			for expression3, value3 := range expected {
+				for expression4, value4 := range expected {
+
+					// OR
+					assert (t, expression1 + " or " + expression2 + " or " + expression3 + " or " + expression4,
+						TypeBool (value1 || value2 || value3 || value4))
+
+					// AND
+					assert (t, expression1 + " and " + expression2 + " and " + expression3 + " and " + expression4,
+						TypeBool (value1 && value2 && value3 && value4))
+
+					// OR/AND
+					assert (t, expression1 + " or " + expression2 + " or " + expression3 + " and " + expression4,
+						TypeBool (value1 || value2 || value3 && value4))
+					assert (t, expression1 + " or " + expression2 + " and " + expression3 + " or " + expression4,
+						TypeBool (value1 || value2 && value3 || value4))
+					assert (t, expression1 + " and " + expression2 + " or " + expression3 + " or " + expression4,
+						TypeBool (value1 && value2 || value3 || value4))
+					assert (t, expression1 + " or " + expression2 + " and " + expression3 + " and " + expression4,
+						TypeBool (value1 || value2 && value3 && value4))
+					assert (t, expression1 + " and " + expression2 + " or " + expression3 + " and " + expression4,
+						TypeBool (value1 && value2 || value3 && value4))
+					assert (t, expression1 + " and " + expression2 + " and " + expression3 + " or " + expression4,
+						TypeBool (value1 && value2 && value3 || value4))
+				}
+			}
+		}
+	}	
 }
 
 func TestParenthesized (t *testing.T) {
