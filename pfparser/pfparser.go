@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <domingo, 31 mayo 2015 09:56:20 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 01 junio 2015 08:39:36 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -114,6 +114,7 @@ type RelationalExpression struct {
 // over items that can be compared with such operator
 type LogicalExpression struct {
 	root LogicalOperator
+	depth int
 	children [2]LogicalEvaluator
 }
 
@@ -433,28 +434,30 @@ func Parse (pformula *string, depth int) (result LogicalEvaluator, err error) {
 			}
 
 			// handle the precedence of AND over OR. In case the
-			// previous logical evaluator was OR and this one is
-			// AND, move AND below OR so that it is computed first
+			// previous logical evaluator was OR and this one is AND
+			// and they are both nested at the same depth, move AND
+			// below OR so that it is computed first
 
 			// therefore, check the previous expression was a
 			// logical expression. In case it was not then a
 			// relational expression is assumed and in this case,
 			// the check does not make sense
 			logExpression, ok := logEvaluator.(LogicalExpression)
-			if ok && logExpression.root == OR && logOperator == AND {
+			if ok && logExpression.root == OR && logOperator == AND &&
+				logExpression.depth == depth {
 
 				// Yeah, the previous one was a logical
 				// expression with an OR and the last logical
 				// operator retrieved was AND so reorder the
 				// operators in the final logical evaluator
-				logEvaluator = LogicalExpression{logExpression.root,
+				logEvaluator = LogicalExpression{logExpression.root, depth, 
 					[2]LogicalEvaluator{logExpression.children[0],
-						LogicalExpression{logOperator,
+						LogicalExpression{logOperator, depth, 
 							[2]LogicalEvaluator{logExpression.children[1],
 							rightEvaluator}}}}
 			} else {
 			
-				logEvaluator = LogicalExpression{logOperator,
+				logEvaluator = LogicalExpression{logOperator, depth, 
 					[2]LogicalEvaluator{logEvaluator, rightEvaluator}}
 			}
 		} else {
