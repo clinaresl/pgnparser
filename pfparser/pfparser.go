@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <lunes, 01 junio 2015 08:39:36 Carlos Linares Lopez (clinares)>
+  Last update <martes, 02 junio 2015 17:56:03 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -76,6 +76,9 @@ type ConstInteger int32
 
 // ConstString represents a constant string value
 type ConstString string
+
+// Variables are represented as a string with the variable's name
+type Variable string
 
 // Relational operators are represented with integers which are
 // matched against the constants: LEQ, LT, EQ, NEQ, GT, GEQ
@@ -236,6 +239,13 @@ func (constant ConstString) Evaluate () RelationalInterface {
 	return constant
 }
 
+// The evaluation of a variable returns its value which is taken from the given
+// symbol table. Special care is taken to cast the result to one of the
+// constants, either an integer (ConstString) or a string (ConstString)
+func (variable Variable) Evaluate () RelationalInterface {
+	return ConstInteger (1)
+}
+
 // The evaluation of a boolean type (TypeBool) returns the same constant
 func (constant TypeBool) Evaluate () LogicalInterface {
 	return constant
@@ -318,19 +328,20 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 	var firstToken, secondToken, thirdToken tokenItem
 	var relOperator RelationalOperator
 
-	// every relational group consists of two constants related by a
-	// relational operator. Constants can be either integers or strings
+	// every relational group consists of two terms related by a relational
+	// operator where a term is defined as either a variable or a
+	// constant. Constants and Variables can be either integers or strings
 
 	// get the next token ...
 	firstToken, err = nextToken (pformula, true); if err != nil {
 		return nil, err
 	}
 
-	// ... and check it is a constant
-	if firstToken.tokenType != constInteger && firstToken.tokenType != constString {
+	// ... and check it is a constant or a variable
+	if firstToken.tokenType != constInteger && firstToken.tokenType != constString && firstToken.tokenType != variable {
 
 		// if not, raise a parsing error
-		log.Fatalf ("[1] A constant was expected just before %q", *pformula)
+		log.Fatalf ("[1] A constant or variable was expected just before %q", *pformula)
 	}
 
 	// now, get the next token ...
@@ -362,11 +373,11 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 		return nil, err
 	}
 
-	// ... and check it is a constant
-	if thirdToken.tokenType != constInteger && thirdToken.tokenType != constString {
+	// ... and check it is either a constant or a variable
+	if thirdToken.tokenType != constInteger && thirdToken.tokenType != constString && thirdToken.tokenType != variable {
 
 		// if not, raise a parsing error
-		log.Fatalf ("[2] A constant was expected just before %q", *pformula)
+		log.Fatalf ("[2] A constant or variable was expected just before %q", *pformula)
 	}
 
 	// at this point, everything went fine - return a relational expression
@@ -408,7 +419,11 @@ func nextGroup (pformula *string, depth int) (result LogicalEvaluator, err error
 // This function effectively parses the contents of the string given in pformula
 // and returns a valid LogicalEvaluator (ie., an expression that can be properly
 // evaluated) and nil if no errors were found or an invalid LogicalEvaluator and
-// an error otherwise
+// an error otherwise.
+//
+// The 'depth' is expected to be equal to zero when this function is invoked by
+// the user. It is used to recognize different formulae when they are nested
+// with parenthesis.
 func Parse (pformula *string, depth int) (result LogicalEvaluator, err error) {
 
 	var logEvaluator LogicalEvaluator = nil
@@ -439,8 +454,8 @@ func Parse (pformula *string, depth int) (result LogicalEvaluator, err error) {
 			// below OR so that it is computed first
 
 			// therefore, check the previous expression was a
-			// logical expression. In case it was not then a
-			// relational expression is assumed and in this case,
+			// logical expression. In case it was not, then a
+			// relational expression is assumed and, in this case,
 			// the check does not make sense
 			logExpression, ok := logEvaluator.(LogicalExpression)
 			if ok && logExpression.root == OR && logOperator == AND &&

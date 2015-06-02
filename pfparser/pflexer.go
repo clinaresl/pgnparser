@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May 23 13:10:40 2015 Carlos Linares Lopez>
-  Last update <lunes, 25 mayo 2015 00:02:19 Carlos Linares Lopez (clinares)>
+  Last update <martes, 02 junio 2015 17:46:28 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -84,6 +84,7 @@ type tokenItem struct {
 const (
 	constInteger tokenType = 1 << iota	// integer constants
 	constString				// string constants
+	variable				// variables
 	and					// -- logical operators
 	or
 	leq					// -- relational operators
@@ -186,6 +187,26 @@ func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 
 		// and return a valid token
 		return tokenItem{constString, ConstString (value)}, nil
+
+	} else if reVariable.MatchString (*pformula) {
+
+		// -- Variables
+		// ------------------------------------------------------------
+		
+		// process the string and extract the relevant group
+		tag := reVariable.FindStringSubmatchIndex (*pformula)
+
+		// convert this group to a variable which just stores the name
+		// of the variable
+		value := (*pformula)[tag[2]:tag[3]]
+		
+		// move forward in the propositional formula if required
+		if consume {
+			*pformula = (*pformula)[tag[3]:]
+		}
+
+		// and return a valid token
+		return tokenItem{variable, Variable (value)}, nil
 		
 	} else if reRelationalOperator.MatchString (*pformula) {
 
