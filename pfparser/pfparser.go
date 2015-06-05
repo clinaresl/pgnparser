@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <martes, 02 junio 2015 17:56:03 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 05 junio 2015 10:29:54 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -96,14 +96,14 @@ type TypeBool bool
 // produce items that can be compared with a relational operator,
 // i.e., that they produce a RelationalInterface
 type RelationalEvaluator interface {
-	Evaluate () RelationalInterface
+	Evaluate (symtable map[string]RelationalInterface) RelationalInterface
 }
 
 // A Logical evaluator is an interface that requires the ability to
 // produce items that can be compared with a logical operator, i.e.,
 // that they produce a LogicalInterface
 type LogicalEvaluator interface {
-	Evaluate () LogicalInterface
+	Evaluate (symtable map[string]RelationalInterface) LogicalInterface
 }
 
 // A relational expression consists of a relational operator that is
@@ -149,7 +149,8 @@ func (constant ConstInteger) Less (right RelationalInterface) TypeBool {
 
 	var value ConstInteger
 	var ok bool
-	
+
+	// verify that both types are compatible
 	value, ok = right.(ConstInteger); if !ok {
 		log.Fatal ("Type mismatch")
 	}
@@ -164,6 +165,7 @@ func (constant ConstInteger) Equal (right RelationalInterface) TypeBool {
 	var value ConstInteger
 	var ok bool
 	
+	// verify that both types are compatible
 	value, ok = right.(ConstInteger); if !ok {
 		log.Fatal ("Type mismatch")
 	}
@@ -178,6 +180,7 @@ func (constant ConstString) Less (right RelationalInterface) TypeBool {
 	var value ConstString
 	var ok bool
 	
+	// verify that both types are compatible
 	value, ok = right.(ConstString); if !ok {
 		log.Fatal ("Type mismatch")
 	}
@@ -192,6 +195,7 @@ func (constant ConstString) Equal (right RelationalInterface) TypeBool {
 	var value ConstString
 	var ok bool
 	
+	// verify that both types are compatible
 	value, ok = right.(ConstString); if !ok {
 		log.Fatal ("Type mismatch")
 	}
@@ -206,6 +210,7 @@ func (operand TypeBool) And (right LogicalInterface) TypeBool {
 	var value TypeBool
 	var ok bool
 
+	// verify that both types are compatible
 	value, ok = right.(TypeBool); if !ok {
 		log.Fatal ("Type mismatch")
 	}
@@ -220,6 +225,7 @@ func (operand TypeBool) Or (right LogicalInterface) TypeBool {
 	var value TypeBool
 	var ok bool
 
+	// verify that both types are compatible
 	value, ok = right.(TypeBool); if !ok {
 		log.Fatal ("Type mismatch")
 	}
@@ -230,36 +236,54 @@ func (operand TypeBool) Or (right LogicalInterface) TypeBool {
 // The following methods implement the evaluation procedure over different types
 
 // The evaluation of a constant integer returns the same constant integer
-func (constant ConstInteger) Evaluate () RelationalInterface {
+func (constant ConstInteger) Evaluate (symtable map[string]RelationalInterface) RelationalInterface {
 	return constant
 }
 
 // The evaluation of a string constant returns the same constant string
-func (constant ConstString) Evaluate () RelationalInterface {
+func (constant ConstString) Evaluate (symtable map[string]RelationalInterface) RelationalInterface {
 	return constant
 }
 
 // The evaluation of a variable returns its value which is taken from the given
 // symbol table. Special care is taken to cast the result to one of the
 // constants, either an integer (ConstString) or a string (ConstString)
-func (variable Variable) Evaluate () RelationalInterface {
-	return ConstInteger (1)
+func (variable Variable) Evaluate (symtable map[string]RelationalInterface) RelationalInterface {
+
+	// retrieve the value stored in the symbol table for this variable
+	content := symtable[string (variable)]
+
+	// first, verify whether this is an integer constant
+	value, ok := content.(ConstInteger); if !ok {
+
+		// in case it is not an integer, then try to cast it as a string
+		value, ok := content.(ConstString); if !ok {
+
+			log.Fatal ("Undefined variable type")
+		} else {
+			return ConstString(value)
+		}
+	}
+
+	// If here, then a cast to an integer constant has been feasible so just
+	// return it
+	return ConstInteger(value)
 }
 
 // The evaluation of a boolean type (TypeBool) returns the same constant
-func (constant TypeBool) Evaluate () LogicalInterface {
+func (constant TypeBool) Evaluate (symtable map[string]RelationalInterface) LogicalInterface {
 	return constant
 }
 
 // The evaluation of a relational expression is done in two steps: first, both
 // children are evaluated and then the relational operator is applied.
-func (expression RelationalExpression) Evaluate () LogicalInterface {
+func (expression RelationalExpression) Evaluate (symtable map[string]RelationalInterface) LogicalInterface {
 
 	var result TypeBool = false
 	
 	// first, evaluate both children
-	lchild := expression.children [0].Evaluate ()
-	rchild := expression.children [1].Evaluate ()
+	lchild := expression.children [0].Evaluate (symtable)
+	rchild := expression.children [1].Evaluate (symtable)
 
 	// and now, depending upon the type of relational operator, apply the
 	// right combination of Equal and Less
@@ -293,12 +317,13 @@ func (expression RelationalExpression) Evaluate () LogicalInterface {
 
 // The evaluation of a logical expression is done in two steps: first, both
 // children are evaluated and then the logical operator is applied.
-func (expression LogicalExpression) Evaluate () LogicalInterface {
+func (expression LogicalExpression) Evaluate (symtable map[string]RelationalInterface) LogicalInterface {
 
 	var result TypeBool = false
 
 	// first, evaluate both children
-	lchild, rchild := expression.children [0].Evaluate (), expression.children [1].Evaluate ()
+	lchild := expression.children [0].Evaluate (symtable)
+	rchild := expression.children [1].Evaluate (symtable)
 
 	// and now, depending upon the type of the logical operator, apply the
 	// right combination of AND and OR
@@ -337,8 +362,10 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 		return nil, err
 	}
 
-	// ... and check it is a constant or a variable
-	if firstToken.tokenType != constInteger && firstToken.tokenType != constString && firstToken.tokenType != variable {
+	// ... and check it is a constant or variable
+	if firstToken.tokenType != constInteger &&
+		firstToken.tokenType != constString &&
+		firstToken.tokenType != variable {
 
 		// if not, raise a parsing error
 		log.Fatalf ("[1] A constant or variable was expected just before %q", *pformula)
@@ -373,8 +400,10 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 		return nil, err
 	}
 
-	// ... and check it is either a constant or a variable
-	if thirdToken.tokenType != constInteger && thirdToken.tokenType != constString && thirdToken.tokenType != variable {
+	// ... and check it is either a constant or variable
+	if thirdToken.tokenType != constInteger &&
+		thirdToken.tokenType != constString &&
+		thirdToken.tokenType != variable {
 
 		// if not, raise a parsing error
 		log.Fatalf ("[2] A constant or variable was expected just before %q", *pformula)

@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <martes, 02 junio 2015 18:04:38 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 05 junio 2015 10:31:44 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -133,12 +133,15 @@ func main () {
 		}
 	}
 
-	var pformula = "%name<=1"
+	var pformula = "'Roberto'<=%name2"
 	logicalEvaluator, err := pfparser.Parse (&pformula, 0); if err != nil {
 		log.Fatalf ("%v\n", err)
 	}
 
-	if logicalEvaluator.Evaluate () != pfparser.TypeBool (false) {
+	symtable := make (map[string]pfparser.RelationalInterface)
+	symtable["name1"] = pfparser.ConstString("Adriana")
+	symtable["name2"] = pfparser.ConstString("Dario")
+	if logicalEvaluator.Evaluate (symtable) != pfparser.TypeBool (false) {
 		log.Println (" True")
 	} else {
 		log.Println (" False")
