@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May 24 23:26:09 2015 Carlos Linares Lopez>
-  Last update <lunes, 01 junio 2015 17:35:37 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 05 junio 2015 11:06:34 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -23,10 +23,11 @@ import (
 	"testing"
 )
 
-// the following function parses the given pformula and evaluates
-// it. In case the result differs from the expected one, a Fatal error
-// is raised using the testing framework specified in t
-func assert (t *testing.T, pformula string, expected TypeBool) {
+// the following function parses the given pformula and evaluates it using the
+// specified symbol table. In case the result differs from the expected one, a
+// Fatal error is raised using the testing framework specified in t
+func assert (t *testing.T, pformula string,
+	symtable map[string]RelationalInterface, expected TypeBool) {
 
 	var err error
 	var logicalEvaluator LogicalEvaluator
@@ -40,12 +41,12 @@ func assert (t *testing.T, pformula string, expected TypeBool) {
 
 	// and now evaluate it, in case the result is not the expected
 	// one then raise a fatal error
-	if logicalEvaluator.Evaluate () != expected {
+	if logicalEvaluator.Evaluate (symtable) != expected {
 		t.Fatalf (" Error in pformula %v", pformula)
 	}	
 }
 
-func TestIntegerUnparenthesized (t *testing.T) {
+func TestConstIntegerUnparenthesized (t *testing.T) {
 
 	// create a map that associates simple relational expressions to their
 	// expected result using integer constants
@@ -64,10 +65,13 @@ func TestIntegerUnparenthesized (t *testing.T) {
 		"10 >= 10" : true ,
 		"10 >  10" : false,
 	}
+
+	// create an empty symbol table
+	symtable := make (map[string]RelationalInterface)
 	
 	// -- simple relational expressions
 	for expression, value := range expected {
-		assert (t, expression, TypeBool (value))
+		assert (t, expression, symtable, TypeBool (value))
 	}
 	
 	// -- compound relational expressions
@@ -77,10 +81,12 @@ func TestIntegerUnparenthesized (t *testing.T) {
 		for expression2, value2 := range expected {
 
 			// OR
-			assert (t, expression1 + " or " + expression2, TypeBool (value1 || value2))
+			assert (t, expression1 + " or " + expression2,
+				symtable, TypeBool (value1 || value2))
 
 			// AND
-			assert (t, expression1 + " and " + expression2, TypeBool (value1 && value2))
+			assert (t, expression1 + " and " + expression2,
+				symtable, TypeBool (value1 && value2))
 		}
 	}
 	
@@ -91,17 +97,17 @@ func TestIntegerUnparenthesized (t *testing.T) {
 
 				// OR
 				assert (t, expression1 + " or " + expression2 + " or " + expression3,
-					TypeBool (value1 || value2 || value3))
+					symtable, TypeBool (value1 || value2 || value3))
 
 				// AND
 				assert (t, expression1 + " and " + expression2 + " and " + expression3,
-					TypeBool (value1 && value2 && value3))
+					symtable, TypeBool (value1 && value2 && value3))
 
 				// OR/AND
 				assert (t, expression1 + " or " + expression2 + " and " + expression3,
-					TypeBool (value1 || value2 && value3))
+					symtable, TypeBool (value1 || value2 && value3))
 				assert (t, expression1 + " and " + expression2 + " or " + expression3,
-					TypeBool (value1 && value2 || value3))
+					symtable, TypeBool (value1 && value2 || value3))
 			}
 		}
 	}
@@ -114,32 +120,32 @@ func TestIntegerUnparenthesized (t *testing.T) {
 
 					// OR
 					assert (t, expression1 + " or " + expression2 + " or " + expression3 + " or " + expression4,
-						TypeBool (value1 || value2 || value3 || value4))
+						symtable, TypeBool (value1 || value2 || value3 || value4))
 
 					// AND
 					assert (t, expression1 + " and " + expression2 + " and " + expression3 + " and " + expression4,
-						TypeBool (value1 && value2 && value3 && value4))
+						symtable, TypeBool (value1 && value2 && value3 && value4))
 
 					// OR/AND
 					assert (t, expression1 + " or " + expression2 + " or " + expression3 + " and " + expression4,
-						TypeBool (value1 || value2 || value3 && value4))
+						symtable, TypeBool (value1 || value2 || value3 && value4))
 					assert (t, expression1 + " or " + expression2 + " and " + expression3 + " or " + expression4,
-						TypeBool (value1 || value2 && value3 || value4))
+						symtable, TypeBool (value1 || value2 && value3 || value4))
 					assert (t, expression1 + " and " + expression2 + " or " + expression3 + " or " + expression4,
-						TypeBool (value1 && value2 || value3 || value4))
+						symtable, TypeBool (value1 && value2 || value3 || value4))
 					assert (t, expression1 + " or " + expression2 + " and " + expression3 + " and " + expression4,
-						TypeBool (value1 || value2 && value3 && value4))
+						symtable, TypeBool (value1 || value2 && value3 && value4))
 					assert (t, expression1 + " and " + expression2 + " or " + expression3 + " and " + expression4,
-						TypeBool (value1 && value2 || value3 && value4))
+						symtable, TypeBool (value1 && value2 || value3 && value4))
 					assert (t, expression1 + " and " + expression2 + " and " + expression3 + " or " + expression4,
-						TypeBool (value1 && value2 && value3 || value4))
+						symtable, TypeBool (value1 && value2 && value3 || value4))
 				}
 			}
 		}
 	}
 }
 
-func TestStringUnparenthesized (t *testing.T) {
+func TestConstStringUnparenthesized (t *testing.T) {
 
 	// create a map that associates simple relational expressions to their
 	// expected result using integer constants
@@ -159,9 +165,12 @@ func TestStringUnparenthesized (t *testing.T) {
 		"'dario' >  'dario'" : false,
 	}
 	
+	// create an empty symbol table
+	symtable := make (map[string]RelationalInterface)
+	
 	// -- simple relational expressions
 	for expression, value := range expected {
-		assert (t, expression, TypeBool (value))
+		assert (t, expression, symtable, TypeBool (value))
 	}
 	
 	// -- compound relational expressions
@@ -171,10 +180,12 @@ func TestStringUnparenthesized (t *testing.T) {
 		for expression2, value2 := range expected {
 
 			// OR
-			assert (t, expression1 + " or " + expression2, TypeBool (value1 || value2))
+			assert (t, expression1 + " or " + expression2,
+				symtable, TypeBool (value1 || value2))
 
 			// AND
-			assert (t, expression1 + " and " + expression2, TypeBool (value1 && value2))
+			assert (t, expression1 + " and " + expression2,
+				symtable, TypeBool (value1 && value2))
 		}
 	}
 	
@@ -185,17 +196,17 @@ func TestStringUnparenthesized (t *testing.T) {
 
 				// OR
 				assert (t, expression1 + " or " + expression2 + " or " + expression3,
-					TypeBool (value1 || value2 || value3))
+					symtable, TypeBool (value1 || value2 || value3))
 
 				// AND
 				assert (t, expression1 + " and " + expression2 + " and " + expression3,
-					TypeBool (value1 && value2 && value3))
+					symtable, TypeBool (value1 && value2 && value3))
 
 				// OR/AND
 				assert (t, expression1 + " or " + expression2 + " and " + expression3,
-					TypeBool (value1 || value2 && value3))
+					symtable, TypeBool (value1 || value2 && value3))
 				assert (t, expression1 + " and " + expression2 + " or " + expression3,
-					TypeBool (value1 && value2 || value3))
+					symtable, TypeBool (value1 && value2 || value3))
 			}
 		}
 	}
@@ -208,32 +219,32 @@ func TestStringUnparenthesized (t *testing.T) {
 
 					// OR
 					assert (t, expression1 + " or " + expression2 + " or " + expression3 + " or " + expression4,
-						TypeBool (value1 || value2 || value3 || value4))
-
+						symtable, TypeBool (value1 || value2 || value3 || value4))
+					
 					// AND
 					assert (t, expression1 + " and " + expression2 + " and " + expression3 + " and " + expression4,
-						TypeBool (value1 && value2 && value3 && value4))
+						symtable, TypeBool (value1 && value2 && value3 && value4))
 
 					// OR/AND
 					assert (t, expression1 + " or " + expression2 + " or " + expression3 + " and " + expression4,
-						TypeBool (value1 || value2 || value3 && value4))
+						symtable, TypeBool (value1 || value2 || value3 && value4))
 					assert (t, expression1 + " or " + expression2 + " and " + expression3 + " or " + expression4,
-						TypeBool (value1 || value2 && value3 || value4))
+						symtable, TypeBool (value1 || value2 && value3 || value4))
 					assert (t, expression1 + " and " + expression2 + " or " + expression3 + " or " + expression4,
-						TypeBool (value1 && value2 || value3 || value4))
+						symtable, TypeBool (value1 && value2 || value3 || value4))
 					assert (t, expression1 + " or " + expression2 + " and " + expression3 + " and " + expression4,
-						TypeBool (value1 || value2 && value3 && value4))
+						symtable, TypeBool (value1 || value2 && value3 && value4))
 					assert (t, expression1 + " and " + expression2 + " or " + expression3 + " and " + expression4,
-						TypeBool (value1 && value2 || value3 && value4))
+						symtable, TypeBool (value1 && value2 || value3 && value4))
 					assert (t, expression1 + " and " + expression2 + " and " + expression3 + " or " + expression4,
-						TypeBool (value1 && value2 && value3 || value4))
+						symtable, TypeBool (value1 && value2 && value3 || value4))
 				}
 			}
 		}
 	}	
 }
 
-func TestIntegerParenthesized (t *testing.T) {
+func TestConstIntegerParenthesized (t *testing.T) {
 
 	// create a map that associates simple relational expressions to their
 	// expected result using integer constants
@@ -253,9 +264,12 @@ func TestIntegerParenthesized (t *testing.T) {
 		"10 >  10" : false,
 	}
 	
+	// create an empty symbol table
+	symtable := make (map[string]RelationalInterface)
+	
 	// -- simple relational expressions
 	for expression, value := range expected {
-		assert (t, "(" + expression + ")", TypeBool (value))
+		assert (t, "(" + expression + ")", symtable, TypeBool (value))
 	}
 	
 	// -- compound relational expressions
@@ -266,11 +280,11 @@ func TestIntegerParenthesized (t *testing.T) {
 
 			// OR
 			assert (t, "(" + expression1 + " or " + expression2 + ")",
-				TypeBool (value1 || value2))
+				symtable, TypeBool (value1 || value2))
 
 			// AND
 			assert (t, "(" + expression1 + " and " + expression2 + ")",
-				TypeBool (value1 && value2))
+				symtable, TypeBool (value1 && value2))
 		}
 	}
 	
@@ -281,25 +295,25 @@ func TestIntegerParenthesized (t *testing.T) {
 
 				// OR
 				assert (t, "(" + expression1 + " or " + expression2 + ")" + " or " + expression3,
-					TypeBool ((value1 || value2) || value3))
+					symtable, TypeBool ((value1 || value2) || value3))
 				assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + ")",
-					TypeBool (value1 || (value2 || value3)))
+					symtable, TypeBool (value1 || (value2 || value3)))
 
 				// AND
 				assert (t, "(" + expression1 + " and " + expression2 + ")"+ " and " + expression3,
-					TypeBool ((value1 && value2) && value3))
+					symtable, TypeBool ((value1 && value2) && value3))
 				assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + ")",
-					TypeBool (value1 && (value2 && value3)))
+					symtable, TypeBool (value1 && (value2 && value3)))
 
 				// OR/AND
 				assert (t, "(" + expression1 + " or " + expression2 + ")"+ " and " + expression3,
-					TypeBool ((value1 || value2) && value3))
+					symtable, TypeBool ((value1 || value2) && value3))
 				assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")",
-					TypeBool (value1 || (value2 && value3)))
+					symtable, TypeBool (value1 || (value2 && value3)))
 				assert (t, "(" + expression1 + " and " + expression2 + ")"+ " or " + expression3,
-					TypeBool ((value1 && value2) || value3))
+					symtable, TypeBool ((value1 && value2) || value3))
 				assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")",
-					TypeBool (value1 && (value2 || value3)))
+					symtable, TypeBool (value1 && (value2 || value3)))
 			}
 		}
 	}
@@ -317,130 +331,130 @@ func TestIntegerParenthesized (t *testing.T) {
 
 					// (p || q) || r && s
 					assert (t, "(" + expression1 + " or " + expression2 + ")" + " or " + expression3 + " and " + expression4,
-						TypeBool ((value1 || value2) || value3 && value4))
+						symtable, TypeBool ((value1 || value2) || value3 && value4))
 
 					// p || (q || r) && s
 					assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + ")" + " and " + expression4,
-						TypeBool (value1 || (value2 || value3) && value4))
+						symtable, TypeBool (value1 || (value2 || value3) && value4))
 					
 					// p || q || (r && s)
 					assert (t, expression1 + " or " + expression2 + " or " + "(" + expression3 + " and " + expression4 + ")" ,
-						TypeBool (value1 || value2 || (value3 && value4)))
+						symtable, TypeBool (value1 || value2 || (value3 && value4)))
 
 					// (p || q || r) && s
 					assert (t, "(" + expression1 + " or " + expression2 + " or " + expression3 + ")" + " and " + expression4,
-						TypeBool ((value1 || value2 || value3) && value4))
+						symtable, TypeBool ((value1 || value2 || value3) && value4))
 
 					// p || (q || r && s)
 					assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + " and " + expression4 + ")" ,
-						TypeBool (value1 || (value2 || value3 && value4)))
+						symtable, TypeBool (value1 || (value2 || value3 && value4)))
 
 
 					// (p || q) && r || s
 					assert (t, "(" + expression1 + " or " + expression2 + ")" + " and " + expression3 + " or " + expression4,
-						TypeBool ((value1 || value2) && value3 || value4))
+						symtable, TypeBool ((value1 || value2) && value3 || value4))
 					
 					// p || (q && r) || s
 					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")" + " or " + expression4,
-						TypeBool (value1 || (value2 && value3) || value4))
+						symtable, TypeBool (value1 || (value2 && value3) || value4))
 					
 					// p || q && (r || s)
 					assert (t, expression1 + " or " + expression2 + " and " + "(" + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 || value2 && (value3 || value4)))
+						symtable, TypeBool (value1 || value2 && (value3 || value4)))
 					
 					// (p || q && r) || s
 					assert (t, "(" + expression1 + " or " + expression2 + " and " + expression3 + ")" + " or " + expression4,
-						TypeBool ((value1 || value2 && value3) || value4))
+						symtable, TypeBool ((value1 || value2 && value3) || value4))
 					
 					// p || (q && r || s)
 					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 || (value2 && value3 || value4)))
+						symtable, TypeBool (value1 || (value2 && value3 || value4)))
 
 
 					// (p && q) || r || s
 					assert (t, "(" + expression1 + " and " + expression2 + ")" + " or " + expression3 + " or " + expression4,
-						TypeBool ((value1 && value2) || value3 || value4))
+						symtable, TypeBool ((value1 && value2) || value3 || value4))
 					
 					// p && (q || r) || s
 					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")" + " or " + expression4,
-						TypeBool (value1 && (value2 || value3) || value4))
+						symtable, TypeBool (value1 && (value2 || value3) || value4))
 					
 					// p && q || (r || s)
 					assert (t, expression1 + " and " + expression2 + " or " + "(" + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 && value2 || (value3 || value4)))
+						symtable, TypeBool (value1 && value2 || (value3 || value4)))
 					
 					// (p && q || r) || s
 					assert (t, "(" + expression1 + " and " + expression2 + " or " + expression3 + ")" + " or " + expression4,
-						TypeBool ((value1 && value2 || value3) || value4))
+						symtable, TypeBool ((value1 && value2 || value3) || value4))
 					
 					// p && (q || r || s)
 					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + " or " + expression4 + ")",
-						TypeBool (value1 && (value2 || value3 || value4)))
+						symtable, TypeBool (value1 && (value2 || value3 || value4)))
 
 
 					// (p || q) && r && s
 					assert (t, "(" + expression1 + " or " + expression2 + ")" + " and " + expression3 + " and " + expression4,
-						TypeBool ((value1 || value2) && value3 && value4))
+						symtable, TypeBool ((value1 || value2) && value3 && value4))
 					
 					// p || (q && r) && s
 					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")" + " and " + expression4,
-						TypeBool (value1 || (value2 && value3) && value4))
+						symtable, TypeBool (value1 || (value2 && value3) && value4))
 					
 					// p || q && (r && s)
 					assert (t, expression1 + " or " + expression2 + " and " + "(" + expression3 + " and " + expression4 + ")",
-						TypeBool (value1 || value2 && (value3 && value4)))
+						symtable, TypeBool (value1 || value2 && (value3 && value4)))
 					
 					// (p || q && r) && s
 					assert (t, "(" + expression1 + " or " + expression2 + " and " + expression3 + ")" + " and " + expression4,
-						TypeBool ((value1 || value2 && value3) && value4))
+						symtable, TypeBool ((value1 || value2 && value3) && value4))
 					
 					// p || (q && r && s)
 					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + " and " + expression4 + ")",
-						TypeBool (value1 || (value2 && value3 && value4)))
+						symtable, TypeBool (value1 || (value2 && value3 && value4)))
 
 
 
 					// (p && q) || r && s
 					assert (t, "(" + expression1 + " and " + expression2 + ")" + " or " + expression3 + " and " + expression4,
-						TypeBool ((value1 && value2) || value3 && value4))
+						symtable, TypeBool ((value1 && value2) || value3 && value4))
 					
 					// p && (q || r) && s
 					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")" + " and " + expression4,
-						TypeBool (value1 && (value2 || value3) && value4))
+						symtable, TypeBool (value1 && (value2 || value3) && value4))
 					
 					// p && q || (r && s)
 					assert (t, expression1 + " and " + expression2 + " or " + "(" + expression3 + " and " + expression4 + ")",
-						TypeBool (value1 && value2 || (value3 && value4)))
+						symtable, TypeBool (value1 && value2 || (value3 && value4)))
 					
 					// (p && q || r) && s
 					assert (t, "(" + expression1 + " and " + expression2 + " or " + expression3 + ")" + " and " + expression4,
-						TypeBool ((value1 && value2 || value3) && value4))
+						symtable, TypeBool ((value1 && value2 || value3) && value4))
 					
 					// p && (q || r && s)
 					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + " and " + expression4 + ")",
-						TypeBool (value1 && (value2 || value3 && value4)))
+						symtable, TypeBool (value1 && (value2 || value3 && value4)))
 
 
 
 					// (p && q) && r || s
 					assert (t, "(" + expression1 + " and " + expression2 + ")" + " and " + expression3 + " or " + expression4,
-						TypeBool ((value1 && value2) && value3 || value4))
+						symtable, TypeBool ((value1 && value2) && value3 || value4))
 					
 					// p && (q && r) || s
 					assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + ")" + " or " + expression4,
-						TypeBool (value1 && (value2 && value3) || value4))
+						symtable, TypeBool (value1 && (value2 && value3) || value4))
 					
 					// p && q && (r || s)
 					assert (t, expression1 + " and " + expression2 + " and " + "(" + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 && value2 && (value3 || value4)))
+						symtable, TypeBool (value1 && value2 && (value3 || value4)))
 					
 					// (p && q && r) || s
 					assert (t, "(" + expression1 + " and " + expression2 + " and " + expression3 + ")" + " or " + expression4,
-						TypeBool ((value1 && value2 && value3) || value4))
+						symtable, TypeBool ((value1 && value2 && value3) || value4))
 					
 					// p && (q && r || s)
 					assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 && (value2 && value3 || value4)))
+						symtable, TypeBool (value1 && (value2 && value3 || value4)))
 
 				}
 			}
@@ -448,7 +462,7 @@ func TestIntegerParenthesized (t *testing.T) {
 	}
 }
 
-func TestStringParenthesized (t *testing.T) {
+func TestConstStringParenthesized (t *testing.T) {
 
 	// create a map that associates simple relational expressions to their
 	// expected result using integer constants
@@ -468,9 +482,12 @@ func TestStringParenthesized (t *testing.T) {
 		"'dario' >  'dario'" : false,
 	}
 	
+	// create an empty symbol table
+	symtable := make (map[string]RelationalInterface)
+	
 	// -- simple relational expressions
 	for expression, value := range expected {
-		assert (t, "(" + expression + ")", TypeBool (value))
+		assert (t, "(" + expression + ")", symtable, TypeBool (value))
 	}
 	
 	// -- compound relational expressions
@@ -481,11 +498,11 @@ func TestStringParenthesized (t *testing.T) {
 
 			// OR
 			assert (t, "(" + expression1 + " or " + expression2 + ")",
-				TypeBool (value1 || value2))
+				symtable, TypeBool (value1 || value2))
 
 			// AND
 			assert (t, "(" + expression1 + " and " + expression2 + ")",
-				TypeBool (value1 && value2))
+				symtable, TypeBool (value1 && value2))
 		}
 	}
 	
@@ -496,25 +513,25 @@ func TestStringParenthesized (t *testing.T) {
 
 				// OR
 				assert (t, "(" + expression1 + " or " + expression2 + ")" + " or " + expression3,
-					TypeBool ((value1 || value2) || value3))
+					symtable, TypeBool ((value1 || value2) || value3))
 				assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + ")",
-					TypeBool (value1 || (value2 || value3)))
+					symtable, TypeBool (value1 || (value2 || value3)))
 
 				// AND
 				assert (t, "(" + expression1 + " and " + expression2 + ")"+ " and " + expression3,
-					TypeBool ((value1 && value2) && value3))
+					symtable, TypeBool ((value1 && value2) && value3))
 				assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + ")",
-					TypeBool (value1 && (value2 && value3)))
+					symtable, TypeBool (value1 && (value2 && value3)))
 
 				// OR/AND
 				assert (t, "(" + expression1 + " or " + expression2 + ")"+ " and " + expression3,
-					TypeBool ((value1 || value2) && value3))
+					symtable, TypeBool ((value1 || value2) && value3))
 				assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")",
-					TypeBool (value1 || (value2 && value3)))
+					symtable, TypeBool (value1 || (value2 && value3)))
 				assert (t, "(" + expression1 + " and " + expression2 + ")"+ " or " + expression3,
-					TypeBool ((value1 && value2) || value3))
+					symtable, TypeBool ((value1 && value2) || value3))
 				assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")",
-					TypeBool (value1 && (value2 || value3)))
+					symtable, TypeBool (value1 && (value2 || value3)))
 			}
 		}
 	}
@@ -532,130 +549,570 @@ func TestStringParenthesized (t *testing.T) {
 
 					// (p || q) || r && s
 					assert (t, "(" + expression1 + " or " + expression2 + ")" + " or " + expression3 + " and " + expression4,
-						TypeBool ((value1 || value2) || value3 && value4))
+						symtable, TypeBool ((value1 || value2) || value3 && value4))
 
 					// p || (q || r) && s
 					assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + ")" + " and " + expression4,
-						TypeBool (value1 || (value2 || value3) && value4))
+						symtable, TypeBool (value1 || (value2 || value3) && value4))
 					
 					// p || q || (r && s)
 					assert (t, expression1 + " or " + expression2 + " or " + "(" + expression3 + " and " + expression4 + ")" ,
-						TypeBool (value1 || value2 || (value3 && value4)))
+						symtable, TypeBool (value1 || value2 || (value3 && value4)))
 
 					// (p || q || r) && s
 					assert (t, "(" + expression1 + " or " + expression2 + " or " + expression3 + ")" + " and " + expression4,
-						TypeBool ((value1 || value2 || value3) && value4))
+						symtable, TypeBool ((value1 || value2 || value3) && value4))
 
 					// p || (q || r && s)
 					assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + " and " + expression4 + ")" ,
-						TypeBool (value1 || (value2 || value3 && value4)))
+						symtable, TypeBool (value1 || (value2 || value3 && value4)))
 
 
 					// (p || q) && r || s
 					assert (t, "(" + expression1 + " or " + expression2 + ")" + " and " + expression3 + " or " + expression4,
-						TypeBool ((value1 || value2) && value3 || value4))
+						symtable, TypeBool ((value1 || value2) && value3 || value4))
 					
 					// p || (q && r) || s
 					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")" + " or " + expression4,
-						TypeBool (value1 || (value2 && value3) || value4))
+						symtable, TypeBool (value1 || (value2 && value3) || value4))
 					
 					// p || q && (r || s)
 					assert (t, expression1 + " or " + expression2 + " and " + "(" + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 || value2 && (value3 || value4)))
+						symtable, TypeBool (value1 || value2 && (value3 || value4)))
 					
 					// (p || q && r) || s
 					assert (t, "(" + expression1 + " or " + expression2 + " and " + expression3 + ")" + " or " + expression4,
-						TypeBool ((value1 || value2 && value3) || value4))
+						symtable, TypeBool ((value1 || value2 && value3) || value4))
 					
 					// p || (q && r || s)
 					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 || (value2 && value3 || value4)))
+						symtable, TypeBool (value1 || (value2 && value3 || value4)))
 
 
 					// (p && q) || r || s
 					assert (t, "(" + expression1 + " and " + expression2 + ")" + " or " + expression3 + " or " + expression4,
-						TypeBool ((value1 && value2) || value3 || value4))
+						symtable, TypeBool ((value1 && value2) || value3 || value4))
 					
 					// p && (q || r) || s
 					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")" + " or " + expression4,
-						TypeBool (value1 && (value2 || value3) || value4))
+						symtable, TypeBool (value1 && (value2 || value3) || value4))
 					
 					// p && q || (r || s)
 					assert (t, expression1 + " and " + expression2 + " or " + "(" + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 && value2 || (value3 || value4)))
+						symtable, TypeBool (value1 && value2 || (value3 || value4)))
 					
 					// (p && q || r) || s
 					assert (t, "(" + expression1 + " and " + expression2 + " or " + expression3 + ")" + " or " + expression4,
-						TypeBool ((value1 && value2 || value3) || value4))
+						symtable, TypeBool ((value1 && value2 || value3) || value4))
 					
 					// p && (q || r || s)
 					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + " or " + expression4 + ")",
-						TypeBool (value1 && (value2 || value3 || value4)))
+						symtable, TypeBool (value1 && (value2 || value3 || value4)))
 
 
 					// (p || q) && r && s
 					assert (t, "(" + expression1 + " or " + expression2 + ")" + " and " + expression3 + " and " + expression4,
-						TypeBool ((value1 || value2) && value3 && value4))
+						symtable, TypeBool ((value1 || value2) && value3 && value4))
 					
 					// p || (q && r) && s
 					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")" + " and " + expression4,
-						TypeBool (value1 || (value2 && value3) && value4))
+						symtable, TypeBool (value1 || (value2 && value3) && value4))
 					
 					// p || q && (r && s)
 					assert (t, expression1 + " or " + expression2 + " and " + "(" + expression3 + " and " + expression4 + ")",
-						TypeBool (value1 || value2 && (value3 && value4)))
+						symtable, TypeBool (value1 || value2 && (value3 && value4)))
 					
 					// (p || q && r) && s
 					assert (t, "(" + expression1 + " or " + expression2 + " and " + expression3 + ")" + " and " + expression4,
-						TypeBool ((value1 || value2 && value3) && value4))
+						symtable, TypeBool ((value1 || value2 && value3) && value4))
 					
 					// p || (q && r && s)
 					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + " and " + expression4 + ")",
-						TypeBool (value1 || (value2 && value3 && value4)))
+						symtable, TypeBool (value1 || (value2 && value3 && value4)))
 
 
 
 					// (p && q) || r && s
 					assert (t, "(" + expression1 + " and " + expression2 + ")" + " or " + expression3 + " and " + expression4,
-						TypeBool ((value1 && value2) || value3 && value4))
+						symtable, TypeBool ((value1 && value2) || value3 && value4))
 					
 					// p && (q || r) && s
 					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")" + " and " + expression4,
-						TypeBool (value1 && (value2 || value3) && value4))
+						symtable, TypeBool (value1 && (value2 || value3) && value4))
 					
 					// p && q || (r && s)
 					assert (t, expression1 + " and " + expression2 + " or " + "(" + expression3 + " and " + expression4 + ")",
-						TypeBool (value1 && value2 || (value3 && value4)))
+						symtable, TypeBool (value1 && value2 || (value3 && value4)))
 					
 					// (p && q || r) && s
 					assert (t, "(" + expression1 + " and " + expression2 + " or " + expression3 + ")" + " and " + expression4,
-						TypeBool ((value1 && value2 || value3) && value4))
+						symtable, TypeBool ((value1 && value2 || value3) && value4))
 					
 					// p && (q || r && s)
 					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + " and " + expression4 + ")",
-						TypeBool (value1 && (value2 || value3 && value4)))
+						symtable, TypeBool (value1 && (value2 || value3 && value4)))
 
 
 
 					// (p && q) && r || s
 					assert (t, "(" + expression1 + " and " + expression2 + ")" + " and " + expression3 + " or " + expression4,
-						TypeBool ((value1 && value2) && value3 || value4))
+						symtable, TypeBool ((value1 && value2) && value3 || value4))
 					
 					// p && (q && r) || s
 					assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + ")" + " or " + expression4,
-						TypeBool (value1 && (value2 && value3) || value4))
+						symtable, TypeBool (value1 && (value2 && value3) || value4))
 					
 					// p && q && (r || s)
 					assert (t, expression1 + " and " + expression2 + " and " + "(" + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 && value2 && (value3 || value4)))
+						symtable, TypeBool (value1 && value2 && (value3 || value4)))
 					
 					// (p && q && r) || s
 					assert (t, "(" + expression1 + " and " + expression2 + " and " + expression3 + ")" + " or " + expression4,
-						TypeBool ((value1 && value2 && value3) || value4))
+						symtable, TypeBool ((value1 && value2 && value3) || value4))
 					
 					// p && (q && r || s)
 					assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + " or " + expression4 + ")" ,
-						TypeBool (value1 && (value2 && value3 || value4)))
+						symtable, TypeBool (value1 && (value2 && value3 || value4)))
+
+				}
+			}
+		}
+	}
+}
+
+func TestVarIntegerParenthesized (t *testing.T) {
+
+	// create a map that associates simple relational expressions to their
+	// expected result using integer constants
+	expected := map[string]bool {
+		"%var1 <  %var2" : true ,
+		"%var1 <= %var2" : true ,
+		"%var1 =  %var2" : false,
+		"%var1 != %var2" : true ,
+		"%var1 >= %var2" : false,
+		"%var1 >  %var2" : false,
+		
+		"%var1 <  %var1" : false,
+		"%var1 <= %var1" : true ,
+		"%var1 =  %var1" : true ,
+		"%var1 != %var1" : false,
+		"%var1 >= %var1" : true ,
+		"%var1 >  %var1" : false,
+	}
+	
+	// create a symbol table
+	symtable := make (map[string]RelationalInterface)
+	symtable["var1"] = ConstInteger(3)
+	symtable["var2"] = ConstInteger(7)
+	
+	// -- simple relational expressions
+	for expression, value := range expected {
+		assert (t, "(" + expression + ")", symtable, TypeBool (value))
+	}
+	
+	// -- compound relational expressions
+
+	// ---- two relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+
+			// OR
+			assert (t, "(" + expression1 + " or " + expression2 + ")",
+				symtable, TypeBool (value1 || value2))
+
+			// AND
+			assert (t, "(" + expression1 + " and " + expression2 + ")",
+				symtable, TypeBool (value1 && value2))
+		}
+	}
+	
+	// ---- three relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+			for expression3, value3 := range expected {
+
+				// OR
+				assert (t, "(" + expression1 + " or " + expression2 + ")" + " or " + expression3,
+					symtable, TypeBool ((value1 || value2) || value3))
+				assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + ")",
+					symtable, TypeBool (value1 || (value2 || value3)))
+
+				// AND
+				assert (t, "(" + expression1 + " and " + expression2 + ")"+ " and " + expression3,
+					symtable, TypeBool ((value1 && value2) && value3))
+				assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + ")",
+					symtable, TypeBool (value1 && (value2 && value3)))
+
+				// OR/AND
+				assert (t, "(" + expression1 + " or " + expression2 + ")"+ " and " + expression3,
+					symtable, TypeBool ((value1 || value2) && value3))
+				assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")",
+					symtable, TypeBool (value1 || (value2 && value3)))
+				assert (t, "(" + expression1 + " and " + expression2 + ")"+ " or " + expression3,
+					symtable, TypeBool ((value1 && value2) || value3))
+				assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")",
+					symtable, TypeBool (value1 && (value2 || value3)))
+			}
+		}
+	}
+
+	// --- four relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+			for expression3, value3 := range expected {
+				for expression4, value4 := range expected {
+
+					// expressions with only ORs or only
+					// ANDs are avoided here.
+
+					// OR/AND
+
+					// (p || q) || r && s
+					assert (t, "(" + expression1 + " or " + expression2 + ")" + " or " + expression3 + " and " + expression4,
+						symtable, TypeBool ((value1 || value2) || value3 && value4))
+
+					// p || (q || r) && s
+					assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool (value1 || (value2 || value3) && value4))
+					
+					// p || q || (r && s)
+					assert (t, expression1 + " or " + expression2 + " or " + "(" + expression3 + " and " + expression4 + ")" ,
+						symtable, TypeBool (value1 || value2 || (value3 && value4)))
+
+					// (p || q || r) && s
+					assert (t, "(" + expression1 + " or " + expression2 + " or " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool ((value1 || value2 || value3) && value4))
+
+					// p || (q || r && s)
+					assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + " and " + expression4 + ")" ,
+						symtable, TypeBool (value1 || (value2 || value3 && value4)))
+
+
+					// (p || q) && r || s
+					assert (t, "(" + expression1 + " or " + expression2 + ")" + " and " + expression3 + " or " + expression4,
+						symtable, TypeBool ((value1 || value2) && value3 || value4))
+					
+					// p || (q && r) || s
+					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool (value1 || (value2 && value3) || value4))
+					
+					// p || q && (r || s)
+					assert (t, expression1 + " or " + expression2 + " and " + "(" + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 || value2 && (value3 || value4)))
+					
+					// (p || q && r) || s
+					assert (t, "(" + expression1 + " or " + expression2 + " and " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool ((value1 || value2 && value3) || value4))
+					
+					// p || (q && r || s)
+					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 || (value2 && value3 || value4)))
+
+
+					// (p && q) || r || s
+					assert (t, "(" + expression1 + " and " + expression2 + ")" + " or " + expression3 + " or " + expression4,
+						symtable, TypeBool ((value1 && value2) || value3 || value4))
+					
+					// p && (q || r) || s
+					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool (value1 && (value2 || value3) || value4))
+					
+					// p && q || (r || s)
+					assert (t, expression1 + " and " + expression2 + " or " + "(" + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 && value2 || (value3 || value4)))
+					
+					// (p && q || r) || s
+					assert (t, "(" + expression1 + " and " + expression2 + " or " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool ((value1 && value2 || value3) || value4))
+					
+					// p && (q || r || s)
+					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + " or " + expression4 + ")",
+						symtable, TypeBool (value1 && (value2 || value3 || value4)))
+
+
+					// (p || q) && r && s
+					assert (t, "(" + expression1 + " or " + expression2 + ")" + " and " + expression3 + " and " + expression4,
+						symtable, TypeBool ((value1 || value2) && value3 && value4))
+					
+					// p || (q && r) && s
+					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool (value1 || (value2 && value3) && value4))
+					
+					// p || q && (r && s)
+					assert (t, expression1 + " or " + expression2 + " and " + "(" + expression3 + " and " + expression4 + ")",
+						symtable, TypeBool (value1 || value2 && (value3 && value4)))
+					
+					// (p || q && r) && s
+					assert (t, "(" + expression1 + " or " + expression2 + " and " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool ((value1 || value2 && value3) && value4))
+					
+					// p || (q && r && s)
+					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + " and " + expression4 + ")",
+						symtable, TypeBool (value1 || (value2 && value3 && value4)))
+
+
+
+					// (p && q) || r && s
+					assert (t, "(" + expression1 + " and " + expression2 + ")" + " or " + expression3 + " and " + expression4,
+						symtable, TypeBool ((value1 && value2) || value3 && value4))
+					
+					// p && (q || r) && s
+					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool (value1 && (value2 || value3) && value4))
+					
+					// p && q || (r && s)
+					assert (t, expression1 + " and " + expression2 + " or " + "(" + expression3 + " and " + expression4 + ")",
+						symtable, TypeBool (value1 && value2 || (value3 && value4)))
+					
+					// (p && q || r) && s
+					assert (t, "(" + expression1 + " and " + expression2 + " or " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool ((value1 && value2 || value3) && value4))
+					
+					// p && (q || r && s)
+					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + " and " + expression4 + ")",
+						symtable, TypeBool (value1 && (value2 || value3 && value4)))
+
+
+
+					// (p && q) && r || s
+					assert (t, "(" + expression1 + " and " + expression2 + ")" + " and " + expression3 + " or " + expression4,
+						symtable, TypeBool ((value1 && value2) && value3 || value4))
+					
+					// p && (q && r) || s
+					assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool (value1 && (value2 && value3) || value4))
+					
+					// p && q && (r || s)
+					assert (t, expression1 + " and " + expression2 + " and " + "(" + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 && value2 && (value3 || value4)))
+					
+					// (p && q && r) || s
+					assert (t, "(" + expression1 + " and " + expression2 + " and " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool ((value1 && value2 && value3) || value4))
+					
+					// p && (q && r || s)
+					assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 && (value2 && value3 || value4)))
+
+				}
+			}
+		}
+	}
+}
+
+func TestVarStringParenthesized (t *testing.T) {
+
+	// create a map that associates simple relational expressions to their
+	// expected result using integer constants
+	expected := map[string]bool {
+		"%var1 <  %var2" : true ,
+		"%var1 <= %var2" : true ,
+		"%var1 =  %var2" : false,
+		"%var1 != %var2" : true ,
+		"%var1 >= %var2" : false,
+		"%var1 >  %var2" : false,
+		
+		"%var1 <  %var1" : false,
+		"%var1 <= %var1" : true ,
+		"%var1 =  %var1" : true ,
+		"%var1 != %var1" : false,
+		"%var1 >= %var1" : true ,
+		"%var1 >  %var1" : false,
+	}
+	
+	// create a symbol table
+	symtable := make (map[string]RelationalInterface)
+	symtable["var1"] = ConstString("Monica")
+	symtable["var2"] = ConstString("Roberto")
+	
+	// -- simple relational expressions
+	for expression, value := range expected {
+		assert (t, "(" + expression + ")", symtable, TypeBool (value))
+	}
+	
+	// -- compound relational expressions
+
+	// ---- two relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+
+			// OR
+			assert (t, "(" + expression1 + " or " + expression2 + ")",
+				symtable, TypeBool (value1 || value2))
+
+			// AND
+			assert (t, "(" + expression1 + " and " + expression2 + ")",
+				symtable, TypeBool (value1 && value2))
+		}
+	}
+	
+	// ---- three relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+			for expression3, value3 := range expected {
+
+				// OR
+				assert (t, "(" + expression1 + " or " + expression2 + ")" + " or " + expression3,
+					symtable, TypeBool ((value1 || value2) || value3))
+				assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + ")",
+					symtable, TypeBool (value1 || (value2 || value3)))
+
+				// AND
+				assert (t, "(" + expression1 + " and " + expression2 + ")"+ " and " + expression3,
+					symtable, TypeBool ((value1 && value2) && value3))
+				assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + ")",
+					symtable, TypeBool (value1 && (value2 && value3)))
+
+				// OR/AND
+				assert (t, "(" + expression1 + " or " + expression2 + ")"+ " and " + expression3,
+					symtable, TypeBool ((value1 || value2) && value3))
+				assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")",
+					symtable, TypeBool (value1 || (value2 && value3)))
+				assert (t, "(" + expression1 + " and " + expression2 + ")"+ " or " + expression3,
+					symtable, TypeBool ((value1 && value2) || value3))
+				assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")",
+					symtable, TypeBool (value1 && (value2 || value3)))
+			}
+		}
+	}
+
+	// --- four relational expressions
+	for expression1, value1 := range expected {
+		for expression2, value2 := range expected {
+			for expression3, value3 := range expected {
+				for expression4, value4 := range expected {
+
+					// expressions with only ORs or only
+					// ANDs are avoided here.
+
+					// OR/AND
+
+					// (p || q) || r && s
+					assert (t, "(" + expression1 + " or " + expression2 + ")" + " or " + expression3 + " and " + expression4,
+						symtable, TypeBool ((value1 || value2) || value3 && value4))
+
+					// p || (q || r) && s
+					assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool (value1 || (value2 || value3) && value4))
+					
+					// p || q || (r && s)
+					assert (t, expression1 + " or " + expression2 + " or " + "(" + expression3 + " and " + expression4 + ")" ,
+						symtable, TypeBool (value1 || value2 || (value3 && value4)))
+
+					// (p || q || r) && s
+					assert (t, "(" + expression1 + " or " + expression2 + " or " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool ((value1 || value2 || value3) && value4))
+
+					// p || (q || r && s)
+					assert (t, expression1 + " or " + "(" + expression2 + " or " + expression3 + " and " + expression4 + ")" ,
+						symtable, TypeBool (value1 || (value2 || value3 && value4)))
+
+
+					// (p || q) && r || s
+					assert (t, "(" + expression1 + " or " + expression2 + ")" + " and " + expression3 + " or " + expression4,
+						symtable, TypeBool ((value1 || value2) && value3 || value4))
+					
+					// p || (q && r) || s
+					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool (value1 || (value2 && value3) || value4))
+					
+					// p || q && (r || s)
+					assert (t, expression1 + " or " + expression2 + " and " + "(" + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 || value2 && (value3 || value4)))
+					
+					// (p || q && r) || s
+					assert (t, "(" + expression1 + " or " + expression2 + " and " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool ((value1 || value2 && value3) || value4))
+					
+					// p || (q && r || s)
+					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 || (value2 && value3 || value4)))
+
+
+					// (p && q) || r || s
+					assert (t, "(" + expression1 + " and " + expression2 + ")" + " or " + expression3 + " or " + expression4,
+						symtable, TypeBool ((value1 && value2) || value3 || value4))
+					
+					// p && (q || r) || s
+					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool (value1 && (value2 || value3) || value4))
+					
+					// p && q || (r || s)
+					assert (t, expression1 + " and " + expression2 + " or " + "(" + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 && value2 || (value3 || value4)))
+					
+					// (p && q || r) || s
+					assert (t, "(" + expression1 + " and " + expression2 + " or " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool ((value1 && value2 || value3) || value4))
+					
+					// p && (q || r || s)
+					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + " or " + expression4 + ")",
+						symtable, TypeBool (value1 && (value2 || value3 || value4)))
+
+
+					// (p || q) && r && s
+					assert (t, "(" + expression1 + " or " + expression2 + ")" + " and " + expression3 + " and " + expression4,
+						symtable, TypeBool ((value1 || value2) && value3 && value4))
+					
+					// p || (q && r) && s
+					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool (value1 || (value2 && value3) && value4))
+					
+					// p || q && (r && s)
+					assert (t, expression1 + " or " + expression2 + " and " + "(" + expression3 + " and " + expression4 + ")",
+						symtable, TypeBool (value1 || value2 && (value3 && value4)))
+					
+					// (p || q && r) && s
+					assert (t, "(" + expression1 + " or " + expression2 + " and " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool ((value1 || value2 && value3) && value4))
+					
+					// p || (q && r && s)
+					assert (t, expression1 + " or " + "(" + expression2 + " and " + expression3 + " and " + expression4 + ")",
+						symtable, TypeBool (value1 || (value2 && value3 && value4)))
+
+
+
+					// (p && q) || r && s
+					assert (t, "(" + expression1 + " and " + expression2 + ")" + " or " + expression3 + " and " + expression4,
+						symtable, TypeBool ((value1 && value2) || value3 && value4))
+					
+					// p && (q || r) && s
+					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool (value1 && (value2 || value3) && value4))
+					
+					// p && q || (r && s)
+					assert (t, expression1 + " and " + expression2 + " or " + "(" + expression3 + " and " + expression4 + ")",
+						symtable, TypeBool (value1 && value2 || (value3 && value4)))
+					
+					// (p && q || r) && s
+					assert (t, "(" + expression1 + " and " + expression2 + " or " + expression3 + ")" + " and " + expression4,
+						symtable, TypeBool ((value1 && value2 || value3) && value4))
+					
+					// p && (q || r && s)
+					assert (t, expression1 + " and " + "(" + expression2 + " or " + expression3 + " and " + expression4 + ")",
+						symtable, TypeBool (value1 && (value2 || value3 && value4)))
+
+
+
+					// (p && q) && r || s
+					assert (t, "(" + expression1 + " and " + expression2 + ")" + " and " + expression3 + " or " + expression4,
+						symtable, TypeBool ((value1 && value2) && value3 || value4))
+					
+					// p && (q && r) || s
+					assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool (value1 && (value2 && value3) || value4))
+					
+					// p && q && (r || s)
+					assert (t, expression1 + " and " + expression2 + " and " + "(" + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 && value2 && (value3 || value4)))
+					
+					// (p && q && r) || s
+					assert (t, "(" + expression1 + " and " + expression2 + " and " + expression3 + ")" + " or " + expression4,
+						symtable, TypeBool ((value1 && value2 && value3) || value4))
+					
+					// p && (q && r || s)
+					assert (t, expression1 + " and " + "(" + expression2 + " and " + expression3 + " or " + expression4 + ")" ,
+						symtable, TypeBool (value1 && (value2 && value3 || value4)))
 
 				}
 			}
