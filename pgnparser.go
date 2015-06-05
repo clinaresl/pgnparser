@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <viernes, 05 junio 2015 10:31:44 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 05 junio 2015 17:17:42 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -31,9 +31,6 @@ import (
 
 	// also use several tools for handling games in pgn format
 	"bitbucket.org/clinares/pgnparser/pgntools"
-
-	// import the parser of propositional formulae
-	"bitbucket.org/clinares/pgnparser/pfparser"
 )
 
 // global variables
@@ -44,6 +41,8 @@ var EXIT_FAILURE int = 1		// exit with failure
 
 var pgnfile string       		// base directory
 var latexTemplate string		// file with the latex template
+var query string			// select query to filter games
+var helpExpressions bool		// is help on expressions requested?
 var verbose bool			// has verbose output been requested?
 var version bool			// has version info been requested?
 
@@ -62,6 +61,10 @@ func init () {
 	// Flag to store the file with the LaTeX template
 	flag.StringVar (&latexTemplate, "template", "", "file with a LaTeX template to use. If given, a file with the same name used in 'file' and extension '.tex' is automatically generated. This template acknowledges placeholders of the form '%name'. Acknowledged placeholders are PGN tags and, additionally, 'moves' which is substituted by the list of moves of each game")
 
+	// Flag to receive a select query
+	flag.StringVar (&query, "select", "", "if an expression is provided here, only games meeting it are accepted. For more information on expressions acknowledged by this directive use '--help-expressions'")
+	flag.BoolVar (&helpExpressions, "help-expressions", false, "if given, additional information on expressions acknowledged by this application is provided")
+	
 	// other optional parameters are verbose and version
 	flag.BoolVar (&verbose, "verbose", false, "provides verbose output")
 	flag.BoolVar (&version, "version", false, "shows version info and exists")
@@ -75,6 +78,18 @@ func showVersion (signal int) {
 
 	fmt.Printf ("\n %v", os.Args [0])
 	fmt.Printf ("\n Version: %v\n\n", VERSION)
+	os.Exit (signal)
+}
+
+// showEpressions
+//
+// shows informmation on expressions as they are recognized by the directive
+// --select
+// ----------------------------------------------------------------------------
+func showExpressions (signal int) {
+
+	fmt.Println ("\n Expressions:")
+	fmt.Println ()
 	os.Exit (signal)
 }
 
@@ -94,6 +109,12 @@ func verify () {
 		showVersion (EXIT_SUCCESS)
 	}
 
+	// in case further assistance on expressions is requested, then show it
+	// here and exit
+	if helpExpressions {
+		showExpressions (EXIT_SUCCESS)
+	}
+
 	// verify that the pgn file given exists and is accessible
 	isregular, _ := fstools.IsRegular (pgnfile); if !isregular {
 		log.Fatalf ("the pgn file '%s' does not exist or is not accessible",
@@ -110,7 +131,7 @@ func main () {
 	verify ()
 
 	// process the contents of the given file
-	games := pgntools.GetGamesFromFile (pgnfile, verbose)
+	games := pgntools.GetGamesFromFile (pgnfile, query, verbose)
 
 	// show the headers of all games
 	fmt.Printf ("\n")
@@ -132,21 +153,6 @@ func main () {
 			log.Fatalf ("An error was issued when writing data to the LaTeX file")
 		}
 	}
-
-	var pformula = "'Roberto'<=%name2"
-	logicalEvaluator, err := pfparser.Parse (&pformula, 0); if err != nil {
-		log.Fatalf ("%v\n", err)
-	}
-
-	symtable := make (map[string]pfparser.RelationalInterface)
-	symtable["name1"] = pfparser.ConstString("Adriana")
-	symtable["name2"] = pfparser.ConstString("Dario")
-	if logicalEvaluator.Evaluate (symtable) != pfparser.TypeBool (false) {
-		log.Println (" True")
-	} else {
-		log.Println (" False")
-	}
-	
 }
 
 

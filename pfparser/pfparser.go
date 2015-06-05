@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <viernes, 05 junio 2015 10:29:54 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 06 junio 2015 00:09:17 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -251,7 +251,9 @@ func (constant ConstString) Evaluate (symtable map[string]RelationalInterface) R
 func (variable Variable) Evaluate (symtable map[string]RelationalInterface) RelationalInterface {
 
 	// retrieve the value stored in the symbol table for this variable
-	content := symtable[string (variable)]
+	content, ok := symtable[string (variable)]; if !ok {
+		log.Fatalf ("Variable '%v' does not exist!", string (variable))
+	}
 
 	// first, verify whether this is an integer constant
 	value, ok := content.(ConstInteger); if !ok {

@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May  6 15:38:56 2015 Carlos Linares Lopez>
-  Last update <martes, 19 mayo 2015 00:10:09 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 06 junio 2015 00:10:40 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -27,6 +27,9 @@ import (
 
 	// import a user package to manage paths
 	"bitbucket.org/clinares/pgnparser/fstools"
+
+	// import the parser of propositional formulae
+	"bitbucket.org/clinares/pgnparser/pfparser"
 )
 
 // global variables
@@ -290,11 +293,27 @@ func getGameFromString (pgn string, verbose bool) PgnGame {
 	return PgnGame {tags, moves, outcome}
 }
 
-// Return the contents of all chess games included the given string in PGN
-// format as an instance of PgnCollection.
+// Return the contents of all chess games as an instance of PgnCollection that
+// satisfy the given query in the specified string which shall be formatted in
+// PGN format
 //
 // In case verbose is given, it shows additional information
-func GetGamesFromString (pgn string, verbose bool) (games PgnCollection) {
+func GetGamesFromString (pgn string, query string, verbose bool) (games PgnCollection) {
+
+	var err error
+	var logEvaluator pfparser.LogicalEvaluator
+
+	// since parsing queries affect its contents, make a backup copy
+	queryString := query
+
+	// in case a string has been given ...
+	if query != "" {
+
+		// ... parse it (with null depth, of course!)
+		logEvaluator, err = pfparser.Parse (&queryString, 0); if err != nil {
+			log.Fatal (err);
+		}
+	}
 
 	// just iterate over the string extracting the information of every game
 	for ;reGame.MatchString (pgn); {
@@ -304,8 +323,27 @@ func GetGamesFromString (pgn string, verbose bool) (games PgnCollection) {
 
 		// Parse this game and add it to the slice of games to return
 		game := getGameFromString (pgn[tag[0]:tag[1]], verbose)
-		games.slice = append (games.slice, game)
-		games.nbGames += 1
+
+		// in case a query has been given, then process it
+		symtable := make (map[string]pfparser.RelationalInterface)
+		if query != "" {
+
+			// first, start by creating a symbol table with all the
+			// information appearing in the headers of this game
+			for key, value := range game.tags {
+				symtable [key] = pfparser.ConstString (value)
+			}
+		}
+
+		// if no query was given, or if one was given and this game
+		// satisfies it
+		if query == "" ||
+			(query != "" &&
+			logEvaluator.Evaluate (symtable) == pfparser.TypeBool (true)) {
+		
+			games.slice = append (games.slice, game)
+			games.nbGames += 1
+		}
 
 		// and move forward
 		pgn = pgn[tag[1]:]
@@ -321,18 +359,19 @@ func GetGamesFromString (pgn string, verbose bool) (games PgnCollection) {
 	return
 }
 
-// Return the contents of all chess games in the given file in PGN format as an
-// instance of PgnCollection
+// Return the contents of all chess games as an instance of PgnCollection that
+// satisfy the given query in the given file which shall be formated in PGN
+// format
 //
 // In case verbose is given, it shows additional information
-func GetGamesFromFile (pgnfile string, verbose bool) (games PgnCollection) {
+func GetGamesFromFile (pgnfile string, query string, verbose bool) (games PgnCollection) {
 
 	// Open and read the given file and retrieve its contents
 	contents := fstools.Read (pgnfile, -1)
-	strContents := string (contents[:len (contents)])
+	strContents := string (contents[:len (contents)])	
 
 	// and now, just return the results of parsing these contents
-	return GetGamesFromString (strContents, verbose)
+	return GetGamesFromString (strContents, query, verbose)
 }
 
 
