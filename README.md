@@ -132,7 +132,7 @@ file if no filter is provided.
 If a different template is used (`templates/sample-comments.tex`) the
 output differs:
 
-![View of the PDF file][images/sample-2.png]
+![View of the PDF file](images/sample-2.png)
 
 
 # License #
