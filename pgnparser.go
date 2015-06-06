@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <viernes, 05 junio 2015 17:17:42 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 06 junio 2015 02:08:55 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -88,8 +88,25 @@ func showVersion (signal int) {
 // ----------------------------------------------------------------------------
 func showExpressions (signal int) {
 
-	fmt.Println ("\n Expressions:")
-	fmt.Println ()
+	fmt.Println (` 
+ Expressions are a powerful mechanism to filter games in a PGN file. They consist of
+ logical expressions made of relational groups. 
+
+ A relational group consists of two terms related by any of the relational operators 
+                        <=, <, =, !=, >, >= 
+ where a term can be either a constant or a variable. On one hand, constants can be
+ either integer (such as 40) or strings (such as '1-0'). Note that strings have to be
+ single quoted. Variables are preceded by the character '%'. Any tag appearing in the
+ header of a PGN game can be used as a variable such as '%White' or '%WhiteElo'. 
+
+ Logical expressions consist of relational groups related by any of the logical 
+ operators:
+                             and, or
+ where 'and' has precedence over 'or'. To modify the precedence rules, parenthesis
+ can be freely used. 
+
+ Note that the names of variables and the logical operators are case sensitive.
+`)
 	os.Exit (signal)
 }
 

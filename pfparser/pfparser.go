@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <sábado, 06 junio 2015 00:09:17 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 06 junio 2015 02:04:32 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -246,8 +246,7 @@ func (constant ConstString) Evaluate (symtable map[string]RelationalInterface) R
 }
 
 // The evaluation of a variable returns its value which is taken from the given
-// symbol table. Special care is taken to cast the result to one of the
-// constants, either an integer (ConstString) or a string (ConstString)
+// symbol table.
 func (variable Variable) Evaluate (symtable map[string]RelationalInterface) RelationalInterface {
 
 	// retrieve the value stored in the symbol table for this variable
@@ -255,21 +254,8 @@ func (variable Variable) Evaluate (symtable map[string]RelationalInterface) Rela
 		log.Fatalf ("Variable '%v' does not exist!", string (variable))
 	}
 
-	// first, verify whether this is an integer constant
-	value, ok := content.(ConstInteger); if !ok {
-
-		// in case it is not an integer, then try to cast it as a string
-		value, ok := content.(ConstString); if !ok {
-
-			log.Fatal ("Undefined variable type")
-		} else {
-			return ConstString(value)
-		}
-	}
-
-	// If here, then a cast to an integer constant has been feasible so just
-	// return it
-	return ConstInteger(value)
+	// since this variable exists in the symbol table, return it
+	return content
 }
 
 // The evaluation of a boolean type (TypeBool) returns the same constant

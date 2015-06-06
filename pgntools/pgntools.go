@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May  6 15:38:56 2015 Carlos Linares Lopez>
-  Last update <sábado, 06 junio 2015 00:10:40 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 06 junio 2015 02:06:32 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -324,14 +324,23 @@ func GetGamesFromString (pgn string, query string, verbose bool) (games PgnColle
 		// Parse this game and add it to the slice of games to return
 		game := getGameFromString (pgn[tag[0]:tag[1]], verbose)
 
-		// in case a query has been given, then process it
 		symtable := make (map[string]pfparser.RelationalInterface)
+		
+		// in case a query has been given, then process it
 		if query != "" {
 
 			// first, start by creating a symbol table with all the
 			// information appearing in the headers of this game
-			for key, value := range game.tags {
-				symtable [key] = pfparser.ConstString (value)
+			for key, content := range game.tags {
+
+				// first, verify whether this is an integer
+				value, ok := strconv.Atoi (content); if ok!=nil {
+
+					// if not, assume it is a string
+					symtable [key] = pfparser.ConstString (content)
+				} else {
+					symtable [key] = pfparser.ConstInteger (value)
+				}
 			}
 		}
 
