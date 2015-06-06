@@ -123,7 +123,7 @@ $ ./pgnparser --file examples/mygames.pgn
 will generate a file called `mygames.pgn.tex` in the directory
 `examples/`. The following image shows the only page generated:
 
-![View of the PDF file](images/sample-1.png)
+![View of the PDF file](images/sample-1.png =800x)
 
 Of course, LaTeX files reproduce an arbitrary number of games: all of
 those accepted by the filter given, if any, or all games in the PGN
@@ -132,7 +132,7 @@ file if no filter is provided.
 If a different template is used (`templates/sample-comments.tex`) the
 output differs:
 
-![View of the PDF file](images/sample-2.png)
+![View of the PDF file](images/sample-2.png =900x)
 
 
 # License #
