@@ -103,7 +103,7 @@ games that match the given query. For example:
 #!sh
 
 $ ./pgnparser --file examples/mygames.pgn
-              --select "%White='tsoymen' and %Black='clinares'"
+              --select "%White = 'tsoymen' and %Black = 'clinares'"
 ```
 
 returns the last game in the table shown above.
@@ -116,7 +116,7 @@ template is automatically generated. For example (file
 #!sh
 
 $ ./pgnparser --file examples/mygames.pgn
-              --select "%White='tsoymen' and %Black='clinares'"
+              --select "%White = 'tsoymen' and %Black = 'clinares'"
               --template templates/simple.tex
 ```
 

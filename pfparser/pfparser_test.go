@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May 24 23:26:09 2015 Carlos Linares Lopez>
-  Last update <viernes, 05 junio 2015 11:06:34 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 07 junio 2015 17:00:31 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -156,6 +156,8 @@ func TestConstStringUnparenthesized (t *testing.T) {
 		"'dario' != 'adriana'" : true ,
 		"'dario' >= 'adriana'" : true ,
 		"'dario' >  'adriana'" : true ,
+		"'dario' in 'adriana'" : false,
+		"'dario' not_in 'adriana'" : true,
 		
 		"'dario' <  'dario'" : false,
 		"'dario' <= 'dario'" : true ,
@@ -163,6 +165,8 @@ func TestConstStringUnparenthesized (t *testing.T) {
 		"'dario' != 'dario'" : false,
 		"'dario' >= 'dario'" : true ,
 		"'dario' >  'dario'" : false,
+		"'dario' in 'dario'" : true,
+		"'dario' not_in 'dario'" : false,
 	}
 	
 	// create an empty symbol table
@@ -473,6 +477,8 @@ func TestConstStringParenthesized (t *testing.T) {
 		"'dario' != 'adriana'" : true ,
 		"'dario' >= 'adriana'" : true ,
 		"'dario' >  'adriana'" : true ,
+		"'dario' in 'adriana'" : false,
+		"'dario' not_in 'adriana'" : true,
 		
 		"'dario' <  'dario'" : false,
 		"'dario' <= 'dario'" : true ,
@@ -480,6 +486,8 @@ func TestConstStringParenthesized (t *testing.T) {
 		"'dario' != 'dario'" : false,
 		"'dario' >= 'dario'" : true ,
 		"'dario' >  'dario'" : false,
+		"'dario' in 'dario'" : true,
+		"'dario' not_in 'dario'" : false,
 	}
 	
 	// create an empty symbol table
@@ -911,6 +919,8 @@ func TestVarStringParenthesized (t *testing.T) {
 		"%var1 != %var2" : true ,
 		"%var1 >= %var2" : false,
 		"%var1 >  %var2" : false,
+		"%var1 in %var2" : false,
+		"%var1 not_in %var2": true,
 		
 		"%var1 <  %var1" : false,
 		"%var1 <= %var1" : true ,
@@ -918,6 +928,8 @@ func TestVarStringParenthesized (t *testing.T) {
 		"%var1 != %var1" : false,
 		"%var1 >= %var1" : true ,
 		"%var1 >  %var1" : false,
+		"%var1 in %var1" : true,
+		"%var1 not_in %var1": false,
 	}
 	
 	// create a symbol table

@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <domingo, 07 junio 2015 16:35:57 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 07 junio 2015 16:41:18 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -183,7 +183,7 @@ func (constant ConstInteger) Equal (right RelationalInterface) TypeBool {
 // satisfy the relational interface
 func (constant ConstInteger) In (right RelationalInterface) TypeBool {
 
-	log.Fatal ("The relational operator 'in' can not be used with integer constants")
+	log.Fatal ("The relational operators in/not_in can not be used with integer constants")
 	return false
 }
 
