@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May 23 13:10:40 2015 Carlos Linares Lopez>
-  Last update <sábado, 06 junio 2015 01:44:49 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 07 junio 2015 16:18:23 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -52,7 +52,7 @@ var reString = regexp.MustCompile (`^\s*(?P<value>'[^']+')`)
 var reVariable = regexp.MustCompile (`^\s*%(?P<varname>[a-zA-Z0-9_]+)`)
 
 // -- relational operators
-var reRelationalOperator = regexp.MustCompile (`^\s*(?P<operator>(<=|<|=|!=|>=|>))`)
+var reRelationalOperator = regexp.MustCompile (`^\s+(?P<operator>(<=|<|=|!=|>=|>|in|not_in))\s+`)
 
 // -- logical operators
 var reLogicalOperator = regexp.MustCompile (`^\s*(?P<operator>(and|or|AND|OR))`)
@@ -77,10 +77,10 @@ type tokenItem struct {
 // consts
 // ----------------------------------------------------------------------------
 
-// The type of a token can be any of the following: integer and string constants
-// or relational or logical operators. Additionally, EOF (end of formula) is
-// used as a token also to signal termination and parenthesis can be used to
-// nest formulas
+// The type of a token can be any of the following: integer and string
+// constants, variables, relational or logical operators. Additionally, EOF (end
+// of formula) is used as a token also to signal termination and parenthesis can
+// be used to nest formulas
 const (
 	constInteger tokenType = 1 << iota	// integer constants
 	constString				// string constants
@@ -93,6 +93,8 @@ const (
 	neq
 	gt
 	geq
+	in
+	notin
 	eof					// end of formula
 	openParen				// parenthesis
 	closeParen
@@ -232,6 +234,10 @@ func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 			relOp = gt
 		case ">=":
 			relOp = geq
+		case "in":
+			relOp = in
+		case "not_in":
+			relOp = notin
 		default:
 			log.Fatalf ("Unknown relational operator '%s'", (*pformula)[tag[2]:tag[3]])
 		}

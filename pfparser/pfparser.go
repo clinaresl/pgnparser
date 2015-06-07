@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May 20 23:46:05 2015 Carlos Linares Lopez>
-  Last update <sábado, 06 junio 2015 02:04:32 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 07 junio 2015 16:35:57 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -42,15 +42,17 @@
 // 3. These precedence rules can be modified using parenthesized formulæ: The
 // most nested expressions are evaluated before others
 //
-// Note that NOT is not implemented since all binary operators can be
-// reversed as desired. The binary operations recognized by this
-// parser are: <= < = != > >=
+// Note that NOT is not implemented since all binary operators can be reversed
+// as desired. The binary operations recognized by this parser are: <= < = != >
+// >= which apply both to integer and string constants and also: in, not_in
+// which are specific to string constants
 //
 package pfparser
 
 import (
 	"log"			// logging services
 	"errors"		// for raising errors
+	"strings"		// substrings
 )
 
 // typedefs
@@ -62,6 +64,7 @@ import (
 type RelationalInterface interface {
 	Less (right RelationalInterface) TypeBool
 	Equal (right RelationalInterface) TypeBool
+	In (right RelationalInterface) TypeBool
 }
 
 // The evaluation of logical expressions requires the ability to apply
@@ -124,7 +127,8 @@ type LogicalExpression struct {
 // constants
 // ----------------------------------------------------------------------------
 
-// A relational operator consists of any of the following: <= < = != > >=
+// A relational operator consists of any of the following: <= < = != > >= in
+// not_in
 const (
 	LEQ RelationalOperator = 1 << iota	// less or equal than
 	LT					// less than
@@ -132,6 +136,8 @@ const (
 	NEQ					// not equal
 	GT					// greater than
 	GEQ					// greater or equal than
+	IN					// substring
+	NOT_IN					// not substring
 )
 
 // A logical operator consists of any of the following: AND, OR
@@ -173,6 +179,14 @@ func (constant ConstInteger) Equal (right RelationalInterface) TypeBool {
 	return int32 (constant) == int32 (value)
 }
 
+// In is entirely forbidden for integer constants. It is included here just to
+// satisfy the relational interface
+func (constant ConstInteger) In (right RelationalInterface) TypeBool {
+
+	log.Fatal ("The relational operator 'in' can not be used with integer constants")
+	return false
+}
+
 // Compare this string with the one specified in right and return whether the
 // first is less than the second
 func (constant ConstString) Less (right RelationalInterface) TypeBool {
@@ -201,6 +215,21 @@ func (constant ConstString) Equal (right RelationalInterface) TypeBool {
 	}
 
 	return string (constant) == string (value)
+}
+
+// Compare this string with the one specified in right and return whether the
+// first is a substring of the second
+func (constant ConstString) In (right RelationalInterface) TypeBool {
+
+	var value ConstString
+	var ok bool
+	
+	// verify that both types are compatible
+	value, ok = right.(ConstString); if !ok {
+		log.Fatal ("Type mismatch")
+	}
+
+	return TypeBool (strings.Contains (string (value), string (constant)))
 }
 
 // Perform the logical AND of this instance with the one in right and return the
@@ -295,6 +324,12 @@ func (expression RelationalExpression) Evaluate (symtable map[string]RelationalI
 	case GEQ:
 		result = rchild.Less (lchild) || rchild.Equal (lchild)
 
+	case IN:
+		result = lchild.In (rchild)
+
+	case NOT_IN:
+		result = !lchild.In (rchild)
+
 	default:
 		log.Fatal ("Unknown relational operator!")
 	}
@@ -379,6 +414,10 @@ func relationalGroup (pformula *string) (result LogicalEvaluator, err error) {
 		relOperator = GT
 	case geq:
 		relOperator = GEQ
+	case in:
+		relOperator = IN
+	case notin:
+		relOperator = NOT_IN
 	default:
 		log.Fatalf ("A relational operator was expected just before %q", *pformula)
 	}
