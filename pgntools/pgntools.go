@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May  6 15:38:56 2015 Carlos Linares Lopez>
-  Last update <sábado, 06 junio 2015 02:06:32 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 11 junio 2015 23:33:40 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -23,6 +23,7 @@ package pgntools
 import (
 	"log"			// logging services
 	"regexp"                // pgn files are parsed with a regexp
+	"sort"			// for sorting games
 	"strconv"		// to convert from strings to other types
 
 	// import a user package to manage paths
@@ -293,12 +294,13 @@ func getGameFromString (pgn string, verbose bool) PgnGame {
 	return PgnGame {tags, moves, outcome}
 }
 
-// Return the contents of all chess games as an instance of PgnCollection that
-// satisfy the given query in the specified string which shall be formatted in
-// PGN format
+// Return the contents of all chess games that satisfiy the given query from the
+// specified string which shall be formattted in PGN format. Games are sorted
+// according to the criteria given in sort if any is given; if not, they are
+// listed in the same order they were found in the file.
 //
 // In case verbose is given, it shows additional information
-func GetGamesFromString (pgn string, query string, verbose bool) (games PgnCollection) {
+func GetGamesFromString (pgn string, query string, sortString string, verbose bool) (games PgnCollection) {
 
 	var err error
 	var logEvaluator pfparser.LogicalEvaluator
@@ -363,24 +365,31 @@ func GetGamesFromString (pgn string, query string, verbose bool) (games PgnColle
 	if pgn != "" {
 		log.Fatalf (" Some games were not processed: %q\n\n", pgn)
 	}
+
+	// and finally sort the games in case a sorting string was given
+	if sortString != "" {
+		games.GetSortDescriptor (sortString)
+		sort.Sort (games)
+	}
 	
 	// and return the slice computed so far
 	return
 }
 
-// Return the contents of all chess games as an instance of PgnCollection that
-// satisfy the given query in the given file which shall be formated in PGN
-// format
+// Return the contents of all chess games that satisfiy the given query from the
+// specified file which shall be formattted in PGN format. Games are sorted
+// according to the criteria given in sort if any is given; if not, they are
+// listed in the same order they were found in the file.
 //
 // In case verbose is given, it shows additional information
-func GetGamesFromFile (pgnfile string, query string, verbose bool) (games PgnCollection) {
+func GetGamesFromFile (pgnfile string, query string, sortString string, verbose bool) (games PgnCollection) {
 
 	// Open and read the given file and retrieve its contents
 	contents := fstools.Read (pgnfile, -1)
 	strContents := string (contents[:len (contents)])	
 
 	// and now, just return the results of parsing these contents
-	return GetGamesFromString (strContents, query, verbose)
+	return GetGamesFromString (strContents, query, sortString, verbose)
 }
 
 

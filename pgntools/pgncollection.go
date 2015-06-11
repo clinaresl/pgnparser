@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <domingo, 10 mayo 2015 15:33:35 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 11 junio 2015 23:25:38 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -21,7 +21,7 @@ package pgntools
 
 import (
 	"log"			// logging services
-	"fmt"			// printing msgs	
+	"fmt"			// printing msgs
 	"regexp"                // pgn files are parsed with a regexp
 
 	// import a user package to manage paths
@@ -30,6 +30,15 @@ import (
 
 // global variables
 // ----------------------------------------------------------------------------
+
+// the following regexp is used to match the different sorting criteria
+
+// sorting criteria consists of a sorting direction and a particular variable
+// used as a key for sorting games. The direction is specified with either < or
+// > meaning increasing and decreasing order respectively; the variable to use
+// is preceded by '%' (there is no need actually to use that prefix and this is
+// done only for the sake of consistency across different commands of pgnparser)
+var reSortingCriteria = regexp.MustCompile (`^\s*(<|>)\s*%([A-Za-z]+)\s*`)
 
 // the following regexps are used just to locate the main body of the
 // LaTeX template
@@ -43,15 +52,41 @@ var reEndDocument = regexp.MustCompile (`\\end{document}`)
 // typedefs
 // ----------------------------------------------------------------------------
 
+// PGN games can be sorted either in ascending or descending order. The
+// direction is then defined as an integer
+type sortingDirection int
+
+// A PgnSorting consists of two items: a constant value for distinguishing
+// ascending from descending order and a variable name used as a key for sorting
+// pgn games
+type PgnSorting struct {
+	direction sortingDirection
+	variable string
+}
+
 // A PgnCollection consists of an arbitrary number of PgnGames along with a
 // count of the number of games stored in it ---this is given to check for
 // consistency so that the difference between nbGames and len (slice) shall be
-// always null
+// always null.
+
+// In addition, a PGN collection contains a sort descriptor which consists of a
+// slice of pairs that contain for each variable whether PGN games should be
+// sorted in increasing or decreasing order
 type PgnCollection struct {
 
 	slice []PgnGame
+	sortDescriptor []PgnSorting
 	nbGames int;
 }
+
+// consts
+// ----------------------------------------------------------------------------
+
+// PGN games can be sorted either in ascending or descending order
+const (
+	increasing sortingDirection = 1 << iota		// increasing order
+	decreasing					// decreasing order
+)
 
 // Methods
 // ----------------------------------------------------------------------------
@@ -69,11 +104,97 @@ func (games *PgnCollection) GetGame (index int) PgnGame {
 	return games.slice [index]
 }
 
-// Return the number of games stored in this particular collection. It returns
-// the internal count of games as opposed to the length of the slice that
-// actually stores the games
-func (games *PgnCollection) GetNbGames () int {
+// Return the number of items in the collection
+func (games PgnCollection) Len () int {
 	return games.nbGames
+}
+
+// Swap two games within the same collection
+func (games PgnCollection) Swap (i, j int) {
+	games.slice[i], games.slice[j] = games.slice[j], games.slice[i]
+}
+
+// This method creates a valid PGN descriptor used for sorting games from a
+// string specification. The string contains pairs of the form (<|>) and
+// %variable and there can be an arbitrary number of them. The first item is
+// used to decide whether to sort games in ascending or descending order; the
+// second one is used to decide what variable to use as a key.
+func (games *PgnCollection) GetSortDescriptor (sortString string) []PgnSorting {
+
+	// extract all sorting criteria given in the string
+	for ;reSortingCriteria.MatchString (sortString); {
+
+		// extract the two groups in the sorting criteria: the direction
+		// and the key
+		tag := reSortingCriteria.FindStringSubmatchIndex (sortString)
+		direction, key := sortString[tag[2]:tag[3]], sortString[tag[4]:tag[5]]
+
+		// and move forward in the string
+		sortString = sortString[tag[1]:]
+
+		// store the direction and key in this collection
+		var newSorting PgnSorting
+		if direction == "<" {
+			newSorting = PgnSorting {increasing, key}
+
+		} else if direction == ">" {
+			newSorting = PgnSorting {decreasing, key}
+		} else {
+			log.Fatalf (" An unknown sorting direction has been found: '%v'", direction)
+		}
+		games.sortDescriptor = append (games.sortDescriptor, newSorting)
+	}
+
+	// make sure here that the full sort descriptor was successfully processed
+	if len (sortString) > 0 {
+		log.Fatalf (" There was an error in the sort string at point '%v'", sortString)
+	}
+
+	// and return the descriptor
+	return games.sortDescriptor
+}
+
+// Return true if the i-th game should be before the j-th game and false
+// otherwise
+func (games PgnCollection) Less (i, j int) bool {
+
+	// go over all items of the sort descriptor stored in this collection
+	// until either the slice is over or a decision has been made whether
+	// the i-th game should be before or after the j-th game
+	for _, descriptor := range games.sortDescriptor {
+
+		// first of all, check this variable exists in both games
+		icontent, ok := games.slice[i].tags[descriptor.variable]; if !ok {
+			log.Fatalf ("'%v' is not a variable and can not be used for sorting games",
+				descriptor.variable)
+		}
+		jcontent, ok := games.slice[j].tags[descriptor.variable]; if !ok {
+			log.Fatalf ("'%v' is not a variable and can not be used for sorting games",
+				descriptor.variable)
+		}
+		
+		// check the direction and then the variable to use
+		if descriptor.direction == increasing {
+			if icontent < jcontent {
+				return true
+			}
+			if icontent > jcontent {
+				return false
+			}
+		} else if descriptor.direction == decreasing {
+			if icontent > jcontent {
+				return true
+			}
+			if icontent < jcontent {
+				return false
+			}
+		} else {
+			log.Fatalf (" Unknown sorting direction '%v'", descriptor.direction)
+		}
+	}
+
+	// if the sorting descriptor was exhausted, then return true by default
+	return true
 }
 
 // Returns a string with a summary of the information of all games stored in
