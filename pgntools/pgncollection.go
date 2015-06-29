@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <lunes, 29 junio 2015 09:03:25 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 29 junio 2015 09:08:52 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -210,7 +210,7 @@ func (games *PgnCollection) ShowHeaders () string {
 	// and now, add to output information of every single game in the given
 	// collection
 	for _, game := range games.slice {
-		output += game.ShowHeader () + "\n"
+		output += game.showHeader () + "\n"
 	}
 
 	// and add a bottom line

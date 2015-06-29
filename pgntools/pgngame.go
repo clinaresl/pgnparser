@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <lunes, 29 junio 2015 08:35:40 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 29 junio 2015 09:08:24 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -205,7 +205,7 @@ func (move PgnMove) getColorPrefix () (prefix string) {
 }
 
 // Produces a LaTeX string with a plain list of the moves of this game
-func (game *PgnGame) StringPlain () string {
+func (game *PgnGame) stringPlain () string {
 
 	// Initialization
 	output := `\mainline{`
@@ -238,7 +238,7 @@ func (game *PgnGame) StringPlain () string {
 // 1. %emt which show the elapsed move time
 // 
 // 2. %show which generates a LaTeX command for showing the current board
-func (game *PgnGame) StringWithComments () string {
+func (game *PgnGame) stringWithComments () string {
 
 	// the variable newMainLine is used to determine whether the next move
 	// should start with a LaTeX command \mainline. Obviously, this is
@@ -342,7 +342,7 @@ func (game* PgnGame) getAndCheckTag (tagname string) dataInterface {
 // Return a string with a summary of the main information stored in this game
 //
 // In case any required data is not found, a fatal error is raised
-func (game *PgnGame) ShowHeader () string {
+func (game *PgnGame) showHeader () string {
 
 	// first, verify that all necessary tags are available
 	dbGameNo    := game.getAndCheckTag ("FICSGamesDBGameNo")
@@ -399,9 +399,9 @@ func (game *PgnGame) replacePlaceholders (template string) string {
 			// most placeholders are just tag names. However,
 			// 'moves' is also acknowledged
 			if placeholder == "moves" {
-				return fmt.Sprintf ("%v", game.StringPlain ())
+				return fmt.Sprintf ("%v", game.stringPlain ())
 			} else if placeholder == "moves_comments" {
-				return fmt.Sprintf ("%v", game.StringWithComments ())
+				return fmt.Sprintf ("%v", game.stringWithComments ())
 			}
 
 			// otherwise, return the value of this tag

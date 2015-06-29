@@ -40,8 +40,8 @@ with various PGN files in the directory `examples/`. If no more
 directives are given, `pgnparser` prints out a text table with the
 headers of all games found in the PGN file.
 
-It also recognizes two optional arguments: `--template` and
-`--select`.
+It also recognizes other optional arguments: `--template`, `--select`
+and `--sort`.
 
 `--template` should be given with a path to a LaTeX template that is
 used to automatically generate a LaTeX file with the transcription of
@@ -63,7 +63,18 @@ consist of either constants (integer or string) or variables. As in
 the case of the LaTeX templates, variables are preceded by the
 character '%' and any tag appearing in the header of a PGN game can be
 used as a variable. To obtain more information about expressions use
-the directive `--help-expressions`.
+the directive `--help-expressions`. In case a query is done with
+`--select` any other operations (e.g., generating LaTeX files or
+sorting games) are performed only over the filtered games.
+
+`--sorting` can be used to sort any collection of chess games
+retrieved from a PGN file. If given, it should be accompanied of an
+arbitrary number of keys of the form `<|> <variable>` where
+`<variable>` should be a reference to a valid variable which shall be
+prefixed with `%`. In case `<` is used, games are sorted in increasing
+order of the given variable; otherwise, they are sorted in decreasing
+order. Keys can be sorted so that in case of a tie of the first key,
+the second one is used and so on.
 
 `pgnparser` provides additional information with the commands `--help`
 and `--version`
@@ -133,6 +144,30 @@ If a different template is used (`templates/sample-comments.tex`) the
 output differs:
 
 ![View of the PDF file](images/sample-2.png)
+
+To sort games with multiple keywords, just provide a single string
+with them, e.g.,
+
+```
+#!sh
+
+$ ./pgnparser --file examples/mygames.pgn --sort "<%White >%PlyCount"
+```
+
+sorts all games in ascending order of the name of the white player
+and, in case of a tie, it sorts games in decreasing order of the
+number of plies (half-moves) of the game. The output is shown below:
+
+    |  DBGameNo  | Date                | White                     | Black                     | ECO | Time  | Moves | Result |
+    +------------+---------------------+---------------------------+---------------------------+-----+-------+-------+--------+
+    |  375458181 | 2015.05.05 11:21:00 | clinares           (1514) | walls              (1532) | C00 | 180+0 |    67 |    ½-½ |
+    |  375529641 | 2015.05.07 05:54:00 | clinares           (1517) | tsoymen            (1575) | D00 | 180+0 |    10 |    0-1 |
+    |  375505558 | 2015.05.06 14:10:00 | indianpool         (1582) | clinares           (1524) | A40 | 180+0 |    26 |    1-0 |
+    |  375431273 | 2015.05.04 17:18:00 | samotnik           (1618) | clinares           (1520) | C20 | 180+0 |    60 |    1-0 |
+    |  375529748 | 2015.05.07 05:54:00 | tsoymen            (1582) | clinares           (1510) | A40 | 180+0 |    34 |    0-1 |
+    +------------+---------------------+---------------------------+---------------------------+-----+-------+-------+--------+
+    
+    # Games found: 5
 
 
 # License #
