@@ -74,7 +74,8 @@ arbitrary number of keys of the form `<|> <variable>` where
 prefixed with `%`. In case `<` is used, games are sorted in increasing
 order of the given variable; otherwise, they are sorted in decreasing
 order. Keys can be sorted so that in case of a tie of the first key,
-the second one is used and so on.
+the second one is used and so on. Additional help on sorting is
+available with `--help-sort`.
 
 `pgnparser` provides additional information with the commands `--help`
 and `--version`
