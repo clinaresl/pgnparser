@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <martes, 19 mayo 2015 01:40:37 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 29 junio 2015 08:35:40 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -23,7 +23,6 @@ import (
 	"fmt"			// printing msgs	
 	"log"			// logging services
 	"regexp"                // pgn files are parsed with a regexp
-	"strconv"		// to convert from strings to other types
 
 	// import a user package to manage paths
 	"bitbucket.org/clinares/pgnparser/fstools"
@@ -41,11 +40,17 @@ var reGroupPlaceholder = regexp.MustCompile (`%[\w\d_]+`)
 // typedefs
 // ----------------------------------------------------------------------------
 
-// A PGN tag consists of a pair <name, value>
-type PgnTag struct {
-
-	name, value string;
+// tags tables and symbol tables store any data that supports the following
+// boolean comparisons: <, = and >
+type dataInterface interface {
+	Less (right dataInterface) bool
+	Equal (right dataInterface) bool
+	Greater (right dataInterface) bool
 }
+
+// a number of types that qualify for the dataInterface are integers and strings
+type constInteger int32
+type constString string
 
 // A PGN move consist of a single ply. For each move the move number, color and
 // actual move value (in algebraic form) is stored. Additionally, in case that
@@ -76,7 +81,7 @@ type PgnOutcome struct {
 // sequence of moves and finally the outcome.
 type PgnGame struct {
 
-	tags map[string]string;
+	tags map[string]dataInterface;
 	moves []PgnMove;
 	outcome PgnOutcome;
 }
@@ -84,9 +89,94 @@ type PgnGame struct {
 // Methods
 // ----------------------------------------------------------------------------
 
-// Produces a string with information of this tag
-func (tag PgnTag) String () string {
-	return fmt.Sprintf ("%v: %v", tag.name, tag.value)
+// Return true if both the receiver and the argument are integers and the
+// receiver is less than the argument
+func (constant constInteger) Less (right dataInterface) bool {
+
+	var value constInteger
+	var ok bool
+
+	// verify both types are compatible
+	value, ok = right.(constInteger); if !ok {
+		log.Fatal (" Type mismatch")
+	}
+
+	return int32 (constant) < int32 (value);
+}
+
+// Return true if both the receiver and the argument are integers holding the
+// same value
+func (constant constInteger) Equal (right dataInterface) bool {
+
+	var value constInteger
+	var ok bool
+
+	// verify both types are compatible
+	value, ok = right.(constInteger); if !ok {
+		log.Fatal (" Type mismatch")
+	}
+
+	return int32 (constant) == int32 (value);
+}
+
+// Return true if both the receiver and the argument are integers and the
+// receiver is greater than the argument
+func (constant constInteger) Greater (right dataInterface) bool {
+
+	var value constInteger
+	var ok bool
+
+	// verify both types are compatible
+	value, ok = right.(constInteger); if !ok {
+		log.Fatal (" Type mismatch")
+	}
+
+	return int32 (constant) > int32 (value);
+}
+
+// Return true if both the receiver and the argument are strings and the
+// receiver is less than the argument
+func (constant constString) Less (right dataInterface) bool {
+
+	var value constString
+	var ok bool
+
+	// verify both types are compatible
+	value, ok = right.(constString); if !ok {
+		log.Fatal (" Type mismatch")
+	}
+
+	return string (constant) < string (value);
+}
+
+// Return true if both the receiver and the argument are integers holding the
+// same value
+func (constant constString) Equal (right dataInterface) bool {
+
+	var value constString
+	var ok bool
+
+	// verify both types are compatible
+	value, ok = right.(constString); if !ok {
+		log.Fatal (" Type mismatch")
+	}
+
+	return string (constant) == string (value);
+}
+
+// Return true if both the receiver and the argument are integers and the
+// receiver is greater than the argument
+func (constant constString) Greater (right dataInterface) bool {
+
+	var value constString
+	var ok bool
+
+	// verify both types are compatible
+	value, ok = right.(constString); if !ok {
+		log.Fatal (" Type mismatch")
+	}
+
+	return string (constant) > string (value);
 }
 
 // Produces a string with the actual content of this move
@@ -96,7 +186,6 @@ func (move PgnMove) String () string {
 
 // Produces a string with information of this outcome as a pair of
 // floating-point numbers
-// ----------------------------------------------------------------------------
 func (outcome PgnOutcome) String () string {
 	return fmt.Sprintf ("%v - %v", outcome.scoreWhite, outcome.scoreBlack)
 }
@@ -208,7 +297,7 @@ func (game *PgnGame) StringWithComments () string {
 
 // Return the tags of this game as a map from tag names to tag values. Although
 // tag values are given between double quotes, these are not shown.
-func (game *PgnGame) GetTags () map[string]string {
+func (game *PgnGame) GetTags () map[string]dataInterface {
 	return game.tags
 }
 
@@ -224,20 +313,20 @@ func (game *PgnGame) GetOutcome () PgnOutcome {
 
 // Return the value of a specific tag and nil if it exists or any value and err
 // in case it does not exist
-func (game *PgnGame) GetTagValue (name string) (value string, err error) {
+func (game *PgnGame) GetTagValue (name string) (value dataInterface, err error) {
 
 	if value, ok := game.tags[name]; ok {
 		return value, nil
 	}
 	
 	// when getting here, the required tag has not been found
-	return "", errors.New ("tag not found!")
+	return constString (""), errors.New ("tag not found!")
 }
 
 // getAndCheckTag is a helper function whose purpose is just to retrieve the
-// value of a given tag. In cse an error happened (most likely because it does
+// value of a given tag. In case an error happened (most likely because it does
 // not exist) then a fatal error is issued and execution is stopped
-func (game* PgnGame) getAndCheckTag (tagname string) string {
+func (game* PgnGame) getAndCheckTag (tagname string) dataInterface {
 
 	value, err := game.GetTagValue (tagname)
 
@@ -270,9 +359,8 @@ func (game *PgnGame) ShowHeader () string {
 	// now, compute the number of moves from the number of plies. If the
 	// number of plies is even, then the number of moves is half the number
 	// of plies, otherwise, add 1
-	moves, err := strconv.Atoi (plyCount)
-	if err != nil {
-		log.Fatalf (fmt.Sprintf (" It was not possible to convert '%v' into an integer", plyCount))
+	moves, ok := plyCount.(constInteger); if !ok {
+		log.Fatalf (fmt.Sprintf (" It was not possible to convert the PlyCount ('%v') into an integer", plyCount))
 	}
 	if 2*(moves/2) < moves {
 		moves = moves/2 + 1
@@ -317,7 +405,7 @@ func (game *PgnGame) replacePlaceholders (template string) string {
 			}
 
 			// otherwise, return the value of this tag
-			return game.tags [placeholder]
+			return fmt.Sprintf ("%v", game.tags [placeholder])
 		})
 }
 

@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <jueves, 11 junio 2015 23:25:38 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 29 junio 2015 09:03:25 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -175,17 +175,17 @@ func (games PgnCollection) Less (i, j int) bool {
 		
 		// check the direction and then the variable to use
 		if descriptor.direction == increasing {
-			if icontent < jcontent {
+			if icontent.Less (jcontent) {
 				return true
 			}
-			if icontent > jcontent {
+			if icontent.Greater (jcontent) {
 				return false
 			}
 		} else if descriptor.direction == decreasing {
-			if icontent > jcontent {
+			if icontent.Greater (jcontent) {
 				return true
 			}
-			if icontent < jcontent {
+			if icontent.Less (jcontent) {
 				return false
 			}
 		} else {

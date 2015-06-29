@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May  6 15:38:56 2015 Carlos Linares Lopez>
-  Last update <jueves, 11 junio 2015 23:33:40 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 29 junio 2015 08:41:23 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -89,10 +89,10 @@ var reGroupOutcome = regexp.MustCompile (`(?P<score1>1/2|0|1)\-(?P<score2>1/2|0|
 // ----------------------------------------------------------------------------
 
 // Return a slice with all tags in the given string. 
-func getTags (pgn string) (tags map[string]string) {
+func getTags (pgn string) (tags map[string]dataInterface) {
 
 	// create the map
-	tags = make (map[string]string)
+	tags = make (map[string]dataInterface)
 	
 	// get information about all pgn tags in the given string
 	for _, tag := range reGroupTags.FindAllStringSubmatchIndex (pgn, -1) {
@@ -102,8 +102,18 @@ func getTags (pgn string) (tags map[string]string) {
 		// <begin/end>-string, <begin/end>-tagname, <begin/end>-tagvalue
 		if len (tag) >= 6 {
 
-			// add this tag to the map to return
-			tags[pgn[tag[2]:tag[3]]] = pgn[tag[4]:tag[5]]
+			// add this tag to the map to return. In case this
+			// string can be interpreted as an integer number
+			value, err := strconv.Atoi (pgn[tag[4]:tag[5]])
+			if err == nil {
+
+				// then store it as an integer constant
+				tags[pgn[tag[2]:tag[3]]] = constInteger (value)
+			} else {
+
+				// otherwise, store it as a string constant
+				tags[pgn[tag[2]:tag[3]]] = constString (pgn[tag[4]:tag[5]])
+			}
 		}
 	}
 
@@ -336,12 +346,17 @@ func GetGamesFromString (pgn string, query string, sortString string, verbose bo
 			for key, content := range game.tags {
 
 				// first, verify whether this is an integer
-				value, ok := strconv.Atoi (content); if ok!=nil {
+				value, ok := content.(constInteger); if ok {
 
-					// if not, assume it is a string
-					symtable [key] = pfparser.ConstString (content)
-				} else {
 					symtable [key] = pfparser.ConstInteger (value)
+				} else {
+
+					// if not, check if it is a string
+					value, ok := content.(constString); if ok {
+						symtable [key] = pfparser.ConstString (value)
+					} else {
+						log.Fatal (" Unknown type")
+					}
 				}
 			}
 		}
