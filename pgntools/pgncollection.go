@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <lunes, 29 junio 2015 09:08:52 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 02 julio 2015 08:05:35 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -64,6 +64,25 @@ type PgnSorting struct {
 	variable string
 }
 
+// A histogram is indexed by keys. Keys are either variables (represented as a
+// string) or a slice of cases (each defined with a string as well). Both
+// variables and cases can be qualified with a title
+type PgnKeyVar struct {
+	title string
+	variable string
+}
+
+type PgnKeyCases struct {
+	title string
+	cases []string
+}
+
+// Therefore, a histogram is indexed by any structure which supports the
+// evaluation for a single game
+type PgnHistogramIndexer interface {
+	Eval (game *PgnGame) 
+}
+
 // A PgnCollection consists of an arbitrary number of PgnGames along with a
 // count of the number of games stored in it ---this is given to check for
 // consistency so that the difference between nbGames and len (slice) shall be
@@ -72,10 +91,15 @@ type PgnSorting struct {
 // In addition, a PGN collection contains a sort descriptor which consists of a
 // slice of pairs that contain for each variable whether PGN games should be
 // sorted in increasing or decreasing order
+
+// Also, a PGN collection might contain a non-empty slice of histogram keys
+// which can be used to genearte a histogram over the entire collection of
+// games.
 type PgnCollection struct {
 
 	slice []PgnGame
 	sortDescriptor []PgnSorting
+	histogramKey []PgnHistogramIndexer
 	nbGames int;
 }
 

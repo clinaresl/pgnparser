@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed May  6 15:38:56 2015 Carlos Linares Lopez>
-  Last update <lunes, 29 junio 2015 08:41:23 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 01 julio 2015 09:30:14 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -309,8 +309,11 @@ func getGameFromString (pgn string, verbose bool) PgnGame {
 // according to the criteria given in sort if any is given; if not, they are
 // listed in the same order they were found in the file.
 //
+// If a non-null histogram specification is provided then a histogram with the
+// required information is automatically generated
+//
 // In case verbose is given, it shows additional information
-func GetGamesFromString (pgn string, query string, sortString string, verbose bool) (games PgnCollection) {
+func GetGamesFromString (pgn string, query string, sortString string, histogramString string, verbose bool) (games PgnCollection) {
 
 	var err error
 	var logEvaluator pfparser.LogicalEvaluator
@@ -396,15 +399,18 @@ func GetGamesFromString (pgn string, query string, sortString string, verbose bo
 // according to the criteria given in sort if any is given; if not, they are
 // listed in the same order they were found in the file.
 //
+// If a non-null histogram specification is provided then a histogram with the
+// required information is automatically generated
+//
 // In case verbose is given, it shows additional information
-func GetGamesFromFile (pgnfile string, query string, sortString string, verbose bool) (games PgnCollection) {
+func GetGamesFromFile (pgnfile string, query string, sortString string, histogramString string, verbose bool) (games PgnCollection) {
 
 	// Open and read the given file and retrieve its contents
 	contents := fstools.Read (pgnfile, -1)
 	strContents := string (contents[:len (contents)])	
 
 	// and now, just return the results of parsing these contents
-	return GetGamesFromString (strContents, query, sortString, verbose)
+	return GetGamesFromString (strContents, query, sortString, histogramString, verbose)
 }
 
 

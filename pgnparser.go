@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <jueves, 11 junio 2015 11:08:26 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 01 julio 2015 09:29:57 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -39,22 +39,24 @@ var VERSION string = "0.1.0"		// current version
 var EXIT_SUCCESS int = 0		// exit with success
 var EXIT_FAILURE int = 1		// exit with failure
 
+// Options
 var pgnfile string       		// base directory
+
 var latexTemplate string		// file with the latex template
 var query string			// select query to filter games
-var helpExpressions bool		// is help on expressions requested?
 var sort string                         // sorting descriptor
+var histogram string			// histogram descriptor
+
+var helpExpressions bool		// is help on expressions requested?
 var helpSort bool                       // is help on sorting requested?
+var helpHistogram bool			// is help about histograms requested?
 var verbose bool			// has verbose output been requested?
 var version bool			// has version info been requested?
 
 // functions
 // ----------------------------------------------------------------------------
 
-// init
-// 
 // initializes the command-line parser
-// ----------------------------------------------------------------------------
 func init () {
 
 	// Flag to store the pgn file to parse
@@ -71,15 +73,16 @@ func init () {
 	flag.StringVar (&sort, "sort", "", "if a string is given here, games are sorted according to the sorting descriptor provided. For more information on sorting descriptors use '--help-sort'")
 	flag.BoolVar (&helpSort, "help-sort", false, "if given, additional information on sorting descriptors is provided")
 	
+	// Flag to receive a histogram descriptor
+	flag.StringVar (&histogram, "histogram", "", "if a string is given here, a histogram with the information requested is generated. For more information on how to specify histograms use '--help-histogram'")
+	flag.BoolVar (&helpHistogram, "help-histogram", false, "if given, additional information on how histograms are specified is provided")
+	
 	// other optional parameters are verbose and version
 	flag.BoolVar (&verbose, "verbose", false, "provides verbose output")
 	flag.BoolVar (&version, "version", false, "shows version info and exists")
 }
 
-// showVersion
-//
 // shows version info and exists with the specified signal
-// ----------------------------------------------------------------------------
 func showVersion (signal int) {
 
 	fmt.Printf ("\n %v", os.Args [0])
@@ -87,11 +90,8 @@ func showVersion (signal int) {
 	os.Exit (signal)
 }
 
-// showEpressions
-//
 // shows informmation on expressions as they are recognized by the directive
 // --select
-// ----------------------------------------------------------------------------
 func showExpressions (signal int) {
 
 	fmt.Println (` 
@@ -166,12 +166,8 @@ func showExpressions (signal int) {
 	os.Exit (signal)
 }
 
-
-// showSortingDescriptors
-//
 // shows informmation on sorting descriptors acknowledged by the directive
 // --sort
-// ----------------------------------------------------------------------------
 func showSortingDescriptors (signal int) {
 
 	fmt.Println (` 
@@ -203,11 +199,60 @@ func showSortingDescriptors (signal int) {
 	os.Exit (signal)
 }
 
-// verify
-// 
+// shows informmation on expressions as they are recognized by the directive
+// --select
+func showHistogram (signal int) {
+
+	fmt.Println (` 
+
+ Histograms are used to produce information about the frequencies of a variable
+ or a combination of two variables. This is, histograms are limited to one or
+ two variables.
+
+ Two different types of variables are recognized:
+
+ 1. Variables prefixed with the character '%' and optionally with a title: 
+
+                             title: variable
+
+    Variables here refer mainly to tags defined in *all* PGN games or variables
+    defined automatically by this software
+
+    If a variable is given, histograms are computed as the number of ocurrences
+    of each observed value of the specified variable.
+
+ 2. Cases defined with the following syntax:
+
+                (title: expression ; title: expression ...)
+
+    this is, as a parenthesized sequence of an arbitrary number of expressions
+    separated by semicolons and preceded by a title which is optional ---for
+    more information on how to define propositional formulas use
+    --help-expressions.
+
+    In this case, the histogram is computed as the number of times that each
+    expression is verified. In general, only one expression should be true. In
+    case that more than one expression is evaluated to true a warning is
+    automatically generated.
+
+ If only one variable is provided, the histogram simply consists of the number
+ of observations of the given variable/case. If two variables are given, the
+ ocurrences of the second variable/case are indexed by the value of the first
+ variable. Of course, histograms are processed according to the order of the
+ variables.
+
+ If a title is given, then it is used in the report generated. Otherwise, a
+ verbatim copy of the variable/case definition is printed.
+
+ Examples:
+
+
+`)
+	os.Exit (signal)
+}
+
 // parse the flags and verifies that proper values were given. If not, a fatal
 // error is logged
-// ----------------------------------------------------------------------------
 func verify () {
 
 	// first, parse the flags ---in case help was given, it is automatically
@@ -219,13 +264,16 @@ func verify () {
 		showVersion (EXIT_SUCCESS)
 	}
 
-	// in case further assistance on either expressions or sorting is
-	// requested, then show it here and exit
+	// in case further assistance on a particular subject is requested, then
+	// show it here and exit
 	if helpExpressions {
 		showExpressions (EXIT_SUCCESS)
 	}
 	if helpSort {
 		showSortingDescriptors (EXIT_SUCCESS)
+	}
+	if helpHistogram {
+		showHistogram (EXIT_SUCCESS)
 	}
 
 	// verify that the pgn file given exists and is accessible
@@ -235,16 +283,14 @@ func verify () {
 	}
 }
 
-
 // Main body
-// ----------------------------------------------------------------------------
 func main () {
 
 	// verify the values parsed
 	verify ()
 
 	// process the contents of the given file
-	games := pgntools.GetGamesFromFile (pgnfile, query, sort, verbose)
+	games := pgntools.GetGamesFromFile (pgnfile, query, sort, histogram, verbose)
 
 	// show the headers of all games
 	fmt.Printf ("\n")
