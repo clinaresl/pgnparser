@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Jul  2 08:06:07 2015 Carlos Linares Lopez>
-  Last update <miércoles, 08 julio 2015 18:13:07 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 09 julio 2015 08:50:36 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -31,13 +31,13 @@ import (
 
 // histograms can store integer values. To allow the definition of values
 // arbitrarily large double precision is used
-type dataValue int64;
+type dataHistValue int64;
 
 // The values stored in a histogram should support increment operations and
 // lookups with keys of any length. Keys are specified as slices of strings
 type histogramCounter interface {
-	Increment (index []string, increment dataValue) dataValue
-	Lookup (index []string) dataValue
+	Increment (index []string, increment dataHistValue) dataHistValue
+	Lookup (index []string) dataHistValue
 }
 
 // A histogram consists simply of a map of strings to counters which can be
@@ -66,7 +66,7 @@ func NewHistogram () (hist Histogram) {
 // error is raised.
 //
 // The value added is returned in case the operation was successful.
-func (value dataValue) Increment (index []string, increment dataValue) dataValue {
+func (value dataHistValue) Increment (index []string, increment dataHistValue) dataHistValue {
 
 	// first, verify that the given index is null. If not, raise an error
 	if len (index) > 0 {
@@ -83,7 +83,7 @@ func (value dataValue) Increment (index []string, increment dataValue) dataValue
 // case the length of the index and the histogram differ, an error is raised
 //
 // The value added is returned in case the operation was successful.
-func (hist *Histogram) Increment (index []string, increment dataValue) dataValue {
+func (hist *Histogram) Increment (index []string, increment dataHistValue) dataHistValue {
 
 	// first, in case this is a null index, raise an error
 	if len (index) == 0 {
@@ -98,7 +98,7 @@ func (hist *Histogram) Increment (index []string, increment dataValue) dataValue
 		// entry for this key, initialize it to zero and increment its
 		// content
 		if len (index) == 1 {
-			hist.key [index[0]] = dataValue (0)
+			hist.key [index[0]] = dataHistValue (0)
 		} else {
 
 			// Case #2 - Otherwise, the histogram should point to a
@@ -117,7 +117,7 @@ func (hist *Histogram) Increment (index []string, increment dataValue) dataValue
 
 		// make sure these numbers can be added, ie., assert the type of
 		// this entry
-		value, ok := hist.key [index[0]].(dataValue); if !ok {
+		value, ok := hist.key [index[0]].(dataHistValue); if !ok {
 			log.Fatal (" It was not possible to add an increment to a non-terminal location")
 		}
 		hist.key [index[0]] = value + increment
@@ -133,7 +133,7 @@ func (hist *Histogram) Increment (index []string, increment dataValue) dataValue
 
 // Return the value of this particular integer. If the given index is not empty
 // an error is raised.
-func (value dataValue) Lookup (index []string) dataValue {
+func (value dataHistValue) Lookup (index []string) dataHistValue {
 
 	// first, verify that the given index is null. If not, raise an error
 	if len (index) > 0 {
@@ -152,12 +152,12 @@ func (value dataValue) Lookup (index []string) dataValue {
 // the given key.
 //
 // If the given index is not found, an error is raised
-func (hist *Histogram) Lookup (index []string) dataValue {
+func (hist *Histogram) Lookup (index []string) dataHistValue {
 
 	// first, in case this is a null index, then return the private count of
 	// items below it
 	if len (index) == 0 {
-		return dataValue (hist.nbitems)
+		return dataHistValue (hist.nbitems)
 	}
 
 	// in other case, just select the right entry. In case it does not

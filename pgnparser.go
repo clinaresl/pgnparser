@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <miércoles, 08 julio 2015 18:00:21 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 09 julio 2015 08:31:28 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -290,7 +290,7 @@ func main () {
 	verify ()
 
 	// process the contents of the given file
-	games := pgntools.GetGamesFromFile (pgnfile, query, sort, histogram, verbose)
+	games := pgntools.GetGamesFromFile (pgnfile, query, sort, verbose)
 
 	// show the headers of all games
 	fmt.Printf ("\n")
@@ -298,6 +298,12 @@ func main () {
 	fmt.Printf ("\n")
 	fmt.Printf (" # Games found: %v\n\n", games.Len ())
 
+	// In case at least one histogram was given, then process it over the
+	// whole collection of pgn games
+	if histogram != "" {
+		games.ComputeHistogram (histogram)
+	}
+	
 	// in case a LaTeX template has been given, then generate a LaTeX file
 	// with the same name than the pgn file (and in the same location) with
 	// extension '.tex'

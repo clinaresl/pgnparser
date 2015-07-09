@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <jueves, 09 julio 2015 08:10:29 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 09 julio 2015 17:52:37 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -23,6 +23,7 @@ import (
 	"log"			// logging services
 	"fmt"			// printing msgs
 	"regexp"                // pgn files are parsed with a regexp
+	"strconv"		// to convert integers into strings
 
 	// import a user package to manage paths
 	"bitbucket.org/clinares/pgnparser/fstools"
@@ -39,6 +40,9 @@ import (
 // is preceded by '%' (there is no need actually to use that prefix and this is
 // done only for the sake of consistency across different commands of pgnparser)
 var reSortingCriteria = regexp.MustCompile (`^\s*(<|>)\s*%([A-Za-z]+)\s*`)
+
+// the following regexp is used to process histogram command lines
+var reHistogramCmd = regexp.MustCompile (`^\s*([A-Za-z0-9]+)\s*:\s*%([A-Za-z]+)\s*`)
 
 // the following regexps are used just to locate the main body of the
 // LaTeX template
@@ -64,9 +68,27 @@ type pgnSorting struct {
 	variable string
 }
 
+// A PgnCollection consists of an arbitrary number of PgnGames along with a
+// count of the number of games stored in it ---this is given to check for
+// consistency so that the difference between nbGames and len (slice) shall be
+// always null.
+
+// In addition, a PGN collection contains a sort descriptor which consists of a
+// slice of pairs that contain for each variable whether PGN games should be
+// sorted in increasing or decreasing order
+type PgnCollection struct {
+
+	slice []PgnGame
+	sortDescriptor []pgnSorting
+	nbGames int;
+}
+
 // A histogram is indexed by keys. Keys are either variables (represented as a
 // string) or a slice of cases (each defined with a string as well). Both
 // variables and cases can be qualified with a title
+
+// A variable just consists of an association of a title and the name of a
+// variable
 type pgnKeyVar struct {
 	title string
 	variable string
@@ -86,19 +108,16 @@ type pgnKeyCases struct {
 	expressions []string
 }
 
-// A PgnCollection consists of an arbitrary number of PgnGames along with a
-// count of the number of games stored in it ---this is given to check for
-// consistency so that the difference between nbGames and len (slice) shall be
-// always null.
-
-// In addition, a PGN collection contains a sort descriptor which consists of a
-// slice of pairs that contain for each variable whether PGN games should be
-// sorted in increasing or decreasing order
-type PgnCollection struct {
-
-	slice []PgnGame
-	sortDescriptor []pgnSorting
-	nbGames int;
+// So far, pgn histogram registers are any structs that support the following
+// operations: get title, get subtitle, get key and get value. Note: first,
+// while titles are always strings, subtitles can be of any type and they should
+// be indeed sorted according to their type; second, values should be supported
+// by the current implementation of histograms
+type pgnHistogramRegister interface {
+	GetTitle () string;
+	GetSubtitle (game *PgnGame) dataInterface;
+	GetKey (game *PgnGame) string;
+	GetValue (game *PgnGame) dataHistValue;
 }
 
 // consts
@@ -112,6 +131,8 @@ const (
 
 // Methods
 // ----------------------------------------------------------------------------
+
+// -- Accessors
 
 // the following are getters over the attributes of a PgnCollection
 
@@ -130,6 +151,10 @@ func (games *PgnCollection) GetGame (index int) PgnGame {
 func (games PgnCollection) Len () int {
 	return games.nbGames
 }
+
+// -- Sorting
+
+// The following methods ease the task of sorting games in a collection
 
 // Swap two games within the same collection
 func (games PgnCollection) Swap (i, j int) {
@@ -217,6 +242,131 @@ func (games PgnCollection) Less (i, j int) bool {
 
 	// if the sorting descriptor was exhausted, then return true by default
 	return true
+}
+
+// -- Histograms
+
+// The following methods are defined to qualify various types to be used for
+// generating histograms
+
+// Just return the value of the title of this key variable
+func (key pgnKeyVar) GetTitle () string {
+	return key.title
+}
+
+// Just return the subtitle to use with this variable. In the case of key
+// variables, the subtitle is just the value for a specific game of the given
+// variable
+// 
+// Importantly, this method returns instances of a generic type so that
+// subtitles can be more naturally sorted
+func (key pgnKeyVar) GetSubtitle (game *PgnGame) dataInterface {
+
+	// Key variables are expected to be found in the tags of a chess game
+	value, ok := game.GetTagValue (key.variable); if ok != nil {
+		log.Fatalf (" It was not possible to access the subtitle of key '%v'\n", key.variable)
+	}
+
+	// in case the value was successfully accessed, just return it
+	return value
+}
+
+// Just return the key to use for storing this entry in a histogram. For key
+// variables, keys are exactly the same than subtitles with a slight
+// difference. They are always stored as strings.
+func (keyin pgnKeyVar) GetKey (game *PgnGame) (keyout string) {
+
+	// just compute the subtitle corresponding to this key variable and
+	// return it as a string
+	subtitle := keyin.GetSubtitle (game)
+
+	// go through various type assertions to convert the subtitle to the
+	// right type and, from it, to a string
+	value, ok := subtitle.(constInteger); if ok {
+		keyout = strconv.Itoa (int (value))
+	} else {
+
+		value, ok := subtitle.(constString); if ok {
+			keyout = string (value)
+		} else {
+			log.Fatalf (" Unknown type of '%v'\n", keyin.variable)
+		}
+	}
+
+	// and now return the key
+	return
+}
+
+// The value of a key variable is always equal to one. This results from the
+// fact that histograms store the association (key, value) so that a value=1
+// means that one occurrence of a specific key has been observed
+func (key pgnKeyVar) GetValue (game *PgnGame) dataHistValue {
+	return 1
+}
+
+// This function processes the histogram command line provided by the user and
+// returns a slice of pgn histogram registers that can then be used to generate
+// the histogram of any collection of chess games.
+func parseHistCommandLine (histCommandLine string) (histDirective []pgnHistogramRegister) {
+
+	// extract all histogram directives given in the histogram command line
+	for ;reHistogramCmd.MatchString (histCommandLine); {
+
+		// extract the two groups in a variable: the title and the
+		// variable name
+		tag := reHistogramCmd.FindStringSubmatchIndex (histCommandLine)
+		title, variable := histCommandLine[tag[2]:tag[3]], histCommandLine[tag[4]:tag[5]]
+
+		// as this has been recognized to be a key variable, a new
+		// instance of key variables is created and its fields are
+		// filled in
+		newRegister := pgnKeyVar {title, variable}
+		histDirective = append (histDirective, newRegister)
+		
+		// and move forward in the string
+		histCommandLine = histCommandLine[tag[1]:]
+	}
+
+	// verify that the whole histogram command line was processed
+	if histCommandLine != "" {
+		log.Fatalf (" Syntax error in the histogram directive: '%v'\n", histCommandLine)
+	}
+
+	// and return the slice of registers computed so far
+	return
+}
+
+// Compute a histogram with the information given in the specified histogram
+// command line. It returns an instance of a histogram
+func (games *PgnCollection) ComputeHistogram (histCommandLine string) Histogram {
+
+	// create a new histogram
+	hist := NewHistogram ()
+
+	// process the histogram command line to get the registers with the
+	// information of every directive provided by the user
+	histRegisters := parseHistCommandLine (histCommandLine)
+	
+	// process all games in the current collection
+	for _, game := range (games.slice) {
+
+		// create a key to be used to access the histogram. Make it
+		// initially empty
+		var key []string
+		
+		// and now, for every register
+		for _, register := range (histRegisters) {
+
+			// retrieve the value of the variable in this register
+			key = append (key, register.GetKey (&game))
+		}
+
+		// and now, annotate that one sample was observed for this
+		// particular key
+		hist.Increment (key, 1)
+	}
+
+	return hist
 }
 
 // Returns a string with a summary of the information of all games stored in

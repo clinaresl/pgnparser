@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Jul  2 08:49:51 2015 Carlos Linares Lopez>
-  Last update <miércoles, 08 julio 2015 18:06:31 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 09 julio 2015 08:50:48 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -204,7 +204,7 @@ func testWithoutRepetition (order int, factor int, t *testing.T) {
 		// the right value is returned
 		for iobservation := 0 ; iobservation < factor ; iobservation++ {
 			value := hist.Increment (createIndex (keys[index]),
-				dataValue (samples[index*factor + iobservation]))
+				dataHistValue (samples[index*factor + iobservation]))
 			if int(value) != samples[index*factor + iobservation] {
 				t.Fatalf (" Increment did not return the right value (%v != %v)!",
 					samples[index*factor + iobservation], value)
