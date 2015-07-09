@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Jul  2 08:06:07 2015 Carlos Linares Lopez>
-  Last update <miércoles, 08 julio 2015 17:47:10 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 08 julio 2015 18:13:07 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -31,29 +31,29 @@ import (
 
 // histograms can store integer values. To allow the definition of values
 // arbitrarily large double precision is used
-type DataValue int64;
+type dataValue int64;
 
 // The values stored in a histogram should support increment operations and
 // lookups with keys of any length. Keys are specified as slices of strings
-type HistogramCounter interface {
-	Increment (index []string, increment DataValue) DataValue
-	Lookup (index []string) DataValue
+type histogramCounter interface {
+	Increment (index []string, increment dataValue) dataValue
+	Lookup (index []string) dataValue
 }
 
-// From here, a histogram consists simply of a map of strings to counters which
-// can be either integers or nested histograms. Importantly, every level of the
+// A histogram consists simply of a map of strings to counters which can be
+// either integers or nested histograms. Importantly, every level of the
 // histogram stores the number of items below it
 type Histogram struct {
 	nbitems int64;
-	key map[string]HistogramCounter
+	key map[string]histogramCounter
 }
 
 // Functions
 // ----------------------------------------------------------------------------
 
-// Returns a new instance of Histogram. It also initializes the private map
+// Return a new instance of Histogram
 func NewHistogram () (hist Histogram) {
-	return Histogram {0, make (map [string]HistogramCounter)}
+	return Histogram {0, make (map [string]histogramCounter)}
 }
 
 // Methods
@@ -66,7 +66,7 @@ func NewHistogram () (hist Histogram) {
 // error is raised.
 //
 // The value added is returned in case the operation was successful.
-func (value DataValue) Increment (index []string, increment DataValue) DataValue {
+func (value dataValue) Increment (index []string, increment dataValue) dataValue {
 
 	// first, verify that the given index is null. If not, raise an error
 	if len (index) > 0 {
@@ -83,7 +83,7 @@ func (value DataValue) Increment (index []string, increment DataValue) DataValue
 // case the length of the index and the histogram differ, an error is raised
 //
 // The value added is returned in case the operation was successful.
-func (hist *Histogram) Increment (index []string, increment DataValue) DataValue {
+func (hist *Histogram) Increment (index []string, increment dataValue) dataValue {
 
 	// first, in case this is a null index, raise an error
 	if len (index) == 0 {
@@ -98,12 +98,12 @@ func (hist *Histogram) Increment (index []string, increment DataValue) DataValue
 		// entry for this key, initialize it to zero and increment its
 		// content
 		if len (index) == 1 {
-			hist.key [index[0]] = DataValue (0)
+			hist.key [index[0]] = dataValue (0)
 		} else {
 
 			// Case #2 - Otherwise, the histogram should point to a
 			// nested histogram
-			hist.key [index[0]] = &Histogram {0, make (map[string]HistogramCounter)}
+			hist.key [index[0]] = &Histogram {0, make (map[string]histogramCounter)}
 		}
 	}
 
@@ -117,7 +117,7 @@ func (hist *Histogram) Increment (index []string, increment DataValue) DataValue
 
 		// make sure these numbers can be added, ie., assert the type of
 		// this entry
-		value, ok := hist.key [index[0]].(DataValue); if !ok {
+		value, ok := hist.key [index[0]].(dataValue); if !ok {
 			log.Fatal (" It was not possible to add an increment to a non-terminal location")
 		}
 		hist.key [index[0]] = value + increment
@@ -133,7 +133,7 @@ func (hist *Histogram) Increment (index []string, increment DataValue) DataValue
 
 // Return the value of this particular integer. If the given index is not empty
 // an error is raised.
-func (value DataValue) Lookup (index []string) DataValue {
+func (value dataValue) Lookup (index []string) dataValue {
 
 	// first, verify that the given index is null. If not, raise an error
 	if len (index) > 0 {
@@ -144,16 +144,20 @@ func (value DataValue) Lookup (index []string) DataValue {
 	return value
 }
 
-// Return the value of the given key. This method allows partial keys so that if
-// the key becomes empty, it retursn the value of the private counter which
-// tells how many items are stored below it. If the given index is not found, an
-// error is raised
-func (hist *Histogram) Lookup (index []string) DataValue {
+// This method acknowledges either full or partial keys.
+//
+// If a full key is given, it returns the value attached to it.
+//
+// In case a partial key is given, it returns the number of items stored below
+// the given key.
+//
+// If the given index is not found, an error is raised
+func (hist *Histogram) Lookup (index []string) dataValue {
 
 	// first, in case this is a null index, then return the private count of
 	// items below it
 	if len (index) == 0 {
-		return DataValue (hist.nbitems)
+		return dataValue (hist.nbitems)
 	}
 
 	// in other case, just select the right entry. In case it does not

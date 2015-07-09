@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <miércoles, 01 julio 2015 09:29:57 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 08 julio 2015 18:00:21 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -204,7 +204,6 @@ func showSortingDescriptors (signal int) {
 func showHistogram (signal int) {
 
 	fmt.Println (` 
-
  Histograms are used to produce information about the frequencies of a variable
  or a combination of two variables. This is, histograms are limited to one or
  two variables.
@@ -223,12 +222,13 @@ func showHistogram (signal int) {
 
  2. Cases defined with the following syntax:
 
-                (title: expression ; title: expression ...)
+              title: (title: expression ; title: expression ...)
 
-    this is, as a parenthesized sequence of an arbitrary number of expressions
-    separated by semicolons and preceded by a title which is optional ---for
-    more information on how to define propositional formulas use
-    --help-expressions.
+    i.e., as a parenthesized sequence of expressions separated by semicolons
+    ---for more information on how to define propositional formulas use
+    --help-expressions. Every expression can be optionally preceded by a
+    title. Likewise, the whole case can be also given a name which is also
+    optional.
 
     In this case, the histogram is computed as the number of times that each
     expression is verified. In general, only one expression should be true. In

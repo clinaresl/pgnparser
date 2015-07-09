@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <jueves, 02 julio 2015 08:05:35 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 09 julio 2015 08:10:29 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -56,10 +56,10 @@ var reEndDocument = regexp.MustCompile (`\\end{document}`)
 // direction is then defined as an integer
 type sortingDirection int
 
-// A PgnSorting consists of two items: a constant value for distinguishing
+// A pgnSorting consists of two items: a constant value for distinguishing
 // ascending from descending order and a variable name used as a key for sorting
 // pgn games
-type PgnSorting struct {
+type pgnSorting struct {
 	direction sortingDirection
 	variable string
 }
@@ -67,20 +67,23 @@ type PgnSorting struct {
 // A histogram is indexed by keys. Keys are either variables (represented as a
 // string) or a slice of cases (each defined with a string as well). Both
 // variables and cases can be qualified with a title
-type PgnKeyVar struct {
+type pgnKeyVar struct {
 	title string
 	variable string
 }
 
-type PgnKeyCases struct {
+// A case consists of a slice of structs similar to variables but, instead of
+// variables, they store propositional expressions
+type pgnKeyCase struct {
 	title string
-	cases []string
+	expression string
 }
 
-// Therefore, a histogram is indexed by any structure which supports the
-// evaluation for a single game
-type PgnHistogramIndexer interface {
-	Eval (game *PgnGame) 
+// A full specification of cases consists just of a slice of cases. The whole
+// collection of cases can be also qualified with a title
+type pgnKeyCases struct {
+	title string
+	expressions []string
 }
 
 // A PgnCollection consists of an arbitrary number of PgnGames along with a
@@ -91,15 +94,10 @@ type PgnHistogramIndexer interface {
 // In addition, a PGN collection contains a sort descriptor which consists of a
 // slice of pairs that contain for each variable whether PGN games should be
 // sorted in increasing or decreasing order
-
-// Also, a PGN collection might contain a non-empty slice of histogram keys
-// which can be used to genearte a histogram over the entire collection of
-// games.
 type PgnCollection struct {
 
 	slice []PgnGame
-	sortDescriptor []PgnSorting
-	histogramKey []PgnHistogramIndexer
+	sortDescriptor []pgnSorting
 	nbGames int;
 }
 
@@ -143,7 +141,7 @@ func (games PgnCollection) Swap (i, j int) {
 // %variable and there can be an arbitrary number of them. The first item is
 // used to decide whether to sort games in ascending or descending order; the
 // second one is used to decide what variable to use as a key.
-func (games *PgnCollection) GetSortDescriptor (sortString string) []PgnSorting {
+func (games *PgnCollection) GetSortDescriptor (sortString string) []pgnSorting {
 
 	// extract all sorting criteria given in the string
 	for ;reSortingCriteria.MatchString (sortString); {
@@ -157,12 +155,12 @@ func (games *PgnCollection) GetSortDescriptor (sortString string) []PgnSorting {
 		sortString = sortString[tag[1]:]
 
 		// store the direction and key in this collection
-		var newSorting PgnSorting
+		var newSorting pgnSorting
 		if direction == "<" {
-			newSorting = PgnSorting {increasing, key}
+			newSorting = pgnSorting {increasing, key}
 
 		} else if direction == ">" {
-			newSorting = PgnSorting {decreasing, key}
+			newSorting = pgnSorting {decreasing, key}
 		} else {
 			log.Fatalf (" An unknown sorting direction has been found: '%v'", direction)
 		}
