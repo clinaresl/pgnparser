@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <jueves, 09 julio 2015 17:52:37 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 10 julio 2015 09:31:25 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -27,6 +27,9 @@ import (
 
 	// import a user package to manage paths
 	"bitbucket.org/clinares/pgnparser/fstools"
+
+	// import the parser of propositional formulae
+	"bitbucket.org/clinares/pgnparser/pfparser"
 )
 
 // global variables
@@ -41,8 +44,15 @@ import (
 // done only for the sake of consistency across different commands of pgnparser)
 var reSortingCriteria = regexp.MustCompile (`^\s*(<|>)\s*%([A-Za-z]+)\s*`)
 
-// the following regexp is used to process histogram command lines
-var reHistogramCmd = regexp.MustCompile (`^\s*([A-Za-z0-9]+)\s*:\s*%([A-Za-z]+)\s*`)
+// the following regexps are used to process histogram command lines
+
+// A histogram command line might consist of a title and a variable name
+var reHistogramCmdVar = regexp.MustCompile (`^\s*([A-Za-z0-9]+)\s*:\s*%([A-Za-z]+)\s*`)
+
+// Also, a histogram command line might consist of the definition of a case
+// which consists of a number of different regular expressions
+var reHistogramCmdCase = regexp.MustCompile (`^\s*(?P<title>[A-Za-z0-9]+)\s*:\s*\[(?P<cases>[^\]]+)\]`)
+var reHistogramCmdSubcase = regexp.MustCompile (`^\s*(?P<subtitle>[A-Za-z0-9]+)\s*:\s*{(?P<expression>[^}]+)}\s*`)
 
 // the following regexps are used just to locate the main body of the
 // LaTeX template
@@ -105,7 +115,7 @@ type pgnKeyCase struct {
 // collection of cases can be also qualified with a title
 type pgnKeyCases struct {
 	title string
-	expressions []string
+	expressions []pgnKeyCase
 }
 
 // So far, pgn histogram registers are any structs that support the following
@@ -254,6 +264,11 @@ func (key pgnKeyVar) GetTitle () string {
 	return key.title
 }
 
+// Just return the title of this case specification
+func (key pgnKeyCases) GetTitle () string {
+	return key.title
+}
+
 // Just return the subtitle to use with this variable. In the case of key
 // variables, the subtitle is just the value for a specific game of the given
 // variable
@@ -269,6 +284,60 @@ func (key pgnKeyVar) GetSubtitle (game *PgnGame) dataInterface {
 
 	// in case the value was successfully accessed, just return it
 	return value
+}
+
+// Return the subtitle to use for this case specification. The importance of
+// cases to be disjoint and to fully enumerate all cases stems from the fact
+// that this service should have one and only one case whose expression
+// evaluates to true, with all the other evaluating to false. Thus, this service
+// simply returns the title of the expression that is verified for this specific
+// game
+// 
+// This method always return a string which is the title of the only case that
+// is verified by this specific game
+func (key pgnKeyCases) GetSubtitle (game *PgnGame) dataInterface {
+
+	var ititle string
+	
+	// first, start by creating a symbol table with all the information
+	// appearing in the headers of this game
+	symtable := make (map[string]pfparser.RelationalInterface)
+	for key, content := range game.tags {
+
+		// first, verify whether this is an integer
+		value, ok := content.(constInteger); if ok {
+
+			symtable [key] = pfparser.ConstInteger (value)
+		} else {
+
+			// if not, check if it is a string
+			value, ok := content.(constString); if ok {
+				symtable [key] = pfparser.ConstString (value)
+			} else {
+				log.Fatal (" Unknown type")
+			}
+		}
+	}
+
+	// for all cases in this specification
+	for _, icase := range (key.expressions) {
+
+		// verify whether this expression is verified
+		var err error
+		var logEvaluator pfparser.LogicalEvaluator
+
+		// parse and evaluate this particular case
+		iexpression := icase.expression
+		logEvaluator, err = pfparser.Parse (&iexpression, 0); if err != nil {
+			log.Fatal (err);
+		}
+		
+		if (logEvaluator.Evaluate (symtable) == pfparser.TypeBool (true)) {
+			ititle = icase.title
+		}
+	}
+
+	return constString (ititle)
 }
 
 // Just return the key to use for storing this entry in a histogram. For key
@@ -297,10 +366,30 @@ func (keyin pgnKeyVar) GetKey (game *PgnGame) (keyout string) {
 	return
 }
 
+// Return the key to use for storing this entry in a histogram. For key cases,
+// keys are exactly the same than subtitles.
+func (keyin pgnKeyCases) GetKey (game *PgnGame) (keyout string) {
+
+	// just compute the subtitle corresponding to this key case and return
+	// it as a string
+	subtitle := keyin.GetSubtitle (game)
+	value, ok := subtitle.(constString); if !ok {
+		log.Fatalf (" A subtitle of a type different than string was returned!")
+	}
+	return string (value)
+}
+
 // The value of a key variable is always equal to one. This results from the
 // fact that histograms store the association (key, value) so that a value=1
 // means that one occurrence of a specific key has been observed
 func (key pgnKeyVar) GetValue (game *PgnGame) dataHistValue {
+	return 1
+}
+
+// The value of a key case is always equal to one. This results from the fact
+// that histograms store the association (key, value) so that a value=1 means
+// that one occurrence of a specific key has been observed
+func (key pgnKeyCases) GetValue (game *PgnGame) dataHistValue {
 	return 1
 }
 
@@ -310,26 +399,63 @@ func (key pgnKeyVar) GetValue (game *PgnGame) dataHistValue {
 func parseHistCommandLine (histCommandLine string) (histDirective []pgnHistogramRegister) {
 
 	// extract all histogram directives given in the histogram command line
-	for ;reHistogramCmd.MatchString (histCommandLine); {
+	for ;reHistogramCmdVar.MatchString (histCommandLine) ||
+		reHistogramCmdCase.MatchString (histCommandLine); {
 
-		// extract the two groups in a variable: the title and the
-		// variable name
-		tag := reHistogramCmd.FindStringSubmatchIndex (histCommandLine)
-		title, variable := histCommandLine[tag[2]:tag[3]], histCommandLine[tag[4]:tag[5]]
-
-		// as this has been recognized to be a key variable, a new
-		// instance of key variables is created and its fields are
-		// filled in
-		newRegister := pgnKeyVar {title, variable}
-		histDirective = append (histDirective, newRegister)
+		// in case the following directive is recognized as a variable
+		if reHistogramCmdVar.MatchString (histCommandLine) {
 		
-		// and move forward in the string
-		histCommandLine = histCommandLine[tag[1]:]
-	}
+			// extract the two groups in a variable: the title and
+			// the variable name
+			tag := reHistogramCmdVar.FindStringSubmatchIndex (histCommandLine)
+			title := histCommandLine[tag[2]:tag[3]]
+			variable := histCommandLine[tag[4]:tag[5]]
 
-	// verify that the whole histogram command line was processed
-	if histCommandLine != "" {
-		log.Fatalf (" Syntax error in the histogram directive: '%v'\n", histCommandLine)
+			// as this has been recognized to be a key variable, a new
+			// instance of key variables is created and its fields are
+			// filled in
+			newRegister := pgnKeyVar {title, variable}
+			histDirective = append (histDirective, newRegister)
+		
+			// and move forward in the string
+			histCommandLine = histCommandLine[tag[1]:]
+		} else if reHistogramCmdCase.MatchString (histCommandLine) {
+
+			tag := reHistogramCmdCase.FindStringSubmatchIndex (histCommandLine)
+
+			// extract the title and the definition with all cases
+			title := histCommandLine[tag[2]:tag[3]]
+			cases := histCommandLine[tag[4]:tag[5]]
+
+			// create an empty slice of cases
+			var expressions []pgnKeyCase
+			
+			// process each case separately
+			for ; reHistogramCmdSubcase.MatchString (cases); {
+
+				subtag := reHistogramCmdSubcase.FindStringSubmatchIndex (cases)
+
+				// create a case and add it to the slice of
+				// cases specifying this title and this case
+				expressions = append (expressions,
+					pgnKeyCase {cases[subtag[2]:subtag[3]],
+						cases [subtag[4]:subtag[5]]})
+				
+				// and move forward in the string
+				cases = cases [subtag[1]:]
+			}
+
+			// create a new instance of cases to store this
+			// specification
+			histDirective = append (histDirective,
+				pgnKeyCases {title, expressions})
+
+			// and move forward in the original string
+			histCommandLine = histCommandLine [tag[1]:]
+		} else {
+			log.Fatalf (" Syntax error in the histogram directive: '%v'\n",
+				histCommandLine)
+		}
 	}
 
 	// and return the slice of registers computed so far
