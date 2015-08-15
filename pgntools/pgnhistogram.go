@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Jul  2 08:06:07 2015 Carlos Linares Lopez>
-  Last update <jueves, 09 julio 2015 08:50:36 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 16 agosto 2015 01:17:05 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -19,7 +19,9 @@
 package pgntools
 
 import (
+	"fmt"			// printing services
 	"log"			// logging services
+	"strconv"		// string conversion from integers
 )
 
 // typedefs
@@ -34,10 +36,13 @@ import (
 type dataHistValue int64;
 
 // The values stored in a histogram should support increment operations and
-// lookups with keys of any length. Keys are specified as slices of strings
+// lookups with keys of any length. Keys are specified as slices of
+// strings. Additionally, they should support convertion to strings that can be
+// printed on a terminal
 type histogramCounter interface {
 	Increment (index []string, increment dataHistValue) dataHistValue
 	Lookup (index []string) dataHistValue
+	String () string
 }
 
 // A histogram consists simply of a map of strings to counters which can be
@@ -169,6 +174,40 @@ func (hist *Histogram) Lookup (index []string) dataHistValue {
 	// finally, look for this specific value recursively
 	return entry.Lookup (index[1:])
 }
+
+// The following service just returns a string representation of this value
+// which is known to be a frequency expressed as a double-precision integer
+func (value dataHistValue) String () string {
+
+	// note that Itoa is used instead of Sprintf to avoid an infinite
+	// recursion
+	return strconv.Itoa (int (value))
+}
+
+// The following method routinely converts the information in a histogram into a
+// string that can be printed to a terminal
+func (hist *Histogram) String () string {
+
+	var output string
+	for index, value := range hist.key {
+
+		// Check the type of the value of this key. In case it is
+		// another histogram ...
+		_, ok := value.(dataHistValue); if !ok {
+			
+			// ... compute the string that corresponds to every
+			// entry of this nested string
+			output += fmt.Sprintf ("%10v:\n%v", index, value.String ())
+		} else {
+
+			// otherwise, just add this value
+			output += fmt.Sprintf (" %10v: %10v\n", index, value)
+		}
+	}
+
+	return output
+}
+
 
 /* Local Variables: */
 /* mode:go */

@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <viernes, 10 julio 2015 09:31:25 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 15 agosto 2015 23:59:05 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -463,7 +463,8 @@ func parseHistCommandLine (histCommandLine string) (histDirective []pgnHistogram
 }
 
 // Compute a histogram with the information given in the specified histogram
-// command line. It returns an instance of a histogram
+// command line using the games stored in the receiver. It returns an instance
+// of a histogram
 func (games *PgnCollection) ComputeHistogram (histCommandLine string) Histogram {
 
 	// create a new histogram

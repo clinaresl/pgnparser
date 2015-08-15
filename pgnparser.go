@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <viernes, 10 julio 2015 09:00:44 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 16 agosto 2015 00:15:11 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -301,7 +301,8 @@ func main () {
 	// In case at least one histogram was given, then process it over the
 	// whole collection of pgn games
 	if histogram != "" {
-		games.ComputeHistogram (histogram)
+		hist := games.ComputeHistogram (histogram)
+		fmt.Printf ("%v\n", &hist)
 	}
 	
 	// in case a LaTeX template has been given, then generate a LaTeX file
