@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <domingo, 16 agosto 2015 00:15:11 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 19 agosto 2015 17:37:02 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -26,8 +26,11 @@ import (
 	"log"				// logging services
 	"os"				// operating system services
 
-	// import a user package to manage paths
+	// import a package to manage paths
 	"bitbucket.org/clinares/pgnparser/fstools"
+
+	// import a package to automatically create tables
+	_"bitbucket.org/clinares/pgnparser/tbl"
 
 	// also use several tools for handling games in pgn format
 	"bitbucket.org/clinares/pgnparser/pgntools"
