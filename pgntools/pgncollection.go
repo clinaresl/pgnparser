@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <sábado, 15 agosto 2015 23:59:05 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 20 agosto 2015 20:20:06 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -30,6 +30,9 @@ import (
 
 	// import the parser of propositional formulae
 	"bitbucket.org/clinares/pgnparser/pfparser"
+
+	// import a package to automatically create tables
+	"bitbucket.org/clinares/pgnparser/tbl"
 )
 
 // global variables
@@ -503,20 +506,24 @@ func (games *PgnCollection) ComputeHistogram (histCommandLine string) Histogram 
 // In case any required data is not found, a fatal error is raised
 func (games *PgnCollection) ShowHeaders () string {
 
-	// show the header
-	output := " |  DBGameNo  | Date                | White                     | Black                     | ECO | Time  | Moves | Result |\n +------------+---------------------+---------------------------+---------------------------+-----+-------+-------+--------+\n"
-
-	// and now, add to output information of every single game in the given
-	// collection
-	for _, game := range games.slice {
-		output += game.showHeader () + "\n"
+	// Create a table
+	table, err := tbl.NewTable ("|c|cc|lr|lr|l|c|c|c|"); if err != nil {
+		log.Fatal (" Fatal error while constructing the table")
 	}
 
-	// and add a bottom line
-	output += " +------------+---------------------+---------------------------+---------------------------+-----+-------+-------+--------+"
+	// Add the header
+	table.AddRow ([]string{"DBGameNo", "Date", "Time", "White", "ELO", "Black", "ELO",
+		"ECO", "Time", "Moves", "Result"})
+	table.TopRule ()
 
-	// and return the string
-	return output
+	// Now, add the header of every single game in this collection
+	for _, game := range games.slice {
+		table.AddRow (game.getHeader ())
+	}
+
+	// End the table and return the table as a string
+	table.BottomRule ()
+	return table.String ()
 }
 
 // Produces LaTeX code using the specified template with information

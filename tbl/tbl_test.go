@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <jueves, 20 agosto 2015 18:08:52 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 20 agosto 2015 20:19:08 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -36,7 +36,7 @@ func TestNewTable (t *testing.T) {
 
 	table1.TopRule ()
 	
-	if table1.AddRow ([]string{"Hola", "me", "llamo", "Carlos", "Linares", "Lopez"})!= nil {
+	if table1.AddRow ([]string{"Hola", "me", "llamo", "Carlos", "Linares", "López"})!= nil {
 		t.Fatal ("Error adding a new row")
 	}
 
@@ -48,15 +48,15 @@ func TestNewTable (t *testing.T) {
 
 	table1.MidRule ()
 	
-	if table1.AddRow ([]string{"", "", "Roberto", "Linares", "Rollan"}) != nil {
+	if table1.AddRow ([]string{"", "", "Roberto", "Linares", "Rollán"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
 	
-	if table1.AddRow ([]string{"", "", "Dario", "Linares", "Rollan"}) != nil {
+	if table1.AddRow ([]string{"", "", "Dario", "Linares", "Rollán"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
 	
-	if table1.AddRow ([]string{"", "", "Adriana", "Linares", "Rollan"}) != nil {
+	if table1.AddRow ([]string{"", "", "Adriana", "Linares", "Rollán"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
 

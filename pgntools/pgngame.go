@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <lunes, 29 junio 2015 09:08:24 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 20 agosto 2015 18:37:53 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -23,6 +23,7 @@ import (
 	"fmt"			// printing msgs	
 	"log"			// logging services
 	"regexp"                // pgn files are parsed with a regexp
+	"strconv"		// to conver int to string
 
 	// import a user package to manage paths
 	"bitbucket.org/clinares/pgnparser/fstools"
@@ -339,11 +340,15 @@ func (game* PgnGame) getAndCheckTag (tagname string) dataInterface {
 	return value
 }
 
-// Return a string with a summary of the main information stored in this game
+// Return a slice of strings with a summary of the main information stored in
+// this game. The slice is sorted according to the format output by
+// PgnCollection.ShowHeaders ()
 //
 // In case any required data is not found, a fatal error is raised
-func (game *PgnGame) showHeader () string {
+func (game *PgnGame) getHeader () []string {
 
+	var result []string
+	
 	// first, verify that all necessary tags are available
 	dbGameNo    := game.getAndCheckTag ("FICSGamesDBGameNo")
 	date        := game.getAndCheckTag ("Date")
@@ -380,8 +385,19 @@ func (game *PgnGame) showHeader () string {
 		scoreWhite, scoreBlack = "0", "1"
 	}
 
-	// and now create a string with information of this game
-	return fmt.Sprintf (" | %10v | %v %v | %-18v (%4v) | %-18v (%4v) | %v | %v | %5v |    %v-%-v |", dbGameNo, date, time, white, whiteELO, black, blackELO, ECO, timeControl, moves, scoreWhite, scoreBlack)
+	// and now, compute the slice of strings to be returned
+	return append (result,
+		fmt.Sprintf("%v", dbGameNo),
+		fmt.Sprintf("%v", date),
+		fmt.Sprintf("%v", time),
+		fmt.Sprintf("%v", white),
+		fmt.Sprintf("%v", whiteELO),
+		fmt.Sprintf("%v", black),
+		fmt.Sprintf("%v", blackELO),
+		fmt.Sprintf("%v", ECO),
+		fmt.Sprintf("%v", timeControl),
+		strconv.Itoa(int(moves)),
+		scoreWhite + "-" + scoreBlack)
 }
 
 // returns the result of replacing all placeholders in template with their

@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <jueves, 20 agosto 2015 18:10:28 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 20 agosto 2015 20:18:33 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -26,6 +26,7 @@ import (
 	"log"			// Fatal messages
 	"regexp"		// for processing specification strings
 	"strings"		// for repeating characters
+	"unicode/utf8"		// provides support for UTF-8 characters
 )
 
 // global variables
@@ -199,7 +200,7 @@ func preBlank (contents string, width int, style stylet) string {
 
 	// first, verify that the length of the contents is less or equal than
 	// the width
-	if len (contents) > width {
+	if utf8.RuneCountInString (contents) > width {
 		log.Fatalf (" It is not possible to insert '%v' within a cell with %v positions",
 			contents, width)
 	}
@@ -212,9 +213,9 @@ func preBlank (contents string, width int, style stylet) string {
 	case LEFT:
 		nbspaces = 1
 	case CENTER:
-		nbspaces = 1 + (width - len (contents))/2
+		nbspaces = 1 + (width - utf8.RuneCountInString (contents))/2
 	case RIGHT:
-		nbspaces = 1 + width - len (contents)
+		nbspaces = 1 + width - utf8.RuneCountInString (contents)
 	}
 
 	// and return a string with as many blank characters as computed above
@@ -230,7 +231,7 @@ func postBlank (contents string, width int, style stylet) string {
 
 	// first, verify that the length of the contents is less or equal than
 	// the width
-	if len (contents) > width {
+	if utf8.RuneCountInString (contents) > width {
 		log.Fatalf (" It is not possible to insert '%v' within a cell with %v positions",
 			contents, width)
 	}
@@ -241,12 +242,12 @@ func postBlank (contents string, width int, style stylet) string {
 	// insert
 	switch style {
 	case LEFT:
-		nbspaces = 1 + width - len (contents)
+		nbspaces = 1 + width - utf8.RuneCountInString (contents)
 	case CENTER:
 
 		// if extra spaces are required, they are inserted after the
 		// text (ie., in this function)
-		nbspaces = 1 + (width - len (contents))/2 + (width - len (contents)) % 2
+		nbspaces = 1 + (width - utf8.RuneCountInString (contents))/2 + (width - utf8.RuneCountInString (contents)) % 2
 	case RIGHT:
 		nbspaces = 1
 	}
@@ -355,13 +356,13 @@ func (table *Tbl) AddRow (row []string) (err error) {
 		// First, if no content was ever processed, init the maximum
 		// width of this column to the length of this cell
 		if idx == len (table.width) {
-			table.width = append (table.width, len (value))
+			table.width = append (table.width, utf8.RuneCountInString (value))
 		} else {
 
 			// Otherwise, compare the length of this item with the
 			// maximum width computed so far
-			if len (value) > table.width [idx] {
-				table.width [idx] = len (value)
+			if utf8.RuneCountInString (value) > table.width [idx] {
+				table.width [idx] = utf8.RuneCountInString (value)
 			}
 		}
 	}
