@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <miércoles, 19 agosto 2015 17:53:18 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 20 agosto 2015 18:10:28 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -57,9 +57,19 @@ var reLastSeparator = regexp.MustCompile (`^(\|\||\|)$`)
 // column. The legal values are represented as integer constants
 type stylet int
 
-// A separator specifies the type of separator (if any) between adjacent
-// columns. The legal values are represented as integer constants
+// A separator specifies the type of separator (if any) between adjacent columns
+// or rows. The legal values are represented as integer constants
 type separatort int
+
+// A line consists of either contents or separators. In case the type of line is
+// TEXT, then it contains text to be shown.
+type tblLine struct {
+	rowType separatort
+
+	// in case this is a line of text, a slice of strings provides the text
+	// of each column
+	cell []string
+}
 
 // A table consists just of a slice of slices of strings. Each slice is a single
 // line to be generated which might consist of either user text or
@@ -72,7 +82,8 @@ type Tbl struct {
 	style []stylet			// style of each column
 	separator []separatort		// separator between columns
 	width []int			// width of each column
-	content [][]string		// contents of each cell indexed by row
+	content []tblLine		// the contents are represented as a
+					// string of lines
 }
 
 
@@ -87,13 +98,14 @@ const (
 )
 
 // A separator specifies one among various characters to be used for separating
-// columns
+// either columns or rows
 const (
 	VOID separatort = 1 << iota	// no separator
+	TEXT				// it contains text! This is for rows
+	BLANK				// blank separator
 	THIN				// single bar
 	THICK				// double bar
 )
-
 
 // Functions
 // ----------------------------------------------------------------------------
@@ -116,13 +128,15 @@ func getStyle (cmd string) (style stylet) {
 	return
 }
 
-// The following is a private function that returns the separator represented by the
-// given string
-func getSeparator (cmd string) (separator separatort) {
+// The following is a private function that returns the column separator
+// represented by the given string
+func getColumnSeparator (cmd string) (separator separatort) {
 
 	switch cmd {
 	case "":
 		separator = VOID
+	case " ":
+		separator = BLANK
 	case "|":
 		separator = THIN
 	case "||":
@@ -134,18 +148,41 @@ func getSeparator (cmd string) (separator separatort) {
 	return
 }
 
-// Return the character used as separator according to the parameter given
-func getSeparatorChr (separator separatort) string {
+// Return the character used as column separator according to the parameter given
+func getColumnSeparatorChr (separator separatort) string {
 
 	var output string
 	
 	switch separator {
 	case VOID:
+		output = ""
+	case BLANK:
 		output = " "
 	case THIN:
 		output = "\u2502"
 	case THICK:
 		output = "\u2503"
+	default:
+		log.Fatalf (" Unknown separator '%v'\n", separator)
+	}
+
+	return output
+}
+
+// Return the character used as row separator according to the parameter given
+func getRowSeparatorChr (separator separatort) string {
+
+	var output string
+	
+	switch separator {
+	case VOID:
+		output = ""
+	case BLANK:
+		output = " "
+	case THIN:
+		output = "\u2500"
+	case THICK:
+		output = "\u2501"
 	default:
 		log.Fatalf (" Unknown separator '%v'\n", separator)
 	}
@@ -231,14 +268,15 @@ func NewTable (cmd string) (table Tbl, err error) {
 		tag := reSpecification.FindStringSubmatchIndex (cmd)
 
 		// get the information on both the separator and the column
-		// specification
-		sep, column := "", cmd[tag[4]:tag[5]]
+		// specification. The separator, by default, equals the blank
+		// character
+		sep, column := " ", cmd[tag[4]:tag[5]]
 		if tag[2] >= 0 {
 			sep = cmd[tag[2]:tag[3]]
 		}
 
 		// update the information on the separator and the style
-		table.separator = append (table.separator, getSeparator (sep))
+		table.separator = append (table.separator, getColumnSeparator (sep))
 		table.style = append (table.style, getStyle (column))
 
 		// and now move forward in the specification string 
@@ -256,7 +294,7 @@ func NewTable (cmd string) (table Tbl, err error) {
 
 			// ... then process it
 			tag := reLastSeparator.FindStringSubmatchIndex (cmd)
-			table.separator = append (table.separator, getSeparator (cmd[tag[2]:tag[3]]))
+			table.separator = append (table.separator, getColumnSeparator (cmd[tag[2]:tag[3]]))
 
 			// and return the table along with no error
 			return table, nil
@@ -275,7 +313,7 @@ func NewTable (cmd string) (table Tbl, err error) {
 	// after ensuring that no separator is inserted at the end (so that the
 	// invariant that the number of separators equals the number of columns
 	// plus one is preserved)
-	table.separator = append (table.separator, VOID)
+	table.separator = append (table.separator, BLANK)
 	return table, nil
 }
 
@@ -283,23 +321,23 @@ func NewTable (cmd string) (table Tbl, err error) {
 // Methods
 // ----------------------------------------------------------------------------
 
-// Add a single line to the contents of the current table at the bottom. The
-// contents are specified as a slice of strings. In case the number of items is
-// less than the number of columns, the row is paddled with empty strings. If
-// the number of items in the given slice exceeds the number of columns in this
-// table, an error is raised
+// Add a single line of text to the bottom of the receiver table. The contents
+// are specified as a slice of strings. In case the number of items is less than
+// the number of columns, the row is paddled with empty strings. If the number
+// of items in the given slice exceeds the number of columns in this table, an
+// error is raised
 func (table *Tbl) AddRow (row []string) (err error) {
 
-	// First, verify that the number of items in this row is less or equal
+	// First, verify that this table has a legal specification string with
+	// non-empty style and separators
+	if len (table.style) == 0 {
+		return errors.New (" This table can not accept any contents! Set a specification string first")
+	}
+
+	// Second, verify that the number of items in this row is less or equal
 	// than the number of columns in this table
 	if len (row) > len (table.style) {
 		return errors.New (fmt.Sprintf (" The row '%v' exceeds the number of columns of this table (%v != %v)\n", row, len (row), len (table.style)))
-	}
-
-	// Second, verify that this table has a legal specification string with
-	// non-empty style and separators
-	if len (table.style) == 0 {
-		return errors.New (" This table can not accept any contents!")
 	}
 
 	// Create a slice with the contents of the next row to be inserted at
@@ -328,9 +366,43 @@ func (table *Tbl) AddRow (row []string) (err error) {
 		}
 	}
 	
-	// and insert this row to the table
-	table.content = append (table.content, newRow)
+	// and insert this row to the table. This line of text is inserted as a
+	// tblLine with no separator (ie., in TEXT mode)
+	table.content = append (table.content, tblLine{TEXT, newRow})
 	return nil
+}
+
+// Add a thick horizontal rule to the current table. Top rules do not draw
+// intersections with column separators (they break them instead).
+//
+// This function is implemented in imitation to the LaTeX package booktabs
+func (table *Tbl) TopRule () {
+
+	// Top rules consist of thick lines. Just add a thick line iwth no text
+	// at all
+	table.content = append (table.content, tblLine {THICK, []string{""}})
+}
+
+// Add a thin horizontal rule to the current table. Mid rules do not draw
+// intersections with column separators (they break them instead)
+//
+// This function is implemented in imitation to the LaTeX package booktabs
+func (table *Tbl) MidRule () {
+
+	// Top rules consist of thick lines. Just add a thick line iwth no text
+	// at all
+	table.content = append (table.content, tblLine {THIN, []string{""}})
+}
+
+// Add a thick horizontal rule to the current table. Bottom rules do not draw
+// intersections with column separators (they break them instead)
+//
+// This function is implemented in imitation to the LaTeX package booktabs
+func (table *Tbl) BottomRule () {
+
+	// Bottom rules consist of thick lines. Just add a thick line iwth no
+	// text at all
+	table.content = append (table.content, tblLine {THICK, []string{""}})
 }
 
 // Return the contents of the current table as a string.
@@ -341,32 +413,56 @@ func (table Tbl) String () string {
 	// For every single line
 	for _, line := range table.content {
 
-		// and for every column
-		for idx, content := range line {
+		// now, depending upon the type of line
+		switch line.rowType {
+
+		case TEXT:
+			
+			// and for every column
+			for idx, content := range line.cell {
 		
-			// Show first the separator
-			output += getSeparatorChr (table.separator [idx])
+				// Show first the separator
+				output += getColumnSeparatorChr (table.separator [idx])
 
-			// show the contents of this cell according to the style
-			// of this column. This is done in three steps: first, a
-			// string with blank characters is inserted before, next
-			// the contents of this cell are printed out and
-			// finally, a last string made of blanks is inserted
-			// again. The first and last strings are used to justify
-			// the contents of the text in this cell according to
-			// its style and they already take into account the
-			// extra space between the contents and the two
-			// separators surrounding it
-			output += preBlank (content, table.width[idx], table.style[idx])
-			output += content
-			output += postBlank (content, table.width[idx], table.style[idx])
+				// show the contents of this cell according to
+				// the style of this column. This is done in
+				// three steps: first, a string with blank
+				// characters is inserted before, next the
+				// contents of this cell are printed out and
+				// finally, a last string made of blanks is
+				// inserted again. The first and last strings
+				// are used to justify the contents of the text
+				// in this cell according to its style and they
+				// already take into account the extra space
+				// between the contents and the two separators
+				// surrounding it
+				output += preBlank (content, table.width[idx], table.style[idx])
+				output += content
+				output += postBlank (content, table.width[idx], table.style[idx])
+			}
+
+			// show the last separator and end the current line
+			output += getColumnSeparatorChr (table.separator [len (table.separator) - 1])
+
+		default:
+			// in case it is not a line of text, then it is a
+			// horizontal rule. Just draw a horizontal rule over
+			// every column
+			hrule := getRowSeparatorChr (line.rowType)
+			for _, width := range table.width {
+				output += hrule
+
+				// note thta 2 is added to the width of this
+				// column accounting for the two surrounding
+				// blank spaces
+				output += strings.Repeat (hrule, 2+width)
+			}
+			output += hrule
+			
 		}
-
-		// show the last separator and end the current line
-		output += getSeparatorChr (table.separator [len (table.separator) - 1])
 		output += "\n"
 	}
-
+	
 	// and return the string
 	return output
 }

@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <miércoles, 19 agosto 2015 17:53:54 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 20 agosto 2015 18:08:52 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -33,13 +33,20 @@ func TestNewTable (t *testing.T) {
 	table1, err1 := NewTable (spec1); if err1 != nil {
 		t.Fatal (" Fatal error while constructing the table")
 	}
+
+	table1.TopRule ()
+	
 	if table1.AddRow ([]string{"Hola", "me", "llamo", "Carlos", "Linares", "Lopez"})!= nil {
 		t.Fatal ("Error adding a new row")
 	}
+
+	table1.MidRule ()
 	
 	if table1.AddRow ([]string{"", "Y", "tengo", "tres", "hijos"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
+
+	table1.MidRule ()
 	
 	if table1.AddRow ([]string{"", "", "Roberto", "Linares", "Rollan"}) != nil {
 		t.Fatal ("Error adding a new row")
@@ -52,6 +59,9 @@ func TestNewTable (t *testing.T) {
 	if table1.AddRow ([]string{"", "", "Adriana", "Linares", "Rollan"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
+
+	table1.BottomRule ()
+
 	fmt.Println ()
 	fmt.Println (table1)
 	fmt.Println ()
