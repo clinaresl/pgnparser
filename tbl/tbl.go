@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <miércoles, 19 agosto 2015 17:34:33 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 19 agosto 2015 17:53:18 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -25,6 +25,7 @@ import (
 	"fmt"			// printing services
 	"log"			// Fatal messages
 	"regexp"		// for processing specification strings
+	"strings"		// for repeating characters
 )
 
 // global variables
@@ -152,18 +153,6 @@ func getSeparatorChr (separator separatort) string {
 	return output
 }
 
-// return a string made of as many blank characters as specified
-func blankString (width int) string {
-
-	var output string
-	
-	for i:=0 ; i<width ; i++ {
-		output += " "
-	}
-
-	return output
-}
-
 // return a string made of blank characters which automatically adjusts the
 // specified contents within a cell with the given width according to the given
 // style if they are inserted *before* the contents
@@ -192,7 +181,7 @@ func preBlank (contents string, width int, style stylet) string {
 	}
 
 	// and return a string with as many blank characters as computed above
-	return blankString (nbspaces)
+	return strings.Repeat (" ", nbspaces)
 }
 
 // return a string made of blank characters which automatically adjusts the
@@ -226,7 +215,7 @@ func postBlank (contents string, width int, style stylet) string {
 	}
 
 	// and return a string with as many blank characters as computed above
-	return blankString (nbspaces)
+	return strings.Repeat (" ", nbspaces)
 }
 
 // Return a new instance of Tbl from a string specification
