@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <jueves, 20 agosto 2015 20:18:33 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 21 agosto 2015 01:14:38 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -38,17 +38,18 @@ import (
 // The separator can be present or not and it can be one among the following
 // types:
 //    void - no separator
-//    |    - a thin bar
-//    ||   - a thick bar
+//    |    - a single bar
+//    ||   - a double bar
+//    |||  - a thick bar
 // The column is one of the types:
 //    c - centered
 //    l - left
 //    r - right
-var reSpecification = regexp.MustCompile (`^(\|\||\|)?(c|l|r)`)
+var reSpecification = regexp.MustCompile (`^(\|\|\||\|\||\|)?(c|l|r)`)
 
 // There is also a specific regexp to recognize separators on their own when
 // processing the last one before the whole string specification is exhausted
-var reLastSeparator = regexp.MustCompile (`^(\|\||\|)$`)
+var reLastSeparator = regexp.MustCompile (`^(\|\|\||\|\||\|)$`)
 
 
 // typedefs
@@ -104,8 +105,9 @@ const (
 	VOID separatort = 1 << iota	// no separator
 	TEXT				// it contains text! This is for rows
 	BLANK				// blank separator
-	THIN				// single bar
-	THICK				// double bar
+	SINGLE				// single bar
+	DOUBLE				// double bar
+	THICK				// thick bar
 )
 
 // Functions
@@ -139,8 +141,10 @@ func getColumnSeparator (cmd string) (separator separatort) {
 	case " ":
 		separator = BLANK
 	case "|":
-		separator = THIN
+		separator = SINGLE
 	case "||":
+		separator = DOUBLE
+	case "|||":
 		separator = THICK
 	default:
 		log.Fatalf (" Unknown separator string '%v'\n", cmd)
@@ -159,8 +163,10 @@ func getColumnSeparatorChr (separator separatort) string {
 		output = ""
 	case BLANK:
 		output = " "
-	case THIN:
+	case SINGLE:
 		output = "\u2502"
+	case DOUBLE:
+		output = "\u2551"
 	case THICK:
 		output = "\u2503"
 	default:
@@ -180,8 +186,10 @@ func getRowSeparatorChr (separator separatort) string {
 		output = ""
 	case BLANK:
 		output = " "
-	case THIN:
+	case SINGLE:
 		output = "\u2500"
+	case DOUBLE:
+		output = "\u2550"
 	case THICK:
 		output = "\u2501"
 	default:
@@ -392,7 +400,7 @@ func (table *Tbl) MidRule () {
 
 	// Top rules consist of thick lines. Just add a thick line iwth no text
 	// at all
-	table.content = append (table.content, tblLine {THIN, []string{""}})
+	table.content = append (table.content, tblLine {SINGLE, []string{""}})
 }
 
 // Add a thick horizontal rule to the current table. Bottom rules do not draw

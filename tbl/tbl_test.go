@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <jueves, 20 agosto 2015 20:19:08 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 21 agosto 2015 01:15:52 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -26,7 +26,7 @@ import (
 
 func TestNewTable (t *testing.T) {
 
-	var spec1 = "||l|cccll||"
+	var spec1 = "|||l|cccl|l|||"
 	var spec2 = "|l|clrrc"
 	var spec3 = "||l|clrrc||"
 	
