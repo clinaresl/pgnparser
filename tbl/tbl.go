@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <viernes, 21 agosto 2015 01:14:38 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 22 agosto 2015 18:18:11 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -35,22 +35,32 @@ import (
 // A string specification consists of an indication how the text is justified in
 // a cell and also about the separators. It is made of pairs separator/column
 // specification.
+// 
 // The separator can be present or not and it can be one among the following
 // types:
-//    void - no separator
-//    |    - a single bar
-//    ||   - a double bar
-//    |||  - a thick bar
+//    void   - no separator
+//    |      - a single bar
+//    ||     - a double bar
+//    |||    - a thick bar
+//    @{...} - a verbatim separator where '...' stands for anything but '}'
+// 
 // The column is one of the types:
 //    c - centered
 //    l - left
 //    r - right
-var reSpecification = regexp.MustCompile (`^(\|\|\||\|\||\|)?(c|l|r)`)
+//
+// Importantly, separators and strings shall be specified in this particular
+// order. The string specification might be ended with either a column or a
+// separator
+var reSpecification = regexp.MustCompile (`^(@\{[^}]*\}|\|\|\||\|\||\|)?(c|l|r)`)
 
 // There is also a specific regexp to recognize separators on their own when
 // processing the last one before the whole string specification is exhausted
-var reLastSeparator = regexp.MustCompile (`^(\|\|\||\|\||\|)$`)
+var reLastSeparator = regexp.MustCompile (`^(@\{[^}]*\}|\|\|\||\|\||\|)$`)
 
+// Verbatim separators are also processed with their own regular expression for
+// extracting the text
+var reVerbatimSeparator = regexp.MustCompile (`^@\{(?P<text>[^}]*)\}`)
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -59,9 +69,17 @@ var reLastSeparator = regexp.MustCompile (`^(\|\|\||\|\||\|)$`)
 // column. The legal values are represented as integer constants
 type stylet int
 
-// A separator specifies the type of separator (if any) between adjacent columns
-// or rows. The legal values are represented as integer constants
+// A separator specifies the type of separator (if any) between adjacent rows or
+// columns. The different types of separators are distinguished with integers.
 type separatort int
+
+// A sepColumn specifies the type of separator (if any) between adjacent
+// columns. In case it is a VERBATIM separator (specified with @{...})  then
+// text contains the body in curly braces
+type sepColumnt struct {
+	separatorType separatort	// type of separator
+	text string			// in case of a verbatim separator
+}
 
 // A line consists of either contents or separators. In case the type of line is
 // TEXT, then it contains text to be shown.
@@ -73,16 +91,15 @@ type tblLine struct {
 	cell []string
 }
 
-// A table consists just of a slice of slices of strings. Each slice is a single
-// line to be generated which might consist of either user text or
-// separators. Additionally, tables are built from specification strings
-// (similar to those used in LaTeX) which result in a slice of styles for every
-// column whose width is re-computed every time a new line is added. In
-// addition, the specification string can be also used to select among various
-// separators
+// A table consists just of a slice of lines to be generated which might consist
+// of either user text or horizontal rules. Additionally, tables are built from
+// specification strings (similar to those used in LaTeX) which result in a
+// slice of styles for every column whose width is re-computed every time a new
+// line is added. In addition, the specification string can be also used to
+// select among various separators
 type Tbl struct {
 	style []stylet			// style of each column
-	separator []separatort		// separator between columns
+	separator []sepColumnt		// separator between columns
 	width []int			// width of each column
 	content []tblLine		// the contents are represented as a
 					// string of lines
@@ -103,18 +120,18 @@ const (
 // either columns or rows
 const (
 	VOID separatort = 1 << iota	// no separator
-	TEXT				// it contains text! This is for rows
 	BLANK				// blank separator
 	SINGLE				// single bar
 	DOUBLE				// double bar
 	THICK				// thick bar
+	TEXT				// it contains text (either a text row
+					// or a verbatim column)
 )
 
 // Functions
 // ----------------------------------------------------------------------------
 
-// The following is a private function that returns the style represented by the
-// given string
+// Return the style represented by the given string
 func getStyle (cmd string) (style stylet) {
 
 	switch cmd {
@@ -131,34 +148,45 @@ func getStyle (cmd string) (style stylet) {
 	return
 }
 
-// The following is a private function that returns the column separator
-// represented by the given string
-func getColumnSeparator (cmd string) (separator separatort) {
+// Return the column separator represented by the given string
+func getColumnSeparator (cmd string) (separator sepColumnt) {
 
 	switch cmd {
 	case "":
-		separator = VOID
+		separator = sepColumnt{VOID, ""}
 	case " ":
-		separator = BLANK
+		separator = sepColumnt{BLANK, ""}
 	case "|":
-		separator = SINGLE
+		separator = sepColumnt{SINGLE, ""}
 	case "||":
-		separator = DOUBLE
+		separator = sepColumnt{DOUBLE, ""}
 	case "|||":
-		separator = THICK
+		separator = sepColumnt{THICK, ""}
 	default:
+
+		// Still, this might be a legal separator if it is a verbatim
+		// one
+		if reVerbatimSeparator.MatchString (cmd) {
+
+			// if this has been recognized as a legal verbatim
+			// separator, extract its contents and return them
+			tag := reVerbatimSeparator.FindStringSubmatchIndex (cmd)
+			return sepColumnt{TEXT, cmd[tag[2]:tag[3]]}
+		}
+
+		// otherwise, raise an error
 		log.Fatalf (" Unknown separator string '%v'\n", cmd)
 	}
 
 	return
 }
 
-// Return the character used as column separator according to the parameter given
-func getColumnSeparatorChr (separator separatort) string {
+// Return the string used as column separator according to the given parameter
+func getColumnSeparatorString (separator sepColumnt) string {
 
 	var output string
 	
-	switch separator {
+	switch separator.separatorType {
 	case VOID:
 		output = ""
 	case BLANK:
@@ -169,6 +197,8 @@ func getColumnSeparatorChr (separator separatort) string {
 		output = "\u2551"
 	case THICK:
 		output = "\u2503"
+	case TEXT:
+		output = separator.text
 	default:
 		log.Fatalf (" Unknown separator '%v'\n", separator)
 	}
@@ -201,10 +231,12 @@ func getRowSeparatorChr (separator separatort) string {
 
 // return a string made of blank characters which automatically adjusts the
 // specified contents within a cell with the given width according to the given
-// style if they are inserted *before* the contents
+// style if they are inserted *before* the contents. The preceding column
+// separator of this cell is given to decide whether to insert an additional
+// blank space or not.
 //
 // This function assumes that the cell consists of a single line
-func preBlank (contents string, width int, style stylet) string {
+func preBlank (contents string, width int, style stylet, sep sepColumnt) string {
 
 	// first, verify that the length of the contents is less or equal than
 	// the width
@@ -219,23 +251,31 @@ func preBlank (contents string, width int, style stylet) string {
 	// insert
 	switch style {
 	case LEFT:
-		nbspaces = 1
+		nbspaces = 0
 	case CENTER:
-		nbspaces = 1 + (width - utf8.RuneCountInString (contents))/2
+		nbspaces = 0 + (width - utf8.RuneCountInString (contents))/2
 	case RIGHT:
-		nbspaces = 1 + width - utf8.RuneCountInString (contents)
+		nbspaces = 0 + width - utf8.RuneCountInString (contents)
 	}
 
+	// in case the separator preceding this cell is not verbatim, then add a
+	// single space
+	if sep.separatorType != TEXT {
+		nbspaces += 1
+	}
+	
 	// and return a string with as many blank characters as computed above
 	return strings.Repeat (" ", nbspaces)
 }
 
 // return a string made of blank characters which automatically adjusts the
 // specified contents within a cell with the given width according to the given
-// style if they are inserted *after* the contents
+// style if they are inserted *after* the contents.  The preceding column
+// separator of this cell is given to decide whether to insert an additional
+// blank space or not.
 //
 // This function assumes that the cell consists of a single line
-func postBlank (contents string, width int, style stylet) string {
+func postBlank (contents string, width int, style stylet, sep sepColumnt) string {
 
 	// first, verify that the length of the contents is less or equal than
 	// the width
@@ -250,16 +290,22 @@ func postBlank (contents string, width int, style stylet) string {
 	// insert
 	switch style {
 	case LEFT:
-		nbspaces = 1 + width - utf8.RuneCountInString (contents)
+		nbspaces = 0 + width - utf8.RuneCountInString (contents)
 	case CENTER:
 
 		// if extra spaces are required, they are inserted after the
 		// text (ie., in this function)
-		nbspaces = 1 + (width - utf8.RuneCountInString (contents))/2 + (width - utf8.RuneCountInString (contents)) % 2
+		nbspaces = 0 + (width - utf8.RuneCountInString (contents))/2 + (width - utf8.RuneCountInString (contents)) % 2
 	case RIGHT:
-		nbspaces = 1
+		nbspaces = 0
 	}
 
+	// in case the separator preceding this cell is not verbatim, then add a
+	// single space
+	if sep.separatorType != TEXT {
+		nbspaces += 1
+	}
+	
 	// and return a string with as many blank characters as computed above
 	return strings.Repeat (" ", nbspaces)
 }
@@ -322,7 +368,7 @@ func NewTable (cmd string) (table Tbl, err error) {
 	// after ensuring that no separator is inserted at the end (so that the
 	// invariant that the number of separators equals the number of columns
 	// plus one is preserved)
-	table.separator = append (table.separator, BLANK)
+	table.separator = append (table.separator, sepColumnt{BLANK, ""})
 	return table, nil
 }
 
@@ -431,7 +477,7 @@ func (table Tbl) String () string {
 			for idx, content := range line.cell {
 		
 				// Show first the separator
-				output += getColumnSeparatorChr (table.separator [idx])
+				output += getColumnSeparatorString (table.separator [idx])
 
 				// show the contents of this cell according to
 				// the style of this column. This is done in
@@ -444,30 +490,55 @@ func (table Tbl) String () string {
 				// in this cell according to its style and they
 				// already take into account the extra space
 				// between the contents and the two separators
-				// surrounding it
-				output += preBlank (content, table.width[idx], table.style[idx])
+				// surrounding it. This is why
+				// preBlank/postBlank receive the type of
+				// separator preceding it and after it
+				output += preBlank (content, table.width[idx], table.style[idx],
+					table.separator[idx])
 				output += content
-				output += postBlank (content, table.width[idx], table.style[idx])
+				output += postBlank (content, table.width[idx], table.style[idx],
+					table.separator[1+idx])
 			}
 
 			// show the last separator and end the current line
-			output += getColumnSeparatorChr (table.separator [len (table.separator) - 1])
+			output += getColumnSeparatorString (table.separator [len (table.separator) - 1])
 
 		default:
 			// in case it is not a line of text, then it is a
 			// horizontal rule. Just draw a horizontal rule over
 			// every column
 			hrule := getRowSeparatorChr (line.rowType)
-			for _, width := range table.width {
+			for idx, width := range table.width {
 				output += hrule
 
-				// note thta 2 is added to the width of this
-				// column accounting for the two surrounding
-				// blank spaces
-				output += strings.Repeat (hrule, 2+width)
+				// in case the preceding separator is verbatim,
+				// then add as many characters as the length of
+				// the separator. Otherwise, add just one
+				if table.separator[idx].separatorType != TEXT {
+					output += hrule
+				} else {
+					output += strings.Repeat (hrule,
+						utf8.RuneCountInString(table.separator[idx].text))
+				}
+
+				// add as many separators as the width of this cell
+				output += strings.Repeat (hrule, width)
+
+				// and proceed similarly with the space after
+				// the contents of the cell
+				if table.separator[1+idx].separatorType != TEXT {
+					output += hrule
+				} else {
+					output += strings.Repeat (hrule,
+						utf8.RuneCountInString(table.separator[idx].text))
+				}
 			}
-			output += hrule
-			
+
+			// Finally, look at the last separator, in case it is
+			// not a verbatim one, then add a last hrule
+			if table.separator[len (table.separator)-1].separatorType != TEXT {
+				output += hrule
+			}
 		}
 		output += "\n"
 	}
