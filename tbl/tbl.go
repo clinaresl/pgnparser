@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <lunes, 24 agosto 2015 13:39:37 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 24 agosto 2015 13:41:12 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -376,6 +376,10 @@ func (table *Tbl) String () string {
 				table.column[jdx].content != VERTICAL_VERBATIM &&
 				(jdx==len (table.column) - 1 ||
 				table.column[1+jdx].content != VERTICAL_VERBATIM) {
+
+				// in this case, add a horizontal rule if this
+				// cell is of that kind or a blank space
+				// otherwise
 				if cell.content == HORIZONTAL_SINGLE {
 					output += "\u2500"
 				} else if cell.content == HORIZONTAL_DOUBLE {
@@ -387,10 +391,8 @@ func (table *Tbl) String () string {
 				}
 			}
 		}
-
 		output += "\n"
 	}
-
 	return output
 }
 
