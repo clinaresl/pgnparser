@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <lunes, 24 agosto 2015 13:11:00 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 24 agosto 2015 13:44:18 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -19,8 +19,7 @@
 package tbl
 
 import (
-	_"fmt"
-	"log"
+	"fmt"
 	"testing"
 )
 
@@ -60,10 +59,48 @@ func TestNewTable1 (t *testing.T) {
 
 	table.BottomRule ()
 	
-	log.Println (table)
-	log.Println (&table)
+	fmt.Println (table)
 }
 
+func TestNewTable2 (t *testing.T) {
+	var spec = "l@{ (}r@{)}"
+
+	table, err := NewTable (spec); if err != nil {
+		t.Fatal (" Fatal error while constructing the table")
+	}
+
+	table.TopRule ()
+	
+	if table.AddRow ([]string{"Player", "ELO"})!= nil {
+		t.Fatal ("Error adding a new row")
+	}
+
+	table.MidRule ()
+
+	if table.AddRow ([]string{"clinares", "1588"})!= nil {
+		t.Fatal ("Error adding a new row")
+	}
+
+	if table.AddRow ([]string{"nemesis", "1631"}) != nil {
+		t.Fatal ("Error adding a new row")
+	}
+
+	if table.AddRow ([]string{"jemma", "1811"}) != nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	if table.AddRow ([]string{"zco", "1880"}) != nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	if table.AddRow ([]string{"miercoles", "1893"}) != nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	table.BottomRule ()
+
+	fmt.Println (table)	
+}
 
 
 /* Local Variables: */

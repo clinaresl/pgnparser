@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <lunes, 24 agosto 2015 13:41:12 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 24 agosto 2015 13:43:59 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -355,7 +355,7 @@ func (cell cellType) String () string {
 }
 
 // A table is drawn just by drawing its cells one after the other
-func (table *Tbl) String () string {
+func (table Tbl) String () string {
 
 	var output string
 	
