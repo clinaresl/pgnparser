@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <viernes, 28 agosto 2015 00:00:43 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 28 agosto 2015 00:44:33 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -208,9 +208,11 @@ func NewTable (cmd string) (table Tbl, err error) {
 // error is raised
 func (table *Tbl) AddRow (row []string) (err error) {
 
-	// First of all, in case the last line was a thick rule, redo it since
-	// we are about to generate a new line
-	if table.horizontalDoubleRule {
+	// First of all, in case the last line was a horizontal rule, redo it
+	// since we are about to generate a new line
+	if table.horizontalSingleRule {
+		table.redoSingleRule ()
+	} else if table.horizontalDoubleRule {
 		table.redoDoubleRule ()
 	} else if table.horizontalThickRule {
 		table.redoThickRule ()
@@ -272,13 +274,78 @@ func (table *Tbl) AddRow (row []string) (err error) {
 	return nil
 }
 
+// Add a single horizontal rule that intersects with the vertical separators
+// provided that any have been specified.
+func (table *Tbl) HSingleRule () {
+
+	// Since it is possible to concatenate horizontal rules, redo the last
+	// one if necessary
+	if table.horizontalSingleRule {
+		table.redoSingleRule ()
+	} else if table.horizontalDoubleRule {
+		table.redoDoubleRule ()
+	} else if table.horizontalThickRule {
+		table.redoThickRule ()
+	}
+	
+	var newRow tblLine
+	for idx, column := range table.column {
+		switch column.content {
+		case VERTICAL_SINGLE:
+			if idx==0 {
+				newRow = append (newRow,
+					cellType {LIGHT_UP_AND_RIGHT,
+						table.width[idx], ""})
+			} else if idx == len (table.column) - 1 {
+				newRow = append (newRow,
+					cellType {LIGHT_UP_AND_LEFT,
+						table.width[idx], ""})
+			} else {
+				newRow = append (newRow,
+					cellType{LIGHT_UP_AND_HORIZONTAL,
+						table.width[idx], ""})
+			}
+
+		case VERTICAL_DOUBLE, VERTICAL_THICK:
+
+			// note that both cases are dealt with in the same way
+			// since there are no UTF-8 characters which combine
+			// them
+			if idx==0 {
+				newRow = append (newRow,
+					cellType {UP_HEAVY_AND_RIGHT_LIGHT,
+						table.width[idx], ""})
+			} else if idx == len (table.column) - 1 {
+				newRow = append (newRow,
+					cellType {UP_HEAVY_AND_LEFT_LIGHT,
+						table.width[idx], ""})
+			} else {
+				newRow = append (newRow, cellType{UP_HEAVY_AND_HORIZONTAL_LIGHT,
+					table.width[idx], ""})
+			}
+		default:
+			newRow = append (newRow,
+				cellType {HORIZONTAL_SINGLE, 
+					table.width[idx], ""})
+		}
+	}
+	table.row = append (table.row, newRow)
+
+	// Before leaving, set the flag of a thick horizontal rule
+	table.horizontalSingleRule = true
+	table.horizontalDoubleRule = false
+	table.horizontalThickRule = false
+}
+
 // Add a double horizontal rule that intersects with the vertical separators
 // provided that any have been specified.
 func (table *Tbl) HDoubleRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalDoubleRule {
+	if table.horizontalSingleRule {
+		table.redoSingleRule ()
+	} else if table.horizontalDoubleRule {
 		table.redoDoubleRule ()
 	} else if table.horizontalThickRule {
 		table.redoThickRule ()
@@ -339,7 +406,9 @@ func (table *Tbl) HThickRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalDoubleRule {
+	if table.horizontalSingleRule {
+		table.redoSingleRule ()
+	} else if table.horizontalDoubleRule {
 		table.redoDoubleRule ()
 	} else if table.horizontalThickRule {
 		table.redoThickRule ()
@@ -402,7 +471,9 @@ func (table *Tbl) TopRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalDoubleRule {
+	if table.horizontalSingleRule {
+		table.redoSingleRule ()
+	} else if table.horizontalDoubleRule {
 		table.redoDoubleRule ()
 	} else if table.horizontalThickRule {
 		table.redoThickRule ()
@@ -432,7 +503,9 @@ func (table *Tbl) MidRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalDoubleRule {
+	if table.horizontalSingleRule {
+		table.redoSingleRule ()
+	} else if table.horizontalDoubleRule {
 		table.redoDoubleRule ()
 	} else if table.horizontalThickRule {
 		table.redoThickRule ()
