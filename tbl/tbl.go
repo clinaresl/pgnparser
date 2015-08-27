@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <jueves, 27 agosto 2015 02:07:18 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 27 agosto 2015 02:33:33 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -327,7 +327,11 @@ func (table *Tbl) redoThickRule () {
 						column.width, ""}
 				}
 			}
-		case VERTICAL_THICK:
+		case VERTICAL_DOUBLE, VERTICAL_THICK:
+
+			// note that both cases are dealt with in the same way
+			// since there are no UTF-8 characters which combine
+			// them
 			if idx==0 {
 				if last == 0 {
 					table.row[last][idx]=cellType{HEAVY_DOWN_AND_RIGHT,
@@ -453,7 +457,12 @@ func (table *Tbl) HThickRule () {
 					cellType{UP_LIGHT_AND_HORIZONTAL_HEAVY,
 						table.width[idx], ""})
 			}
-		case VERTICAL_THICK:
+
+		case VERTICAL_DOUBLE, VERTICAL_THICK:
+
+			// note that both cases are dealt with in the same way
+			// since there are no UTF-8 characters which combine
+			// them
 			if idx==0 {
 				newRow = append (newRow,
 					cellType {HEAVY_UP_AND_RIGHT,
@@ -475,6 +484,8 @@ func (table *Tbl) HThickRule () {
 	table.row = append (table.row, newRow)
 
 	// Before leaving, set the flag of a thick horizontal rule
+	table.horizontalSingleRule = false
+	table.horizontalDoubleRule = false
 	table.horizontalThickRule = true
 }
 
@@ -484,6 +495,12 @@ func (table *Tbl) HThickRule () {
 // This function is implemented in imitation to the LaTeX package booktabs
 func (table *Tbl) TopRule () {
 
+	// Since it is possible to concatenate horizontal rules, redo the last
+	// one if necessary
+	if table.horizontalThickRule {
+		table.redoThickRule ()
+	}
+	
 	// Top rules consist of thick lines. Just add a thick line with no text
 	// at all in every column of this line
 	var newRow tblLine	
@@ -492,6 +509,12 @@ func (table *Tbl) TopRule () {
 			table.width[idx], ""})
 	}
 	table.row = append (table.row, newRow)
+
+	// and make sure to update all flags of the horizontal rules properly
+	table.horizontalSingleRule = false
+	table.horizontalDoubleRule = false
+	table.horizontalThickRule = false
+	
 }
 
 // Add a thin horizontal rule to the current table. Mid rules do not draw
@@ -500,6 +523,12 @@ func (table *Tbl) TopRule () {
 // This function is implemented in imitation to the LaTeX package booktabs
 func (table *Tbl) MidRule () {
 
+	// Since it is possible to concatenate horizontal rules, redo the last
+	// one if necessary
+	if table.horizontalThickRule {
+		table.redoThickRule ()
+	}
+	
 	// Mid rules consist of thin lines. Just add a thin line with no text at
 	// all in every column of this line
 	var newRow tblLine	
@@ -508,6 +537,11 @@ func (table *Tbl) MidRule () {
 			table.width[idx], ""})
 	}
 	table.row = append (table.row, newRow)
+
+	// and make sure to update all flags of the horizontal rules properly
+	table.horizontalSingleRule = false
+	table.horizontalDoubleRule = false
+	table.horizontalThickRule = false	
 }
 
 // Add a thick horizontal rule to the current table. Bottom rules do not draw
