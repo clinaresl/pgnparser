@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <jueves, 27 agosto 2015 02:33:33 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 28 agosto 2015 00:00:43 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -17,7 +17,7 @@
 */
 
 // This package provides means to automatically generating text and LaTeX tables
-// from simple string specifications as those used in LaTeX
+// from simple string specifications as those used in LaTeX.
 //
 // A string specification consists of an indication how the text is justified in
 // all cells in the same column and also how separators shall be
@@ -75,10 +75,6 @@ var reSpecification = regexp.MustCompile (`^(@\{[^}]*\}|\|\|\||\|\||\||c|l|r)`)
 // extracting the text
 var reVerbatimSeparator = regexp.MustCompile (`^@\{(?P<text>[^}]*)\}`)
 
-// the following map relates integer constants to characters to be printed. It
-// is initialized in the init function of this module and it is used to print
-// cells
-var characterSet map[contentType]string
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -122,54 +118,6 @@ type Tbl struct {
 	horizontalThickRule bool
 }
 
-
-// constants
-// ----------------------------------------------------------------------------
-
-// Any specific cell of a table can be one among different types: either
-// separators or text cells.
-const (
-
-	// generic separators
-	VOID contentType = iota			// nothing
-	BLANK					// blank character
-
-	// vertical separators
-	VERTICAL_SINGLE				// 2502: │
-	VERTICAL_DOUBLE				// 2551: ║
-	VERTICAL_THICK				// 2503: ┃
-	VERTICAL_VERBATIM			// text separator
-
-	// horizontal separators
-	HORIZONTAL_SINGLE			// 2500: ─
-	HORIZONTAL_DOUBLE			// 2550: ═
-	HORIZONTAL_THICK			// 2501: ━
-
-	// horizontal separators with vertical bars
-	DOWN_LIGHT_AND_RIGHT_HEAVY		// 250d: ┍
-	HEAVY_DOWN_AND_RIGHT			// 250f: ┏
-	DOWN_LIGHT_AND_LEFT_HEAVY		// 2511: ┑
-	HEAVY_DOWN_AND_LEFT			// 2513: ┓
-	UP_LIGHT_AND_RIGHT_HEAVY		// 2515: ┕
-	HEAVY_UP_AND_RIGHT			// 2517: ┗
-	UP_LIGHT_AND_LEFT_HEAVY			// 2519: ┙
-	HEAVY_UP_AND_LEFT			// 251b: ┛
-	VERTICAL_LIGHT_AND_RIGHT_HEAVY		// 251d: ┝
-	HEAVY_VERTICAL_AND_RIGHT		// 2523: ┣
-	VERTICAL_LIGHT_AND_LEFT_HEAVY		// 2525: ┥
-	HEAVY_VERTICAL_AND_LEFT			// 252b: ┫
-	DOWN_LIGHT_AND_HORIZONTAL_HEAVY		// 252f: ┯
-	HEAVY_DOWN_AND_HORIZONTAL		// 2533: ┳
-	UP_LIGHT_AND_HORIZONTAL_HEAVY		// 2537: ┷
-	HEAVY_UP_AND_HORIZONTAL			// 253b: ┻
-	VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY	// 253f: ┿
-	HEAVY_VERTICAL_AND_HORIZONTAL		// 254b: ╋
-	
-	// text cells
-	LEFT					// left justified
-	CENTER					// centered
-	RIGHT					// right justified
-)
 
 // Functions
 // ----------------------------------------------------------------------------
@@ -218,47 +166,6 @@ func getColumnType (cmd string) (column tblColumn) {
 	return
 }
 
-// initializes this module by setting the right values in the characterSet map
-func init () {
-
-	// initialize the map of utf-8 characters and set its contents
-	characterSet = make (map[contentType]string)
-
-	// -- generic separators
-	characterSet[VOID]  = ""
-	characterSet[BLANK] = " "
-	
-	// -- vertical separators
-	characterSet[VERTICAL_SINGLE] = "\u2502"
-	characterSet[VERTICAL_DOUBLE] = "\u2551"
-	characterSet[VERTICAL_THICK]  = "\u2503"
-
-	// -- horizontal separators
-	characterSet[HORIZONTAL_SINGLE] = "\u2500"
-	characterSet[HORIZONTAL_DOUBLE] = "\u2550"
-	characterSet[HORIZONTAL_THICK]  = "\u2501"
-
-	// -- horizontal separators with vertical bars
-	characterSet[DOWN_LIGHT_AND_RIGHT_HEAVY]            = "\u250d"
-	characterSet[HEAVY_DOWN_AND_RIGHT]                  = "\u250f"
-	characterSet[DOWN_LIGHT_AND_LEFT_HEAVY]             = "\u2511"
-	characterSet[HEAVY_DOWN_AND_LEFT]                   = "\u2513"
-	characterSet[UP_LIGHT_AND_RIGHT_HEAVY]              = "\u2515"
-	characterSet[HEAVY_UP_AND_RIGHT]                    = "\u2517"
-	characterSet[UP_LIGHT_AND_LEFT_HEAVY]               = "\u2519"
-	characterSet[HEAVY_UP_AND_LEFT]                     = "\u251b"
-	characterSet[VERTICAL_LIGHT_AND_RIGHT_HEAVY]        = "\u251d"
-	characterSet[HEAVY_VERTICAL_AND_RIGHT]              = "\u2523"
-	characterSet[VERTICAL_LIGHT_AND_LEFT_HEAVY]         = "\u2525"
-	characterSet[HEAVY_VERTICAL_AND_LEFT]               = "\u252b"
-	characterSet[DOWN_LIGHT_AND_HORIZONTAL_HEAVY]       = "\u252f"
-	characterSet[HEAVY_DOWN_AND_HORIZONTAL]             = "\u2533"
-	characterSet[UP_LIGHT_AND_HORIZONTAL_HEAVY]         = "\u2537"
-	characterSet[HEAVY_UP_AND_HORIZONTAL]               = "\u253b"
-	characterSet[VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY]   = "\u253f"
-	characterSet[HEAVY_VERTICAL_AND_HORIZONTAL]         = "\u254b"
-}
-
 // Return a new instance of Tbl from a string specification
 func NewTable (cmd string) (table Tbl, err error) {
 
@@ -294,73 +201,6 @@ func NewTable (cmd string) (table Tbl, err error) {
 // Methods
 // ----------------------------------------------------------------------------
 
-// Redraw the last line in case it is a horizontal thick rule. This is necessary
-// in case more lines are added after a horizontal rule so that the connectors
-// are now set properly
-func (table *Tbl) redoThickRule () {
-	last := len (table.row) - 1
-	for idx, column := range table.column {
-		switch column.content {
-		case VERTICAL_SINGLE:
-			if idx==0 {
-				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_LIGHT_AND_RIGHT_HEAVY,
-						column.width, ""}
-				} else {
-					table.row[last][idx]=cellType{VERTICAL_LIGHT_AND_RIGHT_HEAVY,
-						column.width, ""}
-				}
-			} else if idx == len (table.column) - 1 {
-				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_LIGHT_AND_LEFT_HEAVY,
-						column.width, ""}
-				} else {
-					table.row[last][idx]=cellType{VERTICAL_LIGHT_AND_LEFT_HEAVY,
-						column.width, ""}
-				}
-			} else {
-				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_LIGHT_AND_HORIZONTAL_HEAVY,
-						column.width, ""}
-				} else {
-					table.row[last][idx]=cellType{VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY,
-						column.width, ""}
-				}
-			}
-		case VERTICAL_DOUBLE, VERTICAL_THICK:
-
-			// note that both cases are dealt with in the same way
-			// since there are no UTF-8 characters which combine
-			// them
-			if idx==0 {
-				if last == 0 {
-					table.row[last][idx]=cellType{HEAVY_DOWN_AND_RIGHT,
-						column.width, ""}
-				} else {
-					table.row[last][idx] = cellType{HEAVY_VERTICAL_AND_RIGHT,
-						column.width, ""}
-				}
-			} else if idx == len (table.column) - 1 {
-				if last == 0 {
-					table.row[last][idx] = cellType{HEAVY_DOWN_AND_LEFT,
-						column.width, ""}
-				} else {
-					table.row[last][idx] = cellType{HEAVY_VERTICAL_AND_LEFT,
-						column.width, ""}
-				}
-			} else {
-				if last == 0 {
-					table.row[last][idx] = cellType{HEAVY_DOWN_AND_HORIZONTAL,
-						column.width, ""}
-				} else {
-					table.row[last][idx] = cellType{HEAVY_VERTICAL_AND_HORIZONTAL,
-						column.width, ""}
-				}
-			}
-		}
-	}
-}
-
 // Add a single line of text to the bottom of the receiver table. The contents
 // are specified as a slice of strings. In case the number of items is less than
 // the number of columns, the row is paddled with empty strings. If the number
@@ -370,7 +210,9 @@ func (table *Tbl) AddRow (row []string) (err error) {
 
 	// First of all, in case the last line was a thick rule, redo it since
 	// we are about to generate a new line
-	if table.horizontalThickRule {
+	if table.horizontalDoubleRule {
+		table.redoDoubleRule ()
+	} else if table.horizontalThickRule {
 		table.redoThickRule ()
 	}
 	
@@ -430,13 +272,76 @@ func (table *Tbl) AddRow (row []string) (err error) {
 	return nil
 }
 
+// Add a double horizontal rule that intersects with the vertical separators
+// provided that any have been specified.
+func (table *Tbl) HDoubleRule () {
+
+	// Since it is possible to concatenate horizontal rules, redo the last
+	// one if necessary
+	if table.horizontalDoubleRule {
+		table.redoDoubleRule ()
+	} else if table.horizontalThickRule {
+		table.redoThickRule ()
+	}
+	
+	var newRow tblLine
+	for idx, column := range table.column {
+		switch column.content {
+		case VERTICAL_SINGLE:
+			if idx==0 {
+				newRow = append (newRow,
+					cellType {UP_SINGLE_AND_RIGHT_DOUBLE,
+						table.width[idx], ""})
+			} else if idx == len (table.column) - 1 {
+				newRow = append (newRow,
+					cellType {UP_SINGLE_AND_LEFT_DOUBLE,
+						table.width[idx], ""})
+			} else {
+				newRow = append (newRow,
+					cellType{UP_SINGLE_AND_HORIZONTAL_DOUBLE,
+						table.width[idx], ""})
+			}
+
+		case VERTICAL_DOUBLE, VERTICAL_THICK:
+
+			// note that both cases are dealt with in the same way
+			// since there are no UTF-8 characters which combine
+			// them
+			if idx==0 {
+				newRow = append (newRow,
+					cellType {DOUBLE_UP_AND_RIGHT,
+						table.width[idx], ""})
+			} else if idx == len (table.column) - 1 {
+				newRow = append (newRow,
+					cellType {DOUBLE_UP_AND_LEFT,
+						table.width[idx], ""})
+			} else {
+				newRow = append (newRow, cellType{DOUBLE_UP_AND_HORIZONTAL,
+					table.width[idx], ""})
+			}
+		default:
+			newRow = append (newRow,
+				cellType {HORIZONTAL_DOUBLE, 
+					table.width[idx], ""})
+		}
+	}
+	table.row = append (table.row, newRow)
+
+	// Before leaving, set the flag of a thick horizontal rule
+	table.horizontalSingleRule = false
+	table.horizontalDoubleRule = true
+	table.horizontalThickRule = false
+}
+
 // Add a thick horizontal rule that intersects with the vertical separators
 // provided that any have been specified.
 func (table *Tbl) HThickRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalThickRule {
+	if table.horizontalDoubleRule {
+		table.redoDoubleRule ()
+	} else if table.horizontalThickRule {
 		table.redoThickRule ()
 	}
 	
@@ -497,7 +402,9 @@ func (table *Tbl) TopRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalThickRule {
+	if table.horizontalDoubleRule {
+		table.redoDoubleRule ()
+	} else if table.horizontalThickRule {
 		table.redoThickRule ()
 	}
 	
@@ -525,7 +432,9 @@ func (table *Tbl) MidRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalThickRule {
+	if table.horizontalDoubleRule {
+		table.redoDoubleRule ()
+	} else if table.horizontalThickRule {
 		table.redoThickRule ()
 	}
 	
@@ -581,7 +490,7 @@ func (cell cellType) String () string {
 }
 
 // A table is drawn just by drawing its cells one after the other
-func (table *Tbl) String () string {
+func (table Tbl) String () string {
 
 	var output string
 

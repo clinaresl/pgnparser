@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <jueves, 27 agosto 2015 02:33:52 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 28 agosto 2015 00:05:54 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -25,25 +25,25 @@ import (
 
 func TestNewTable1 (t *testing.T) {
 
-	var spec = "|l||c|||ccl|l||"
+	var spec = "||l||c||ccl||l||"
 	
 	table, err := NewTable (spec); if err != nil {
 		t.Fatal (" Fatal error while constructing the table")
 	}
 
-	table.HThickRule ()
+	table.HDoubleRule ()
 	
 	if table.AddRow ([]string{"Hola", "me", "llamo", "Carlos", "Linares", "López"})!= nil {
 		t.Fatal ("Error adding a new row")
 	}
 
-	table.HThickRule ()
+	table.HDoubleRule ()
 	
 	if table.AddRow ([]string{"", "Y", "tengo", "tres", "hijos"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
 
-	table.HThickRule ()
+	table.HDoubleRule ()
 	
 	if table.AddRow ([]string{"", "", "Roberto", "Linares", "Rollán"}) != nil {
 		t.Fatal ("Error adding a new row")
@@ -57,14 +57,13 @@ func TestNewTable1 (t *testing.T) {
 		t.Fatal ("Error adding a new row")
 	}
 
-	table.HThickRule ()
+	table.HDoubleRule ()
 	
 	fmt.Println (table)
-	fmt.Println (&table)
 }
 
 func TestNewTable2 (t *testing.T) {
-	var spec = "l@{ (}r@{)}"
+	var spec = "l@{ (}r@{)}@{ }"
 
 	table, err := NewTable (spec); if err != nil {
 		t.Fatal (" Fatal error while constructing the table")
@@ -101,7 +100,6 @@ func TestNewTable2 (t *testing.T) {
 	table.BottomRule ()
 
 	fmt.Println (table)	
-	fmt.Println (&table)	
 }
 
 
