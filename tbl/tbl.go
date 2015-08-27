@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <viernes, 28 agosto 2015 00:44:33 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 28 agosto 2015 00:55:04 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -262,6 +262,11 @@ func (table *Tbl) AddRow (row []string) (err error) {
 		default:
 			return errors.New (fmt.Sprintf("Unknown column type '%v'\n", value))
 		}
+	}
+
+	// Check there are no left values in the given row
+	if idx < len (row) {
+		return errors.New (fmt.Sprintf ("%v items were given but there are only %v columns", len (row), idx))
 	}
 	
 	// add this row to the table and exit with no error
@@ -562,7 +567,7 @@ func (cell cellType) String () string {
 	return output
 }
 
-// A table is drawn just by drawing its cells one after the other
+// Return a string with a representation of the contents of the table
 func (table Tbl) String () string {
 
 	var output string
