@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <viernes, 28 agosto 2015 00:56:01 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 29 agosto 2015 02:16:36 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -63,7 +63,7 @@ func TestNewTable1 (t *testing.T) {
 }
 
 func TestNewTable2 (t *testing.T) {
-	var spec = "l@{ (}r@{)}@{ }"
+	var spec = "l@{ (}r@{)}@{ }c"
 
 	table, err := NewTable (spec); if err != nil {
 		t.Fatal (" Fatal error while constructing the table")
@@ -71,29 +71,29 @@ func TestNewTable2 (t *testing.T) {
 
 	table.TopRule ()
 	
-	if table.AddRow ([]string{"Player", "ELO"})!= nil {
+	if table.AddRow ([]string{"Player", "ELO", "Country"})!= nil {
 		t.Fatal ("Error adding a new row")
 	}
 
 	table.MidRule ()
 
-	if table.AddRow ([]string{"clinares", "1588"})!= nil {
+	if table.AddRow ([]string{"clinares", "1588", "Spain"})!= nil {
 		t.Fatal ("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"nemesis", "1631"}) != nil {
+	if table.AddRow ([]string{"nemesis", "1631", "Egypt"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"jemma", "1811"}) != nil {
+	if table.AddRow ([]string{"jemma", "1811", "Germany"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
 	
-	if table.AddRow ([]string{"zco", "1880"}) != nil {
+	if table.AddRow ([]string{"zco", "1880", "United Kingdom"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
 	
-	if table.AddRow ([]string{"miercoles", "1893"}) != nil {
+	if table.AddRow ([]string{"miercoles", "1893", "Spain"}) != nil {
 		t.Fatal ("Error adding a new row")
 	}
 	

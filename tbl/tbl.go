@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <viernes, 28 agosto 2015 00:55:04 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 29 agosto 2015 02:11:59 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -235,16 +235,28 @@ func (table *Tbl) AddRow (row []string) (err error) {
 
 		case LEFT, CENTER, RIGHT:
 
-			// if it contains text provided by the user, then create
-			// a new cell with those contents (along with two
-			// surrounding spaces) and move forward in the slice
-			// provided by the user
-
 			// if there are no more contents provided by the user,
-			// paddle the remainin entries with blank spaces
+			// paddle the remainin entries with blank
+			// spaces. Otherwise, add the user text
 			content := " "
 			if idx < len (row) {
-				content = " " + row[idx] + " "
+
+				// make sure user text is surrounded by blank
+				// spaces unless the previous/next column are
+				// verbatim column
+				if jdx == 0 ||
+					table.column[jdx-1].content != VERTICAL_VERBATIM {
+					content = " " + row[idx]
+				} else {
+					content = row[idx]
+				}
+				if jdx == len (table.column) - 1 {
+					if table.column[jdx].content != VERTICAL_VERBATIM {
+						content += " "
+					}
+				} else if table.column[jdx+1].content != VERTICAL_VERBATIM {
+						content += " "
+				}
 			}
 
 			// compute the width of this cell as the maximum between
