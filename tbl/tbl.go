@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <sábado, 29 agosto 2015 02:11:59 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 31 agosto 2015 02:33:29 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -30,6 +30,9 @@
 //    ||     - a double bar
 //    |||    - a thick bar
 //    @{...} - a verbatim separator where '...' stands for anything but '}'
+//    p{width} - creates a column with a fixed width which can be specified in
+//    LaTeX format. This package however, takes only the first digits and
+//    interpretes them as a number of characters
 // 
 // The column is one of the types:
 //    c - centered
@@ -46,6 +49,7 @@ import (
 	"log"			// Fatal messages
 	"math"			// Max
 	"regexp"		// for processing specification strings
+	"strconv"		// Atoi
 	"strings"		// for repeating characters
 	"unicode/utf8"		// provides support for UTF-8 characters
 )
@@ -59,21 +63,32 @@ import (
 // 
 // The separator can be present or not and it can be one among the following
 // types:
-//    void   - no separator
 //    |      - a single bar
 //    ||     - a double bar
 //    |||    - a thick bar
 //    @{...} - a verbatim separator where '...' stands for anything but '}'
+//    p{width} - creates a column with a fixed width which can be specified in
+//    LaTeX format. This package however, takes only the first digits and
+//    interpretes them as a number of characters
 // 
 // The column is one of the types:
 //    c - centered
 //    l - left
 //    r - right
-var reSpecification = regexp.MustCompile (`^(@\{[^}]*\}|\|\|\||\|\||\||c|l|r)`)
+var reSpecification = regexp.MustCompile (`^(p{[^}]*\}|\@\{[^}]*\}|\|\|\||\|\||\||c|l|r)`)
 
 // Verbatim separators are also processed with their own regular expression for
 // extracting the text
 var reVerbatimSeparator = regexp.MustCompile (`^@\{(?P<text>[^}]*)\}`)
+
+// Likewise, fixed widths are processed separately with an additional regular
+// expression to extract the width
+var reFixedWidth = regexp.MustCompile (`^p\{(?P<width>[^}]*)\}`)
+
+// While the full width is passed to the LaTeX code, only the integer part is
+// used to set the width of a column. Thus, an additional regexp is used just to
+// extract it
+var reIntegerFixedWidth = regexp.MustCompile (`^(?P<value>[\d]+).*`)
 
 
 // typedefs
@@ -146,7 +161,8 @@ func getColumnType (cmd string) (column tblColumn) {
 		column = tblColumn{RIGHT, 0, ""}
 	default:
 
-		// Still, this might be a legal column only if it is a verbatim
+		// Still, this might be a legal column only if it is a verbatim,
+		// or ...
 		if reVerbatimSeparator.MatchString (cmd) {
 
 			// if this has been recognized as a legal verbatim
@@ -157,6 +173,28 @@ func getColumnType (cmd string) (column tblColumn) {
 			return tblColumn{VERTICAL_VERBATIM,
 				utf8.RuneCountInString (cmd[tag[2]:tag[3]]),
 				cmd[tag[2]:tag[3]]}
+		} else if reFixedWidth.MatchString (cmd) {
+
+			// ... or a fixed widht column
+			tag0 := reFixedWidth.FindStringSubmatchIndex (cmd)
+			arg  := cmd[tag0[2]:tag0[3]]
+			
+			// If this is the case, create a column of the proper
+			// type indicating the width provided by the user
+			if reIntegerFixedWidth.MatchString (arg) {
+
+				tag1 := reIntegerFixedWidth.FindStringSubmatchIndex (arg)
+				width, err := strconv.Atoi (arg[tag1[2]:tag1[3]]); if err != nil {
+					log.Fatalf (" Impossible to extract the width from '%v'",
+						arg[tag1[2]:tag1[3]])
+				} else {
+					return tblColumn {VERTICAL_FIXED_WIDTH,
+						width, ""}
+				}
+			} else {
+				log.Fatalf (" Impossible to extract an integer width from '%v'",
+					arg)
+			}
 		}
 
 		// otherwise, raise an error
@@ -233,6 +271,50 @@ func (table *Tbl) AddRow (row []string) (err error) {
 			// the user, just copy its specification
 			newRow = append (newRow, cellType (value))
 
+		case VERTICAL_FIXED_WIDTH:
+
+			// if there are no more contents provided by the user,
+			// paddle the remainin entries with blank
+			// spaces. Otherwise, add the user text
+			var text string
+			if idx < len (row) {
+				content := row[idx]
+				if utf8.RuneCountInString (content) <= value.width {
+					text = content + strings.Repeat (" ",
+						value.width -
+							utf8.RuneCountInString (content))
+				} else {
+					text = content[0:value.width-1] + "►"
+				}				
+			} else {
+				text = strings.Repeat (" ", value.width)
+			}
+
+			// finally, make sure user text is surrounded by blank
+			// spaces unless the previous/next column are verbatim
+			// column
+			if jdx == 0 ||
+				table.column[jdx-1].content != VERTICAL_VERBATIM {
+				text = " " + text
+			}
+			if jdx == len (table.column) - 1 ||
+				table.column[jdx+1].content != VERTICAL_VERBATIM {
+				text = text + " "
+			}
+
+			// update the width of this column after taking into
+			// account the surrounding blank spaces
+			table.width [jdx] = int (math.Max (float64 (table.width[jdx]),
+				float64 (utf8.RuneCountInString (text))))
+			
+			// create the cell and add it to this row
+			newRow = append (newRow, cellType{value.content,
+				utf8.RuneCountInString (text),
+				text})
+			
+			// and move to the next entry provided by the user
+			idx += 1
+			
 		case LEFT, CENTER, RIGHT:
 
 			// if there are no more contents provided by the user,
@@ -270,6 +352,8 @@ func (table *Tbl) AddRow (row []string) (err error) {
 				cellType{value.content,
 					table.width [jdx],
 					content})
+			
+			// and move to the next entry provided by the user
 			idx += 1
 		default:
 			return errors.New (fmt.Sprintf("Unknown column type '%v'\n", value))
@@ -561,6 +645,8 @@ func (cell cellType) String () string {
 	// depending upon the type of cell
 	switch cell.content {
 	case VERTICAL_VERBATIM:
+		output = cell.text
+	case VERTICAL_FIXED_WIDTH:
 		output = cell.text
 	case LEFT:
 		output = cell.text + strings.Repeat (" ",

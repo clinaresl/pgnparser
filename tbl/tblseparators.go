@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Aug 27 23:41:01 2015 Carlos Linares Lopez>
-  Last update <viernes, 28 agosto 2015 00:42:57 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 29 agosto 2015 02:34:06 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -43,7 +43,8 @@ const (
 	VERTICAL_SINGLE				// 2502: │
 	VERTICAL_DOUBLE				// 2551: ║
 	VERTICAL_THICK				// 2503: ┃
-	VERTICAL_VERBATIM			// text separator
+	VERTICAL_VERBATIM			// text separator @{}
+	VERTICAL_FIXED_WIDTH			// fixed width p{}
 
 	// horizontal separators
 	HORIZONTAL_SINGLE			// 2500: ─

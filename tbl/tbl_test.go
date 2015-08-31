@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <sábado, 29 agosto 2015 02:16:36 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 31 agosto 2015 02:53:20 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -25,13 +25,13 @@ import (
 
 func TestNewTable1 (t *testing.T) {
 
-	var spec = "|l|c|ccl|l|"
+	var spec = "||l|c|ccl|l||"
 	
 	table, err := NewTable (spec); if err != nil {
 		t.Fatal (" Fatal error while constructing the table")
 	}
 
-	table.HSingleRule ()
+	table.HDoubleRule ()
 	
 	if table.AddRow ([]string{"Hola", "me", "llamo", "Carlos", "Linares", "López"})!= nil {
 		t.Fatal ("Error adding a new row")
@@ -57,7 +57,7 @@ func TestNewTable1 (t *testing.T) {
 		t.Fatal ("Error adding a new row")
 	}
 
-	table.HSingleRule ()
+	table.HDoubleRule ()
 	
 	fmt.Println (table)
 }
@@ -98,6 +98,45 @@ func TestNewTable2 (t *testing.T) {
 	}
 	
 	table.BottomRule ()
+
+	fmt.Println (table)	
+}
+
+
+func TestNewTable3 (t *testing.T) {
+	var spec = "|cllp{12.5mm}r|"
+
+	table, err := NewTable (spec); if err != nil {
+		t.Fatal (" Fatal error while constructing the table")
+	}
+
+	table.HSingleRule ()
+
+	if table.AddRow ([]string{"Lisp", "1958", "❤", "Nice and old", "John McCarthy"})!=nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	if table.AddRow ([]string{"C", "1972", "❤❤❤", "A must to know!", "Dennis Ritchie"})!= nil {
+		t.Fatal ("Error adding a new row")
+	}
+
+	if table.AddRow ([]string{"C++", "1985", "❤❤❤❤❤", "Fast, capable", "Bjarne Stroustrup"})!= nil {
+		t.Fatal ("Error adding a new row")
+	}
+
+	if table.AddRow ([]string{"Python", "1989", "❤❤❤❤", "Quick development", "Guido van Rossum"}) != nil {
+		t.Fatal ("Error adding a new row")
+	}
+
+	if table.AddRow ([]string{"Go", "2007", "❤❤❤❤❤", "Amazing! Brilliant", "Robert Griesemer, Rob Pike & Ken Thompson"}) != nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	if table.AddRow ([]string{"Java", "1995", "", "Not my fave", "James Gosling"}) != nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	table.HSingleRule ()
 
 	fmt.Println (table)	
 }

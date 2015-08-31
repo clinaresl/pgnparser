@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <sábado, 22 agosto 2015 18:20:27 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 29 agosto 2015 03:22:02 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -517,7 +517,13 @@ func (games *PgnCollection) ShowHeaders () string {
 	table.TopRule ()
 
 	// Now, add the header of every single game in this collection
-	for _, game := range games.slice {
+	for idx, game := range games.slice {
+		// show a separator every ten lines to make the table easier to
+		// read
+		if idx>0 && idx%10==0 {
+			table.MidRule ()
+		}
+		
 		table.AddRow (game.getHeader ())
 	}
 
