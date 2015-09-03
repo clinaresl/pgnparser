@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <miércoles, 02 septiembre 2015 09:35:15 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 03 septiembre 2015 20:35:32 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -697,6 +697,77 @@ func (table *Tbl) CSingleLine (cmd string) {
 			} else {
 				newRow.cell = append (newRow.cell,
 					cellType {HORIZONTAL_SINGLE,
+						table.width[idx], ""})
+			}
+		} else {
+
+			// in case we are out of bounds, just simply preserve
+			// the type of column at this position
+			newRow.cell = append (newRow.cell,
+				cellType {cell.content, table.width[idx], ""})
+		}
+	}
+
+	// and add this row to the bottom of the table
+	table.row = append (table.row, newRow)
+}
+
+// draws a horizontal double rule from a specific column to other. The specific
+// region to draw is specified in LaTeX format in the given command
+func (table *Tbl) CDoubleLine (cmd string) {
+
+	var err error
+	var from, to int
+	
+	// parse the given command
+	if reCLine.MatchString (cmd) {
+		tag := reCLine.FindStringSubmatchIndex (cmd)
+
+		// extract the limits of this cline
+		from, err = strconv.Atoi (cmd[tag[2]:tag[3]]); if err != nil {
+			log.Fatalf (" It was not feasible to extract the first bound from '%v'",
+				cmd[tag[2]:tag[3]])
+		}
+		to, err = strconv.Atoi (cmd[tag[4]:tag[5]]); if err != nil {
+			log.Fatalf (" It was not feasible to extract the second bound from '%v'",
+				cmd[tag[4]:tag[5]])
+		}
+	} else {
+		log.Fatalf ("Incorrect cline specification: '%v'",
+			cmd)
+	}
+
+	// 'from' and 'to' are given as user column indexes. Translate them into
+	// effective column indexes
+	from, to = table.getEffectiveColumn (from), table.getEffectiveColumn (to)
+	
+	// Since it is possible to concatenate horizontal rules, redo the last
+	// one if necessary
+	table.redoLastLine ()
+	
+	// A single rules consist of double lines in those areas specified by the
+	// user and blank characters otherwise
+	newRow := tblLine{HORIZONTAL_DOUBLE,
+		tblRule{HORIZONTAL_DOUBLE, from, to},
+		[]cellType{}}
+	for idx, cell := range table.column {
+
+		// first update the column number of this one wrt columns with
+		// content ---ie., ignoring separators
+		if cell.content == LEFT ||
+			cell.content == CENTER ||
+			cell.content == RIGHT ||
+			cell.content == VERTICAL_VERBATIM ||
+			cell.content == VERTICAL_FIXED_WIDTH {
+
+			// and now check whether this one shall be drawn
+			if idx < from || idx > to {
+				newRow.cell = append (newRow.cell,
+					cellType {BLANK,
+						table.width[idx], ""})
+			} else {
+				newRow.cell = append (newRow.cell,
+					cellType {HORIZONTAL_DOUBLE,
 						table.width[idx], ""})
 			}
 		} else {
