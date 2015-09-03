@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <lunes, 31 agosto 2015 02:33:29 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 02 septiembre 2015 09:35:15 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -90,6 +90,9 @@ var reFixedWidth = regexp.MustCompile (`^p\{(?P<width>[^}]*)\}`)
 // extract it
 var reIntegerFixedWidth = regexp.MustCompile (`^(?P<value>[\d]+).*`)
 
+// clines are recognized with the following regular expression
+var reCLine = regexp.MustCompile (`(?P<from>\d+)-(?P<to>\d+)`)
+
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -114,23 +117,31 @@ type cellType struct {
 // A column is specified with a cell type
 type tblColumn cellType
 
-// A line is just made up of cells
-type tblLine []cellType
+// A horizontal rule (of a specific type) is characterized by its beginning and
+// end.
+type tblRule struct {
+	content contentType
+	from, to int
+}
+
+// Lines can either contain text (content=TEXT) or a horizontal rule. In case it
+// is a horizontal rule, the line stores the beginning and end of it. In any
+// case, lines are made up of cells of different types
+type tblLine struct {
+	content contentType
+	rule tblRule
+	cell []cellType
+}
 
 // A table consists mainly of two components: information about the columns and
 // information about the rows. The former is stored as a slice of columns. Rows
-// are specified as a slice of lines, each one with its own cells. Additionally,
-// a table contains a slice of widths with the overall width of each cell in
-// every line. Finally, there are three flags used to *remember* whether the
-// last line was a horizontal rule or not and the type of horizontal rule. This
-// is necessary to redraw the connectors in case that more lines are added.
+// are specified as a slice of lines, each one of its own type and with its own
+// cells. Additionally, a table contains a slice of widths with the overall
+// width of each cell in every line.
 type Tbl struct {
 	column []tblColumn
 	row []tblLine
 	width []int
-	horizontalSingleRule bool
-	horizontalDoubleRule bool
-	horizontalThickRule bool
 }
 
 
@@ -239,6 +250,39 @@ func NewTable (cmd string) (table Tbl, err error) {
 // Methods
 // ----------------------------------------------------------------------------
 
+// this private service translates a *user* column index into an effective
+// column index. User columns are those with user contents. Effective columns
+// are those defined in the specification string. Importantly, while the user
+// column index is 1-based, the effective column index is 0-based
+func (table *Tbl) getEffectiveColumn (user int) (int) {
+
+	// iterate over all columns until the specified user column has been
+	// found
+	for idx, jdx := 0, 1; idx < len (table.column) ; idx += 1 {
+		if table.column[idx].content == LEFT ||
+			table.column[idx].content == CENTER ||
+			table.column[idx].content == RIGHT ||
+			table.column[idx].content == VERTICAL_VERBATIM ||
+			table.column[idx].content == VERTICAL_FIXED_WIDTH {
+
+			// if this is the user column index requested then
+			// return its effective counter
+			if jdx == user {
+				return idx
+			}
+
+			// increment the number of user column indexes found so
+			// far
+			jdx += 1
+		}
+	}
+
+	// if all columns have been processed and the user column index
+	// requested has not been found, then show an error
+	log.Fatalf (" User column index '%v' out of bounds!", user)
+	return -1
+}
+
 // Add a single line of text to the bottom of the receiver table. The contents
 // are specified as a slice of strings. In case the number of items is less than
 // the number of columns, the row is paddled with empty strings. If the number
@@ -248,17 +292,13 @@ func (table *Tbl) AddRow (row []string) (err error) {
 
 	// First of all, in case the last line was a horizontal rule, redo it
 	// since we are about to generate a new line
-	if table.horizontalSingleRule {
-		table.redoSingleRule ()
-	} else if table.horizontalDoubleRule {
-		table.redoDoubleRule ()
-	} else if table.horizontalThickRule {
-		table.redoThickRule ()
-	}
+	table.redoLastLine ()
 	
 	// insert all cells of this line: those provided by the user and others
 	// provided in the specification string
-	var newRow tblLine
+	newRow := tblLine{TEXT,
+		tblRule{VOID, 0, 0},
+		[]cellType{}}
 	idx := 0
 	for jdx, value := range (table.column) {
 
@@ -269,7 +309,7 @@ func (table *Tbl) AddRow (row []string) (err error) {
 
 			// in case this cell does not contain text specified by
 			// the user, just copy its specification
-			newRow = append (newRow, cellType (value))
+			newRow.cell = append (newRow.cell, cellType (value))
 
 		case VERTICAL_FIXED_WIDTH:
 
@@ -308,7 +348,7 @@ func (table *Tbl) AddRow (row []string) (err error) {
 				float64 (utf8.RuneCountInString (text))))
 			
 			// create the cell and add it to this row
-			newRow = append (newRow, cellType{value.content,
+			newRow.cell = append (newRow.cell, cellType{value.content,
 				utf8.RuneCountInString (text),
 				text})
 			
@@ -348,7 +388,7 @@ func (table *Tbl) AddRow (row []string) (err error) {
 			// well
 			table.width [jdx] = int (math.Max (float64 (table.width[jdx]),
 				float64 (utf8.RuneCountInString (content))))
-			newRow = append (newRow,
+			newRow.cell = append (newRow.cell,
 				cellType{value.content,
 					table.width [jdx],
 					content})
@@ -367,11 +407,6 @@ func (table *Tbl) AddRow (row []string) (err error) {
 	
 	// add this row to the table and exit with no error
 	table.row = append (table.row, newRow)
-
-	// and make sure to update all flags of the horizontal rules properly
-	table.horizontalSingleRule = false
-	table.horizontalDoubleRule = false
-	table.horizontalThickRule = false
 	return nil
 }
 
@@ -381,61 +416,66 @@ func (table *Tbl) HSingleRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalSingleRule {
-		table.redoSingleRule ()
-	} else if table.horizontalDoubleRule {
-		table.redoDoubleRule ()
-	} else if table.horizontalThickRule {
-		table.redoThickRule ()
-	}
+	table.redoLastLine ()
 	
-	var newRow tblLine
+	newRow := tblLine{HORIZONTAL_SINGLE,
+		tblRule{HORIZONTAL_SINGLE, 1, len (table.column)},
+		[]cellType{}}
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
 			if idx==0 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {LIGHT_UP_AND_RIGHT,
 						table.width[idx], ""})
 			} else if idx == len (table.column) - 1 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {LIGHT_UP_AND_LEFT,
 						table.width[idx], ""})
 			} else {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType{LIGHT_UP_AND_HORIZONTAL,
 						table.width[idx], ""})
 			}
 
-		case VERTICAL_DOUBLE, VERTICAL_THICK:
+		case VERTICAL_DOUBLE:
 
-			// note that both cases are dealt with in the same way
-			// since there are no UTF-8 characters which combine
-			// them
 			if idx==0 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
+					cellType {UP_DOUBLE_AND_RIGHT_SINGLE,
+						table.width[idx], ""})
+			} else if idx == len (table.column) - 1 {
+				newRow.cell = append (newRow.cell,
+					cellType {UP_DOUBLE_AND_LEFT_SINGLE,
+						table.width[idx], ""})
+			} else {
+				newRow.cell = append (newRow.cell,
+					cellType{UP_DOUBLE_AND_HORIZONTAL_SINGLE,
+						table.width[idx], ""})
+			}
+			
+		case VERTICAL_THICK:
+
+			if idx==0 {
+				newRow.cell = append (newRow.cell,
 					cellType {UP_HEAVY_AND_RIGHT_LIGHT,
 						table.width[idx], ""})
 			} else if idx == len (table.column) - 1 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {UP_HEAVY_AND_LEFT_LIGHT,
 						table.width[idx], ""})
 			} else {
-				newRow = append (newRow, cellType{UP_HEAVY_AND_HORIZONTAL_LIGHT,
-					table.width[idx], ""})
+				newRow.cell = append (newRow.cell,
+					cellType{UP_HEAVY_AND_HORIZONTAL_LIGHT,
+						table.width[idx], ""})
 			}
 		default:
-			newRow = append (newRow,
+			newRow.cell = append (newRow.cell,
 				cellType {HORIZONTAL_SINGLE, 
 					table.width[idx], ""})
 		}
 	}
 	table.row = append (table.row, newRow)
-
-	// Before leaving, set the flag of a thick horizontal rule
-	table.horizontalSingleRule = true
-	table.horizontalDoubleRule = false
-	table.horizontalThickRule = false
 }
 
 // Add a double horizontal rule that intersects with the vertical separators
@@ -444,28 +484,24 @@ func (table *Tbl) HDoubleRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalSingleRule {
-		table.redoSingleRule ()
-	} else if table.horizontalDoubleRule {
-		table.redoDoubleRule ()
-	} else if table.horizontalThickRule {
-		table.redoThickRule ()
-	}
+	table.redoLastLine ()
 	
-	var newRow tblLine
+	newRow := tblLine{HORIZONTAL_DOUBLE,
+		tblRule{HORIZONTAL_DOUBLE, 1, len (table.column)},
+		[]cellType{}}
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
 			if idx==0 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {UP_SINGLE_AND_RIGHT_DOUBLE,
 						table.width[idx], ""})
 			} else if idx == len (table.column) - 1 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {UP_SINGLE_AND_LEFT_DOUBLE,
 						table.width[idx], ""})
 			} else {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType{UP_SINGLE_AND_HORIZONTAL_DOUBLE,
 						table.width[idx], ""})
 			}
@@ -476,29 +512,25 @@ func (table *Tbl) HDoubleRule () {
 			// since there are no UTF-8 characters which combine
 			// them
 			if idx==0 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {DOUBLE_UP_AND_RIGHT,
 						table.width[idx], ""})
 			} else if idx == len (table.column) - 1 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {DOUBLE_UP_AND_LEFT,
 						table.width[idx], ""})
 			} else {
-				newRow = append (newRow, cellType{DOUBLE_UP_AND_HORIZONTAL,
-					table.width[idx], ""})
+				newRow.cell = append (newRow.cell,
+					cellType{DOUBLE_UP_AND_HORIZONTAL,
+						table.width[idx], ""})
 			}
 		default:
-			newRow = append (newRow,
+			newRow.cell = append (newRow.cell,
 				cellType {HORIZONTAL_DOUBLE, 
 					table.width[idx], ""})
 		}
 	}
 	table.row = append (table.row, newRow)
-
-	// Before leaving, set the flag of a thick horizontal rule
-	table.horizontalSingleRule = false
-	table.horizontalDoubleRule = true
-	table.horizontalThickRule = false
 }
 
 // Add a thick horizontal rule that intersects with the vertical separators
@@ -507,28 +539,24 @@ func (table *Tbl) HThickRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalSingleRule {
-		table.redoSingleRule ()
-	} else if table.horizontalDoubleRule {
-		table.redoDoubleRule ()
-	} else if table.horizontalThickRule {
-		table.redoThickRule ()
-	}
+	table.redoLastLine ()
 	
-	var newRow tblLine
+	newRow := tblLine{HORIZONTAL_SINGLE,
+		tblRule{HORIZONTAL_SINGLE, 1, len (table.column)},
+		[]cellType{}}
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
 			if idx==0 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {UP_LIGHT_AND_RIGHT_HEAVY,
 						table.width[idx], ""})
 			} else if idx == len (table.column) - 1 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {UP_LIGHT_AND_LEFT_HEAVY,
 						table.width[idx], ""})
 			} else {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType{UP_LIGHT_AND_HORIZONTAL_HEAVY,
 						table.width[idx], ""})
 			}
@@ -539,29 +567,25 @@ func (table *Tbl) HThickRule () {
 			// since there are no UTF-8 characters which combine
 			// them
 			if idx==0 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {HEAVY_UP_AND_RIGHT,
 						table.width[idx], ""})
 			} else if idx == len (table.column) - 1 {
-				newRow = append (newRow,
+				newRow.cell = append (newRow.cell,
 					cellType {HEAVY_UP_AND_LEFT,
 						table.width[idx], ""})
 			} else {
-				newRow = append (newRow, cellType{HEAVY_UP_AND_HORIZONTAL,
-					table.width[idx], ""})
+				newRow.cell = append (newRow.cell,
+					cellType{HEAVY_UP_AND_HORIZONTAL,
+						table.width[idx], ""})
 			}
 		default:
-			newRow = append (newRow,
+			newRow.cell = append (newRow.cell,
 				cellType {HORIZONTAL_THICK, 
 					table.width[idx], ""})
 		}
 	}
 	table.row = append (table.row, newRow)
-
-	// Before leaving, set the flag of a thick horizontal rule
-	table.horizontalSingleRule = false
-	table.horizontalDoubleRule = false
-	table.horizontalThickRule = true
 }
 
 // Add a thick horizontal rule to the current table. Top rules do not draw
@@ -572,28 +596,18 @@ func (table *Tbl) TopRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalSingleRule {
-		table.redoSingleRule ()
-	} else if table.horizontalDoubleRule {
-		table.redoDoubleRule ()
-	} else if table.horizontalThickRule {
-		table.redoThickRule ()
-	}
+	table.redoLastLine ()
 	
 	// Top rules consist of thick lines. Just add a thick line with no text
 	// at all in every column of this line
-	var newRow tblLine	
+	newRow := tblLine{HORIZONTAL_THICK,
+		tblRule{HORIZONTAL_SINGLE, 1, len (table.column)},
+		[]cellType{}}
 	for idx := range table.column {
-		newRow = append (newRow, cellType {HORIZONTAL_THICK,
+		newRow.cell = append (newRow.cell, cellType {HORIZONTAL_THICK,
 			table.width[idx], ""})
 	}
 	table.row = append (table.row, newRow)
-
-	// and make sure to update all flags of the horizontal rules properly
-	table.horizontalSingleRule = false
-	table.horizontalDoubleRule = false
-	table.horizontalThickRule = false
-	
 }
 
 // Add a thin horizontal rule to the current table. Mid rules do not draw
@@ -604,27 +618,18 @@ func (table *Tbl) MidRule () {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
-	if table.horizontalSingleRule {
-		table.redoSingleRule ()
-	} else if table.horizontalDoubleRule {
-		table.redoDoubleRule ()
-	} else if table.horizontalThickRule {
-		table.redoThickRule ()
-	}
+	table.redoLastLine ()
 	
 	// Mid rules consist of thin lines. Just add a thin line with no text at
 	// all in every column of this line
-	var newRow tblLine	
+	newRow := tblLine{HORIZONTAL_SINGLE,
+		tblRule{HORIZONTAL_SINGLE, 1, len (table.column)},
+		[]cellType{}}
 	for idx := range table.column {
-		newRow = append (newRow, cellType {HORIZONTAL_SINGLE,
+		newRow.cell = append (newRow.cell, cellType {HORIZONTAL_SINGLE,
 			table.width[idx], ""})
 	}
 	table.row = append (table.row, newRow)
-
-	// and make sure to update all flags of the horizontal rules properly
-	table.horizontalSingleRule = false
-	table.horizontalDoubleRule = false
-	table.horizontalThickRule = false	
 }
 
 // Add a thick horizontal rule to the current table. Bottom rules do not draw
@@ -634,6 +639,77 @@ func (table *Tbl) MidRule () {
 func (table *Tbl) BottomRule () {
 
 	table.TopRule ()
+}
+
+// draws a horizontal single rule from a specific column to other. The specific
+// region to draw is specified in LaTeX format in the given command
+func (table *Tbl) CSingleLine (cmd string) {
+
+	var err error
+	var from, to int
+	
+	// parse the given command
+	if reCLine.MatchString (cmd) {
+		tag := reCLine.FindStringSubmatchIndex (cmd)
+
+		// extract the limits of this cline
+		from, err = strconv.Atoi (cmd[tag[2]:tag[3]]); if err != nil {
+			log.Fatalf (" It was not feasible to extract the first bound from '%v'",
+				cmd[tag[2]:tag[3]])
+		}
+		to, err = strconv.Atoi (cmd[tag[4]:tag[5]]); if err != nil {
+			log.Fatalf (" It was not feasible to extract the second bound from '%v'",
+				cmd[tag[4]:tag[5]])
+		}
+	} else {
+		log.Fatalf ("Incorrect cline specification: '%v'",
+			cmd)
+	}
+
+	// 'from' and 'to' are given as user column indexes. Translate them into
+	// effective column indexes
+	from, to = table.getEffectiveColumn (from), table.getEffectiveColumn (to)
+	
+	// Since it is possible to concatenate horizontal rules, redo the last
+	// one if necessary
+	table.redoLastLine ()
+	
+	// A single rules consist of thin lines in those areas specified by the
+	// user and blank characters otherwise
+	newRow := tblLine{HORIZONTAL_SINGLE,
+		tblRule{HORIZONTAL_SINGLE, from, to},
+		[]cellType{}}
+	for idx, cell := range table.column {
+
+		// first update the column number of this one wrt columns with
+		// content ---ie., ignoring separators
+		if cell.content == LEFT ||
+			cell.content == CENTER ||
+			cell.content == RIGHT ||
+			cell.content == VERTICAL_VERBATIM ||
+			cell.content == VERTICAL_FIXED_WIDTH {
+
+			// and now check whether this one shall be drawn
+			if idx < from || idx > to {
+				newRow.cell = append (newRow.cell,
+					cellType {BLANK,
+						table.width[idx], ""})
+			} else {
+				newRow.cell = append (newRow.cell,
+					cellType {HORIZONTAL_SINGLE,
+						table.width[idx], ""})
+			}
+		} else {
+
+			// in case we are out of bounds, just simply preserve
+			// the type of column at this position
+			newRow.cell = append (newRow.cell,
+				cellType {cell.content, table.width[idx], ""})
+		}
+	}
+
+	// and add this row to the bottom of the table
+	table.row = append (table.row, newRow)
 }
 
 // Cells draw themselves producing a string which takes into account the width
@@ -674,7 +750,7 @@ func (table Tbl) String () string {
 	for _, line := range table.row {
 
 		// and for every column
-		for jdx, cell := range line {
+		for jdx, cell := range line.cell {
 
 			// draw this cell after updating its width
 			cell.width = table.width [jdx]

@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Aug 27 23:41:01 2015 Carlos Linares Lopez>
-  Last update <sábado, 29 agosto 2015 02:34:06 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 03 septiembre 2015 20:28:18 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -39,6 +39,10 @@ const (
 	VOID contentType = iota			// nothing
 	BLANK					// blank character
 
+	// type of lines: other than the horizontal rules, lines can hold also
+	// text
+	TEXT					// line of text
+
 	// vertical separators
 	VERTICAL_SINGLE				// 2502: │
 	VERTICAL_DOUBLE				// 2551: ║
@@ -55,62 +59,81 @@ const (
 
 	// -- single horizontal separators
 	LIGHT_DOWN_AND_RIGHT			// 250c: ┌
-	DOWN_HEAVY_AND_RIGHT_LIGHT		// 250e: ┎
 	LIGHT_DOWN_AND_LEFT			// 2510: ┐
-	DOWN_HEAVY_AND_LEFT_LIGHT		// 2512: ┒
 	LIGHT_UP_AND_RIGHT			// 2514: └
-	UP_HEAVY_AND_RIGHT_LIGHT		// 2516: ┖
 	LIGHT_UP_AND_LEFT			// 2518: ┘
-	UP_HEAVY_AND_LEFT_LIGHT			// 251a: ┚
 	LIGHT_VERTICAL_AND_RIGHT		// 251c: ├
-	VERTICAL_HEAVY_AND_RIGHT_LIGHT		// 2520: ┠
 	LIGHT_VERTICAL_AND_LEFT			// 2524: ┤
-	VERTICAL_HEAVY_AND_LEFT_LIGHT		// 2528: ┨
 	LIGHT_DOWN_AND_HORIZONTAL		// 252c: ┬
-	DOWN_HEAVY_AND_HORIZONTAL_RIGHT		// 2530: ┰
 	LIGHT_UP_AND_HORIZONTAL			// 2534: ┴
-	UP_HEAVY_AND_HORIZONTAL_LIGHT		// 2538: ┸
 	LIGHT_VERTICAL_AND_HORIZONTAL		// 253c: ┼
+
+	DOWN_DOUBLE_AND_RIGHT_SINGLE	        // 2553: ╓
+	DOWN_DOUBLE_AND_LEFT_SINGLE		// 2556: ╖
+	UP_DOUBLE_AND_RIGHT_SINGLE		// 2559: ╙
+	UP_DOUBLE_AND_LEFT_SINGLE		// 255c: ╜
+	VERTICAL_DOUBLE_AND_RIGHT_SINGLE	// 255f: ╟
+	VERTICAL_DOUBLE_AND_LEFT_SINGLE		// 2562: ╢
+	DOWN_DOUBLE_AND_HORIZONTAL_SINGLE	// 2565: ╥
+	UP_DOUBLE_AND_HORIZONTAL_SINGLE		// 2568: ╨
+	VERTICAL_DOUBLE_AND_HORIZONTAL_SINGLE	// 256b: ╫
+
+	DOWN_HEAVY_AND_RIGHT_LIGHT		// 250e: ┎
+	DOWN_HEAVY_AND_LEFT_LIGHT		// 2512: ┒
+	UP_HEAVY_AND_RIGHT_LIGHT		// 2516: ┖
+	UP_HEAVY_AND_LEFT_LIGHT			// 251a: ┚
+	VERTICAL_HEAVY_AND_RIGHT_LIGHT		// 2520: ┠
+	VERTICAL_HEAVY_AND_LEFT_LIGHT		// 2528: ┨
+	DOWN_HEAVY_AND_HORIZONTAL_RIGHT		// 2530: ┰
+	UP_HEAVY_AND_HORIZONTAL_LIGHT		// 2538: ┸
 	VERTICAL_HEAVY_AND_HORIZONTAL_LIGHT	// 2542: ╂
 	
 	// -- double horizontal separators
 	DOWN_SINGLE_AND_RIGHT_DOUBLE		// 2552: ╒
-	DOUBLE_DOWN_AND_RIGHT			// 2554: ╔
 	DOWN_SINGLE_AND_LEFT_DOUBLE		// 2555: ╕
-	DOUBLE_DOWN_AND_LEFT			// 2557: ╗
 	UP_SINGLE_AND_RIGHT_DOUBLE		// 2558: ╘
-	DOUBLE_UP_AND_RIGHT			// 255a: ╚
 	UP_SINGLE_AND_LEFT_DOUBLE		// 255b: ╛
-	DOUBLE_UP_AND_LEFT			// 255d: ╝
 	VERTICAL_SINGLE_AND_RIGHT_DOUBLE	// 255e: ╞
-	DOUBLE_VERTICAL_AND_RIGHT		// 2560: ╠
 	VERTICAL_SINGLE_AND_LEFT_DOUBLE		// 2561: ╡
-	DOUBLE_VERTICAL_AND_LEFT		// 2563: ╣
 	DOWN_SINGLE_AND_HORIZONTAL_DOUBLE	// 2564: ╤
-	DOUBLE_DOWN_AND_HORIZONTAL		// 2566: ╦
 	UP_SINGLE_AND_HORIZONTAL_DOUBLE		// 2567: ╧
-	DOUBLE_UP_AND_HORIZONTAL		// 2569: ╩
 	VERTICAL_SINGLE_AND_HORIZONTAL_DOUBLE	// 256a: ╪
+
+	DOUBLE_DOWN_AND_RIGHT			// 2554: ╔
+	DOUBLE_DOWN_AND_LEFT			// 2557: ╗
+	DOUBLE_UP_AND_RIGHT			// 255a: ╚
+	DOUBLE_UP_AND_LEFT			// 255d: ╝
+	DOUBLE_VERTICAL_AND_RIGHT		// 2560: ╠
+	DOUBLE_VERTICAL_AND_LEFT		// 2563: ╣
+	DOUBLE_DOWN_AND_HORIZONTAL		// 2566: ╦
+	DOUBLE_UP_AND_HORIZONTAL		// 2569: ╩
 	DOUBLE_VERTICAL_AND_HORIZONTAL		// 256c: ╬
+
+	// there are no utf-8 characters for double horizontal separators and
+	// thick vertical separators
 	
 	// -- thick horizontal separators
 	DOWN_LIGHT_AND_RIGHT_HEAVY		// 250d: ┍
-	HEAVY_DOWN_AND_RIGHT			// 250f: ┏
 	DOWN_LIGHT_AND_LEFT_HEAVY		// 2511: ┑
-	HEAVY_DOWN_AND_LEFT			// 2513: ┓
 	UP_LIGHT_AND_RIGHT_HEAVY		// 2515: ┕
-	HEAVY_UP_AND_RIGHT			// 2517: ┗
 	UP_LIGHT_AND_LEFT_HEAVY			// 2519: ┙
-	HEAVY_UP_AND_LEFT			// 251b: ┛
 	VERTICAL_LIGHT_AND_RIGHT_HEAVY		// 251d: ┝
-	HEAVY_VERTICAL_AND_RIGHT		// 2523: ┣
 	VERTICAL_LIGHT_AND_LEFT_HEAVY		// 2525: ┥
-	HEAVY_VERTICAL_AND_LEFT			// 252b: ┫
 	DOWN_LIGHT_AND_HORIZONTAL_HEAVY		// 252f: ┯
-	HEAVY_DOWN_AND_HORIZONTAL		// 2533: ┳
 	UP_LIGHT_AND_HORIZONTAL_HEAVY		// 2537: ┷
-	HEAVY_UP_AND_HORIZONTAL			// 253b: ┻
 	VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY	// 253f: ┿
+
+	// there are no utf-8 characters for thick horizontal separators and
+	// double vertical separators
+	
+	HEAVY_DOWN_AND_RIGHT			// 250f: ┏
+	HEAVY_DOWN_AND_LEFT			// 2513: ┓
+	HEAVY_UP_AND_RIGHT			// 2517: ┗
+	HEAVY_UP_AND_LEFT			// 251b: ┛
+	HEAVY_VERTICAL_AND_RIGHT		// 2523: ┣
+	HEAVY_VERTICAL_AND_LEFT			// 252b: ┫
+	HEAVY_DOWN_AND_HORIZONTAL		// 2533: ┳
+	HEAVY_UP_AND_HORIZONTAL			// 253b: ┻
 	HEAVY_VERTICAL_AND_HORIZONTAL		// 254b: ╋
 	
 	// text cells
@@ -164,6 +187,17 @@ func init () {
 	characterSet[UP_HEAVY_AND_HORIZONTAL_LIGHT]       = "\u2538"
 	characterSet[LIGHT_VERTICAL_AND_HORIZONTAL]       = "\u253c"
 	characterSet[VERTICAL_HEAVY_AND_HORIZONTAL_LIGHT] = "\u2542"
+
+	characterSet[DOWN_DOUBLE_AND_RIGHT_SINGLE]          = "\u2553"
+	characterSet[DOWN_DOUBLE_AND_LEFT_SINGLE]           = "\u2556"
+	characterSet[UP_DOUBLE_AND_RIGHT_SINGLE]            = "\u2559"
+	characterSet[UP_DOUBLE_AND_LEFT_SINGLE]             = "\u255c"
+	characterSet[VERTICAL_DOUBLE_AND_RIGHT_SINGLE]      = "\u255f"
+	characterSet[VERTICAL_DOUBLE_AND_LEFT_SINGLE]       = "\u2562"
+	characterSet[DOWN_DOUBLE_AND_HORIZONTAL_SINGLE]     = "\u2565"
+	characterSet[UP_DOUBLE_AND_HORIZONTAL_SINGLE]       = "\u2568"
+	characterSet[VERTICAL_DOUBLE_AND_HORIZONTAL_SINGLE] = "\u256b"
+
 	
 	// -- horizontal double separators
 	characterSet[DOWN_SINGLE_AND_RIGHT_DOUBLE]          = "\u2552"
@@ -210,67 +244,125 @@ func init () {
 // Methods
 // ----------------------------------------------------------------------------
 
+// Check whether it is necessary to redo the last line.
+func (table *Tbl) redoLastLine () {
+
+	// in case the table is empty, exit immediately
+	if len (table.row) > 0 {
+	
+		// The last line shall be redrawn in case it is a horizontal
+		// rule since we know now that a new lines is about to be
+		// inserted. Thus, the connectors shall be updated accordingly
+		if table.row[len (table.row)-1].content == HORIZONTAL_SINGLE {
+			table.redoSingleRule ()
+		} else if table.row[len (table.row)-1].content == HORIZONTAL_DOUBLE {
+			table.redoDoubleRule ()
+		} else if table.row[len (table.row)-1].content == HORIZONTAL_THICK {
+			table.redoThickRule ()
+		}
+	}
+}
+
 // Redraw the last line in case it is a horizontal single rule. This is
 // necessary in case more lines are added after a horizontal rule so that the
-// connectors are now set properly
+// connectors are now drawn properly
 func (table *Tbl) redoSingleRule () {
+
+	// first, a few shortcuts
 	last := len (table.row) - 1
+	row := table.row[last]
+
+	// and now, iterate over all columns
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
-			if idx==0 {
+			if idx+1 == row.rule.from {
 				if last == 0 {
-					table.row[last][idx]=cellType{LIGHT_DOWN_AND_RIGHT,
+					row.cell[idx]=cellType{LIGHT_DOWN_AND_RIGHT,
 						column.width, ""}
 				} else {
-					table.row[last][idx]=cellType{LIGHT_VERTICAL_AND_RIGHT,
+					row.cell[idx]=cellType{LIGHT_VERTICAL_AND_RIGHT,
 						column.width, ""}
 				}
-			} else if idx == len (table.column) - 1 {
+			} else if idx+1 == row.rule.to {
 				if last == 0 {
-					table.row[last][idx]=cellType{LIGHT_DOWN_AND_LEFT,
+					row.cell[idx]=cellType{LIGHT_DOWN_AND_LEFT,
 						column.width, ""}
 				} else {
-					table.row[last][idx]=cellType{LIGHT_VERTICAL_AND_LEFT,
-						column.width, ""}
+						row.cell[idx]=cellType{LIGHT_VERTICAL_AND_LEFT,
+							column.width, ""}
 				}
 			} else {
 				if last == 0 {
-					table.row[last][idx]=cellType{LIGHT_DOWN_AND_HORIZONTAL,
+					row.cell[idx]=cellType{LIGHT_DOWN_AND_HORIZONTAL,
 						column.width, ""}
 				} else {
-					table.row[last][idx]=cellType{LIGHT_VERTICAL_AND_HORIZONTAL,
-						column.width, ""}
+					if idx >= row.rule.from &&
+						idx<= row.rule.to {
+						row.cell[idx]=cellType{LIGHT_VERTICAL_AND_HORIZONTAL,
+							column.width, ""}
+					}
 				}
 			}
-		case VERTICAL_DOUBLE, VERTICAL_THICK:
-
-			// note that both cases are dealt with in the same way
-			// since there are no UTF-8 characters which combine
-			// them
-			if idx==0 {
+			
+		case VERTICAL_DOUBLE:
+			if idx+1 == row.rule.from {
 				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_HEAVY_AND_RIGHT_LIGHT,
+					row.cell[idx]=cellType{DOWN_DOUBLE_AND_RIGHT_SINGLE,
 						column.width, ""}
 				} else {
-					table.row[last][idx] = cellType{VERTICAL_HEAVY_AND_RIGHT_LIGHT,
+					row.cell[idx]=cellType{VERTICAL_DOUBLE_AND_RIGHT_SINGLE,
 						column.width, ""}
 				}
-			} else if idx == len (table.column) - 1 {
+			} else if idx+1 == row.rule.to {
 				if last == 0 {
-					table.row[last][idx] = cellType{DOWN_HEAVY_AND_LEFT_LIGHT,
+					row.cell[idx]=cellType{DOWN_DOUBLE_AND_LEFT_SINGLE,
 						column.width, ""}
 				} else {
-					table.row[last][idx] = cellType{VERTICAL_HEAVY_AND_LEFT_LIGHT,
+						row.cell[idx]=cellType{VERTICAL_DOUBLE_AND_LEFT_SINGLE,
+							column.width, ""}
+				}
+			} else {
+				if last == 0 {
+					row.cell[idx]=cellType{UP_DOUBLE_AND_HORIZONTAL_SINGLE,
+						column.width, ""}
+				} else {
+					if idx >= row.rule.from &&
+						idx<= row.rule.to {
+						row.cell[idx]=cellType{VERTICAL_DOUBLE_AND_HORIZONTAL_SINGLE,
+							column.width, ""}
+					}
+				}
+			}
+
+		case VERTICAL_THICK:
+
+			if idx+1 == row.rule.from {
+				if last == 0 {
+					row.cell[idx]=cellType{DOWN_HEAVY_AND_RIGHT_LIGHT,
+						column.width, ""}
+				} else {
+					row.cell[idx] = cellType{VERTICAL_HEAVY_AND_RIGHT_LIGHT,
+						column.width, ""}
+				}
+			} else if idx+1 == row.rule.to {
+				if last == 0 {
+					row.cell[idx] = cellType{DOWN_HEAVY_AND_LEFT_LIGHT,
+						column.width, ""}
+				} else {
+					row.cell[idx] = cellType{VERTICAL_HEAVY_AND_LEFT_LIGHT,
 						column.width, ""}
 				}
 			} else {
 				if last == 0 {
-					table.row[last][idx] = cellType{DOWN_HEAVY_AND_HORIZONTAL_RIGHT,
+					row.cell[idx] = cellType{DOWN_HEAVY_AND_HORIZONTAL_RIGHT,
 						column.width, ""}
 				} else {
-					table.row[last][idx] = cellType{VERTICAL_HEAVY_AND_HORIZONTAL_LIGHT,
-						column.width, ""}
+					if idx >= row.rule.from &&
+						idx<= row.rule.to {
+						row.cell[idx] = cellType{VERTICAL_HEAVY_AND_HORIZONTAL_LIGHT,
+							column.width, ""}
+					}
 				}
 			}
 		}
@@ -279,34 +371,39 @@ func (table *Tbl) redoSingleRule () {
 
 // Redraw the last line in case it is a horizontal double rule. This is necessary
 // in case more lines are added after a horizontal rule so that the connectors
-// are now set properly
+// are now drawn properly
 func (table *Tbl) redoDoubleRule () {
+
+	// first, a few shortcuts
 	last := len (table.row) - 1
+	row := table.row[last]
+
+	// and now, iterate over all columns
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
 			if idx==0 {
 				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_SINGLE_AND_RIGHT_DOUBLE,
+					row.cell[idx]=cellType{DOWN_SINGLE_AND_RIGHT_DOUBLE,
 						column.width, ""}
 				} else {
-					table.row[last][idx]=cellType{VERTICAL_SINGLE_AND_RIGHT_DOUBLE,
+					row.cell[idx]=cellType{VERTICAL_SINGLE_AND_RIGHT_DOUBLE,
 						column.width, ""}
 				}
 			} else if idx == len (table.column) - 1 {
 				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_SINGLE_AND_LEFT_DOUBLE,
+					row.cell[idx]=cellType{DOWN_SINGLE_AND_LEFT_DOUBLE,
 						column.width, ""}
 				} else {
-					table.row[last][idx]=cellType{VERTICAL_SINGLE_AND_LEFT_DOUBLE,
+					row.cell[idx]=cellType{VERTICAL_SINGLE_AND_LEFT_DOUBLE,
 						column.width, ""}
 				}
 			} else {
 				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_SINGLE_AND_HORIZONTAL_DOUBLE,
+					row.cell[idx]=cellType{DOWN_SINGLE_AND_HORIZONTAL_DOUBLE,
 						column.width, ""}
 				} else {
-					table.row[last][idx]=cellType{VERTICAL_SINGLE_AND_HORIZONTAL_DOUBLE,
+					row.cell[idx]=cellType{VERTICAL_SINGLE_AND_HORIZONTAL_DOUBLE,
 						column.width, ""}
 				}
 			}
@@ -317,26 +414,26 @@ func (table *Tbl) redoDoubleRule () {
 			// them
 			if idx==0 {
 				if last == 0 {
-					table.row[last][idx]=cellType{DOUBLE_DOWN_AND_RIGHT,
+					row.cell[idx]=cellType{DOUBLE_DOWN_AND_RIGHT,
 						column.width, ""}
 				} else {
-					table.row[last][idx] = cellType{DOUBLE_VERTICAL_AND_RIGHT,
+					row.cell[idx] = cellType{DOUBLE_VERTICAL_AND_RIGHT,
 						column.width, ""}
 				}
 			} else if idx == len (table.column) - 1 {
 				if last == 0 {
-					table.row[last][idx] = cellType{DOUBLE_DOWN_AND_LEFT,
+					row.cell[idx] = cellType{DOUBLE_DOWN_AND_LEFT,
 						column.width, ""}
 				} else {
-					table.row[last][idx] = cellType{DOUBLE_VERTICAL_AND_LEFT,
+					row.cell[idx] = cellType{DOUBLE_VERTICAL_AND_LEFT,
 						column.width, ""}
 				}
 			} else {
 				if last == 0 {
-					table.row[last][idx] = cellType{DOUBLE_DOWN_AND_HORIZONTAL,
+					row.cell[idx] = cellType{DOUBLE_DOWN_AND_HORIZONTAL,
 						column.width, ""}
 				} else {
-					table.row[last][idx] = cellType{DOUBLE_VERTICAL_AND_HORIZONTAL,
+					row.cell[idx] = cellType{DOUBLE_VERTICAL_AND_HORIZONTAL,
 						column.width, ""}
 				}
 			}
@@ -346,34 +443,39 @@ func (table *Tbl) redoDoubleRule () {
 
 // Redraw the last line in case it is a horizontal thick rule. This is necessary
 // in case more lines are added after a horizontal rule so that the connectors
-// are now set properly
+// are now drawn properly
 func (table *Tbl) redoThickRule () {
+
+	// first, a few shortcuts
 	last := len (table.row) - 1
+	row := table.row[last]
+
+	// and now, iterate over all columns
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
 			if idx==0 {
 				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_LIGHT_AND_RIGHT_HEAVY,
+					row.cell[idx]=cellType{DOWN_LIGHT_AND_RIGHT_HEAVY,
 						column.width, ""}
 				} else {
-					table.row[last][idx]=cellType{VERTICAL_LIGHT_AND_RIGHT_HEAVY,
+					row.cell[idx]=cellType{VERTICAL_LIGHT_AND_RIGHT_HEAVY,
 						column.width, ""}
 				}
 			} else if idx == len (table.column) - 1 {
 				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_LIGHT_AND_LEFT_HEAVY,
+					row.cell[idx]=cellType{DOWN_LIGHT_AND_LEFT_HEAVY,
 						column.width, ""}
 				} else {
-					table.row[last][idx]=cellType{VERTICAL_LIGHT_AND_LEFT_HEAVY,
+					row.cell[idx]=cellType{VERTICAL_LIGHT_AND_LEFT_HEAVY,
 						column.width, ""}
 				}
 			} else {
 				if last == 0 {
-					table.row[last][idx]=cellType{DOWN_LIGHT_AND_HORIZONTAL_HEAVY,
+					row.cell[idx]=cellType{DOWN_LIGHT_AND_HORIZONTAL_HEAVY,
 						column.width, ""}
 				} else {
-					table.row[last][idx]=cellType{VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY,
+					row.cell[idx]=cellType{VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY,
 						column.width, ""}
 				}
 			}
@@ -384,26 +486,26 @@ func (table *Tbl) redoThickRule () {
 			// them
 			if idx==0 {
 				if last == 0 {
-					table.row[last][idx]=cellType{HEAVY_DOWN_AND_RIGHT,
+					row.cell[idx]=cellType{HEAVY_DOWN_AND_RIGHT,
 						column.width, ""}
 				} else {
-					table.row[last][idx] = cellType{HEAVY_VERTICAL_AND_RIGHT,
+					row.cell[idx] = cellType{HEAVY_VERTICAL_AND_RIGHT,
 						column.width, ""}
 				}
 			} else if idx == len (table.column) - 1 {
 				if last == 0 {
-					table.row[last][idx] = cellType{HEAVY_DOWN_AND_LEFT,
+					row.cell[idx] = cellType{HEAVY_DOWN_AND_LEFT,
 						column.width, ""}
 				} else {
-					table.row[last][idx] = cellType{HEAVY_VERTICAL_AND_LEFT,
+					row.cell[idx] = cellType{HEAVY_VERTICAL_AND_LEFT,
 						column.width, ""}
 				}
 			} else {
 				if last == 0 {
-					table.row[last][idx] = cellType{HEAVY_DOWN_AND_HORIZONTAL,
+					row.cell[idx] = cellType{HEAVY_DOWN_AND_HORIZONTAL,
 						column.width, ""}
 				} else {
-					table.row[last][idx] = cellType{HEAVY_VERTICAL_AND_HORIZONTAL,
+					row.cell[idx] = cellType{HEAVY_VERTICAL_AND_HORIZONTAL,
 						column.width, ""}
 				}
 			}
