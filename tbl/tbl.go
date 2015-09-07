@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <jueves, 03 septiembre 2015 20:35:32 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 07 septiembre 2015 19:16:15 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -295,7 +295,8 @@ func (table *Tbl) AddRow (row []string) (err error) {
 	table.redoLastLine ()
 	
 	// insert all cells of this line: those provided by the user and others
-	// provided in the specification string
+	// provided in the specification string. Since this line does not
+	// contain horizontal rules, from and to equal are null
 	newRow := tblLine{TEXT,
 		tblRule{VOID, 0, 0},
 		[]cellType{}}
@@ -417,10 +418,24 @@ func (table *Tbl) HSingleRule () {
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
 	table.redoLastLine ()
+
+	// create a new row whose contents will be computed in this
+	// function. Importantly, the beginning of the rule depends on whether
+	// there is an initial column at location 0 or not: if there is a column
+	// at location 0, the rule starts at location 1 so that when redrawing
+	// this horizontal rule the first character is set properly
+	var newRow tblLine
+	if table.column[0].content >= VERTICAL_SINGLE &&
+		table.column[0].content <= VERTICAL_THICK {
+		newRow = tblLine{HORIZONTAL_SINGLE,
+			tblRule{HORIZONTAL_SINGLE, 1, len (table.column)-1},
+			[]cellType{}}
+	} else {
+		newRow = tblLine{HORIZONTAL_SINGLE,
+			tblRule{HORIZONTAL_SINGLE, 0, len (table.column)-1},
+			[]cellType{}}
+	}
 	
-	newRow := tblLine{HORIZONTAL_SINGLE,
-		tblRule{HORIZONTAL_SINGLE, 1, len (table.column)},
-		[]cellType{}}
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
@@ -486,9 +501,23 @@ func (table *Tbl) HDoubleRule () {
 	// one if necessary
 	table.redoLastLine ()
 	
-	newRow := tblLine{HORIZONTAL_DOUBLE,
-		tblRule{HORIZONTAL_DOUBLE, 1, len (table.column)},
-		[]cellType{}}
+	// create a new row whose contents will be computed in this
+	// function. Importantly, the beginning of the rule depends on whether
+	// there is an initial column at location 0 or not: if there is a column
+	// at location 0, the rule starts at location 1 so that when redrawing
+	// this horizontal rule the first character is set properly
+	var newRow tblLine
+	if table.column[0].content >= VERTICAL_SINGLE &&
+		table.column[0].content <= VERTICAL_THICK {
+		newRow = tblLine{HORIZONTAL_DOUBLE,
+			tblRule{HORIZONTAL_DOUBLE, 1, len (table.column)-1},
+			[]cellType{}}
+	} else {
+		newRow = tblLine{HORIZONTAL_DOUBLE,
+			tblRule{HORIZONTAL_DOUBLE, 0, len (table.column)-1},
+			[]cellType{}}
+	}
+	
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
@@ -541,9 +570,23 @@ func (table *Tbl) HThickRule () {
 	// one if necessary
 	table.redoLastLine ()
 	
-	newRow := tblLine{HORIZONTAL_SINGLE,
-		tblRule{HORIZONTAL_SINGLE, 1, len (table.column)},
-		[]cellType{}}
+	// create a new row whose contents will be computed in this
+	// function. Importantly, the beginning of the rule depends on whether
+	// there is an initial column at location 0 or not: if there is a column
+	// at location 0, the rule starts at location 1 so that when redrawing
+	// this horizontal rule the first character is set properly
+	var newRow tblLine
+	if table.column[0].content >= VERTICAL_SINGLE &&
+		table.column[0].content <= VERTICAL_THICK {
+		newRow = tblLine{HORIZONTAL_THICK,
+			tblRule{HORIZONTAL_THICK, 1, len (table.column)-1},
+			[]cellType{}}
+	} else {
+		newRow = tblLine{HORIZONTAL_THICK,
+			tblRule{HORIZONTAL_THICK, 0, len (table.column)-1},
+			[]cellType{}}
+	}
+	
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
@@ -601,7 +644,7 @@ func (table *Tbl) TopRule () {
 	// Top rules consist of thick lines. Just add a thick line with no text
 	// at all in every column of this line
 	newRow := tblLine{HORIZONTAL_THICK,
-		tblRule{HORIZONTAL_SINGLE, 1, len (table.column)},
+		tblRule{HORIZONTAL_SINGLE, 0, len (table.column)-1},
 		[]cellType{}}
 	for idx := range table.column {
 		newRow.cell = append (newRow.cell, cellType {HORIZONTAL_THICK,
@@ -623,7 +666,7 @@ func (table *Tbl) MidRule () {
 	// Mid rules consist of thin lines. Just add a thin line with no text at
 	// all in every column of this line
 	newRow := tblLine{HORIZONTAL_SINGLE,
-		tblRule{HORIZONTAL_SINGLE, 1, len (table.column)},
+		tblRule{HORIZONTAL_SINGLE, 0, len (table.column)-1},
 		[]cellType{}}
 	for idx := range table.column {
 		newRow.cell = append (newRow.cell, cellType {HORIZONTAL_SINGLE,
@@ -674,8 +717,8 @@ func (table *Tbl) CSingleLine (cmd string) {
 	// one if necessary
 	table.redoLastLine ()
 	
-	// A single rules consist of thin lines in those areas specified by the
-	// user and blank characters otherwise
+	// A cline consists of thin lines in those areas specified by the user
+	// and blank characters otherwise
 	newRow := tblLine{HORIZONTAL_SINGLE,
 		tblRule{HORIZONTAL_SINGLE, from, to},
 		[]cellType{}}
@@ -745,8 +788,8 @@ func (table *Tbl) CDoubleLine (cmd string) {
 	// one if necessary
 	table.redoLastLine ()
 	
-	// A single rules consist of double lines in those areas specified by the
-	// user and blank characters otherwise
+	// A cline consists of double lines in those areas specified by the user
+	// and blank characters otherwise
 	newRow := tblLine{HORIZONTAL_DOUBLE,
 		tblRule{HORIZONTAL_DOUBLE, from, to},
 		[]cellType{}}
@@ -768,6 +811,77 @@ func (table *Tbl) CDoubleLine (cmd string) {
 			} else {
 				newRow.cell = append (newRow.cell,
 					cellType {HORIZONTAL_DOUBLE,
+						table.width[idx], ""})
+			}
+		} else {
+
+			// in case we are out of bounds, just simply preserve
+			// the type of column at this position
+			newRow.cell = append (newRow.cell,
+				cellType {cell.content, table.width[idx], ""})
+		}
+	}
+
+	// and add this row to the bottom of the table
+	table.row = append (table.row, newRow)
+}
+
+// draws a horizontal thick rule from a specific column to other. The specific
+// region to draw is specified in LaTeX format in the given command
+func (table *Tbl) CThickLine (cmd string) {
+
+	var err error
+	var from, to int
+	
+	// parse the given command
+	if reCLine.MatchString (cmd) {
+		tag := reCLine.FindStringSubmatchIndex (cmd)
+
+		// extract the limits of this cline
+		from, err = strconv.Atoi (cmd[tag[2]:tag[3]]); if err != nil {
+			log.Fatalf (" It was not feasible to extract the first bound from '%v'",
+				cmd[tag[2]:tag[3]])
+		}
+		to, err = strconv.Atoi (cmd[tag[4]:tag[5]]); if err != nil {
+			log.Fatalf (" It was not feasible to extract the second bound from '%v'",
+				cmd[tag[4]:tag[5]])
+		}
+	} else {
+		log.Fatalf ("Incorrect cline specification: '%v'",
+			cmd)
+	}
+
+	// 'from' and 'to' are given as user column indexes. Translate them into
+	// effective column indexes
+	from, to = table.getEffectiveColumn (from), table.getEffectiveColumn (to)
+	
+	// Since it is possible to concatenate horizontal rules, redo the last
+	// one if necessary
+	table.redoLastLine ()
+	
+	// A cline consists of thick lines in those areas specified by the user
+	// and blank characters otherwise
+	newRow := tblLine{HORIZONTAL_THICK,
+		tblRule{HORIZONTAL_THICK, from, to},
+		[]cellType{}}
+	for idx, cell := range table.column {
+
+		// first update the column number of this one wrt columns with
+		// content ---ie., ignoring separators
+		if cell.content == LEFT ||
+			cell.content == CENTER ||
+			cell.content == RIGHT ||
+			cell.content == VERTICAL_VERBATIM ||
+			cell.content == VERTICAL_FIXED_WIDTH {
+
+			// and now check whether this one shall be drawn
+			if idx < from || idx > to {
+				newRow.cell = append (newRow.cell,
+					cellType {BLANK,
+						table.width[idx], ""})
+			} else {
+				newRow.cell = append (newRow.cell,
+					cellType {HORIZONTAL_THICK,
 						table.width[idx], ""})
 			}
 		} else {
