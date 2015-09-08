@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <lunes, 07 septiembre 2015 19:20:45 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 07 septiembre 2015 19:33:08 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -31,19 +31,27 @@ func TestNewTable0 (t *testing.T) {
 		t.Fatal (" Fatal error while constructing the table")
 	}
 
-	if table.AddRow ([]string{"101", "2", "37"})!= nil {
+	if table.AddRow ([]string{"10231", "2", "3242344857"})!= nil {
 		t.Fatal ("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"41", "53", "607"})!= nil {
+	if table.AddRow ([]string{"489251", "5233", "67207"})!= nil {
 		t.Fatal ("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"7", "787", "9113"})!= nil {
+	if table.AddRow ([]string{"7878074521374", "787", "9113"})!= nil {
 		t.Fatal ("Error adding a new row")
 	}
 
-	fmt.Println (table)	
+	fmt.Printf (`
+ The first application of the package Tbl consists of arranging data contextually,
+ i.e., wrt to other items surrounding it. For this, neither horizontal nor vertical
+ separators are needed and it just suffices creating a table that either centers the 
+ contents of each cell or that justify them to either the right or left. The following
+ is a tiny example where 9 numbers are centered:
+
+%v
+`, table)
 }
 
 func TestNewTable1 (t *testing.T) {
@@ -86,7 +94,7 @@ func TestNewTable1 (t *testing.T) {
 }
 
 func TestNewTable2 (t *testing.T) {
-	var spec = "l@{ (}r@{)}@{ }c"
+	var spec = "|l|@{ (}r@{) }|c|"
 
 	table, err := NewTable (spec); if err != nil {
 		t.Fatal (" Fatal error while constructing the table")

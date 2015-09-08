@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <lunes, 07 septiembre 2015 19:16:15 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 07 septiembre 2015 19:25:41 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -644,7 +644,7 @@ func (table *Tbl) TopRule () {
 	// Top rules consist of thick lines. Just add a thick line with no text
 	// at all in every column of this line
 	newRow := tblLine{HORIZONTAL_THICK,
-		tblRule{HORIZONTAL_SINGLE, 0, len (table.column)-1},
+		tblRule{HORIZONTAL_THICK, 0, len (table.column)-1},
 		[]cellType{}}
 	for idx := range table.column {
 		newRow.cell = append (newRow.cell, cellType {HORIZONTAL_THICK,
