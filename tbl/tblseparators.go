@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Aug 27 23:41:01 2015 Carlos Linares Lopez>
-  Last update <domingo, 06 septiembre 2015 22:48:10 Carlos Linares Lopez (clinares)>
+  Last update <martes, 08 septiembre 2015 08:20:20 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -51,9 +51,16 @@ const (
 	VERTICAL_FIXED_WIDTH			// fixed width p{}
 
 	// horizontal separators
+
+	// -- the following intersect with vertical separators
 	HORIZONTAL_SINGLE			// 2500: ─
 	HORIZONTAL_DOUBLE			// 2550: ═
 	HORIZONTAL_THICK			// 2501: ━
+
+	// -- the following do not intersect with vertical separators
+	HORIZONTAL_TOP_RULE                     // 2501: ━
+	HORIZONTAL_MID_RULE			// 2500: ─
+	HORIZONTAL_BOTTOM_RULE			// 2501: ━
 
 	// horizontal separators with vertical bars
 

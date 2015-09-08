@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <lunes, 07 septiembre 2015 19:25:41 Carlos Linares Lopez (clinares)>
+  Last update <martes, 08 septiembre 2015 08:26:50 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -641,11 +641,23 @@ func (table *Tbl) TopRule () {
 	// one if necessary
 	table.redoLastLine ()
 	
-	// Top rules consist of thick lines. Just add a thick line with no text
-	// at all in every column of this line
-	newRow := tblLine{HORIZONTAL_THICK,
-		tblRule{HORIZONTAL_THICK, 0, len (table.column)-1},
-		[]cellType{}}
+	// create a new row whose contents will be computed in this
+	// function. Importantly, the beginning of the rule depends on whether
+	// there is an initial column at location 0 or not: if there is a column
+	// at location 0, the rule starts at location 1 so that when redrawing
+	// this horizontal rule the first character is set properly
+	var newRow tblLine
+	if table.column[0].content >= VERTICAL_SINGLE &&
+		table.column[0].content <= VERTICAL_THICK {
+		newRow = tblLine{HORIZONTAL_TOP_RULE,
+			tblRule{HORIZONTAL_TOP_RULE, 1, len (table.column)-1},
+			[]cellType{}}
+	} else {
+		newRow = tblLine{HORIZONTAL_TOP_RULE,
+			tblRule{HORIZONTAL_TOP_RULE, 0, len (table.column)-1},
+			[]cellType{}}
+	}
+	
 	for idx := range table.column {
 		newRow.cell = append (newRow.cell, cellType {HORIZONTAL_THICK,
 			table.width[idx], ""})
@@ -663,11 +675,23 @@ func (table *Tbl) MidRule () {
 	// one if necessary
 	table.redoLastLine ()
 	
-	// Mid rules consist of thin lines. Just add a thin line with no text at
-	// all in every column of this line
-	newRow := tblLine{HORIZONTAL_SINGLE,
-		tblRule{HORIZONTAL_SINGLE, 0, len (table.column)-1},
-		[]cellType{}}
+	// create a new row whose contents will be computed in this
+	// function. Importantly, the beginning of the rule depends on whether
+	// there is an initial column at location 0 or not: if there is a column
+	// at location 0, the rule starts at location 1 so that when redrawing
+	// this horizontal rule the first character is set properly
+	var newRow tblLine
+	if table.column[0].content >= VERTICAL_SINGLE &&
+		table.column[0].content <= VERTICAL_THICK {
+		newRow = tblLine{HORIZONTAL_MID_RULE,
+			tblRule{HORIZONTAL_MID_RULE, 1, len (table.column)-1},
+			[]cellType{}}
+	} else {
+		newRow = tblLine{HORIZONTAL_MID_RULE,
+			tblRule{HORIZONTAL_MID_RULE, 0, len (table.column)-1},
+			[]cellType{}}
+	}
+	
 	for idx := range table.column {
 		newRow.cell = append (newRow.cell, cellType {HORIZONTAL_SINGLE,
 			table.width[idx], ""})
