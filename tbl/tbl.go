@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <martes, 08 septiembre 2015 08:26:50 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 09 septiembre 2015 17:51:26 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -333,7 +333,6 @@ func (table *Tbl) AddRow (row []string) (err error) {
 
 			// finally, make sure user text is surrounded by blank
 			// spaces unless the previous/next column are verbatim
-			// column
 			if jdx == 0 ||
 				table.column[jdx-1].content != VERTICAL_VERBATIM {
 				text = " " + text
@@ -415,220 +414,36 @@ func (table *Tbl) AddRow (row []string) (err error) {
 // provided that any have been specified.
 func (table *Tbl) HSingleRule () {
 
-	// Since it is possible to concatenate horizontal rules, redo the last
-	// one if necessary
-	table.redoLastLine ()
-
-	// create a new row whose contents will be computed in this
-	// function. Importantly, the beginning of the rule depends on whether
-	// there is an initial column at location 0 or not: if there is a column
-	// at location 0, the rule starts at location 1 so that when redrawing
-	// this horizontal rule the first character is set properly
-	var newRow tblLine
-	if table.column[0].content >= VERTICAL_SINGLE &&
-		table.column[0].content <= VERTICAL_THICK {
-		newRow = tblLine{HORIZONTAL_SINGLE,
-			tblRule{HORIZONTAL_SINGLE, 1, len (table.column)-1},
-			[]cellType{}}
-	} else {
-		newRow = tblLine{HORIZONTAL_SINGLE,
-			tblRule{HORIZONTAL_SINGLE, 0, len (table.column)-1},
-			[]cellType{}}
-	}
-	
-	for idx, column := range table.column {
-		switch column.content {
-		case VERTICAL_SINGLE:
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {LIGHT_UP_AND_RIGHT,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {LIGHT_UP_AND_LEFT,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{LIGHT_UP_AND_HORIZONTAL,
-						table.width[idx], ""})
-			}
-
-		case VERTICAL_DOUBLE:
-
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {UP_DOUBLE_AND_RIGHT_SINGLE,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {UP_DOUBLE_AND_LEFT_SINGLE,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{UP_DOUBLE_AND_HORIZONTAL_SINGLE,
-						table.width[idx], ""})
-			}
-			
-		case VERTICAL_THICK:
-
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {UP_HEAVY_AND_RIGHT_LIGHT,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {UP_HEAVY_AND_LEFT_LIGHT,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{UP_HEAVY_AND_HORIZONTAL_LIGHT,
-						table.width[idx], ""})
-			}
-		default:
-			newRow.cell = append (newRow.cell,
-				cellType {HORIZONTAL_SINGLE, 
-					table.width[idx], ""})
-		}
-	}
-	table.row = append (table.row, newRow)
+	table.hrule (HORIZONTAL_SINGLE,
+		LIGHT_UP_AND_RIGHT, LIGHT_UP_AND_LEFT, LIGHT_UP_AND_HORIZONTAL,
+		UP_DOUBLE_AND_RIGHT_SINGLE, UP_DOUBLE_AND_LEFT_SINGLE, UP_DOUBLE_AND_HORIZONTAL_SINGLE,
+		UP_HEAVY_AND_RIGHT_LIGHT, UP_HEAVY_AND_LEFT_LIGHT, UP_HEAVY_AND_HORIZONTAL_LIGHT)
 }
 
 // Add a double horizontal rule that intersects with the vertical separators
 // provided that any have been specified.
 func (table *Tbl) HDoubleRule () {
 
-	// Since it is possible to concatenate horizontal rules, redo the last
-	// one if necessary
-	table.redoLastLine ()
-	
-	// create a new row whose contents will be computed in this
-	// function. Importantly, the beginning of the rule depends on whether
-	// there is an initial column at location 0 or not: if there is a column
-	// at location 0, the rule starts at location 1 so that when redrawing
-	// this horizontal rule the first character is set properly
-	var newRow tblLine
-	if table.column[0].content >= VERTICAL_SINGLE &&
-		table.column[0].content <= VERTICAL_THICK {
-		newRow = tblLine{HORIZONTAL_DOUBLE,
-			tblRule{HORIZONTAL_DOUBLE, 1, len (table.column)-1},
-			[]cellType{}}
-	} else {
-		newRow = tblLine{HORIZONTAL_DOUBLE,
-			tblRule{HORIZONTAL_DOUBLE, 0, len (table.column)-1},
-			[]cellType{}}
+	// notice that the intersection of double rules with either double or
+	// thick vertical separators is computed with the same UTF-8 characters
+	// since other combinations are not allowed by UTF-8
+	table.hrule (HORIZONTAL_DOUBLE,
+		UP_SINGLE_AND_RIGHT_DOUBLE, UP_SINGLE_AND_LEFT_DOUBLE, UP_SINGLE_AND_HORIZONTAL_DOUBLE,
+		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL,
+		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL)
 	}
-	
-	for idx, column := range table.column {
-		switch column.content {
-		case VERTICAL_SINGLE:
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {UP_SINGLE_AND_RIGHT_DOUBLE,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {UP_SINGLE_AND_LEFT_DOUBLE,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{UP_SINGLE_AND_HORIZONTAL_DOUBLE,
-						table.width[idx], ""})
-			}
-
-		case VERTICAL_DOUBLE, VERTICAL_THICK:
-
-			// note that both cases are dealt with in the same way
-			// since there are no UTF-8 characters which combine
-			// them
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {DOUBLE_UP_AND_RIGHT,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {DOUBLE_UP_AND_LEFT,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{DOUBLE_UP_AND_HORIZONTAL,
-						table.width[idx], ""})
-			}
-		default:
-			newRow.cell = append (newRow.cell,
-				cellType {HORIZONTAL_DOUBLE, 
-					table.width[idx], ""})
-		}
-	}
-	table.row = append (table.row, newRow)
-}
 
 // Add a thick horizontal rule that intersects with the vertical separators
 // provided that any have been specified.
 func (table *Tbl) HThickRule () {
 
-	// Since it is possible to concatenate horizontal rules, redo the last
-	// one if necessary
-	table.redoLastLine ()
-	
-	// create a new row whose contents will be computed in this
-	// function. Importantly, the beginning of the rule depends on whether
-	// there is an initial column at location 0 or not: if there is a column
-	// at location 0, the rule starts at location 1 so that when redrawing
-	// this horizontal rule the first character is set properly
-	var newRow tblLine
-	if table.column[0].content >= VERTICAL_SINGLE &&
-		table.column[0].content <= VERTICAL_THICK {
-		newRow = tblLine{HORIZONTAL_THICK,
-			tblRule{HORIZONTAL_THICK, 1, len (table.column)-1},
-			[]cellType{}}
-	} else {
-		newRow = tblLine{HORIZONTAL_THICK,
-			tblRule{HORIZONTAL_THICK, 0, len (table.column)-1},
-			[]cellType{}}
-	}
-	
-	for idx, column := range table.column {
-		switch column.content {
-		case VERTICAL_SINGLE:
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {UP_LIGHT_AND_RIGHT_HEAVY,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {UP_LIGHT_AND_LEFT_HEAVY,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{UP_LIGHT_AND_HORIZONTAL_HEAVY,
-						table.width[idx], ""})
-			}
-
-		case VERTICAL_DOUBLE, VERTICAL_THICK:
-
-			// note that both cases are dealt with in the same way
-			// since there are no UTF-8 characters which combine
-			// them
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {HEAVY_UP_AND_RIGHT,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {HEAVY_UP_AND_LEFT,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{HEAVY_UP_AND_HORIZONTAL,
-						table.width[idx], ""})
-			}
-		default:
-			newRow.cell = append (newRow.cell,
-				cellType {HORIZONTAL_THICK, 
-					table.width[idx], ""})
-		}
-	}
-	table.row = append (table.row, newRow)
+	// notice that the intersection of thick rules with either double or
+	// thick vertical separators is computed with the same UTF-8 characters
+	// since other combinations are not allowed by UTF-8
+	table.hrule (HORIZONTAL_THICK,
+		UP_LIGHT_AND_RIGHT_HEAVY, UP_LIGHT_AND_LEFT_HEAVY, UP_LIGHT_AND_HORIZONTAL_HEAVY,
+		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL,
+		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL)
 }
 
 // Add a thick horizontal rule to the current table. Top rules do not draw

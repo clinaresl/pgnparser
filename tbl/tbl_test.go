@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <martes, 08 septiembre 2015 08:23:00 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 09 septiembre 2015 17:52:47 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -88,7 +88,7 @@ func TestNewTable1 (t *testing.T) {
 		t.Fatal ("Error adding a new row")
 	}
 
-	table.HDoubleRule ()
+	table.HThickRule ()
 	
 	fmt.Println (table)
 }

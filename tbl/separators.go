@@ -1,11 +1,11 @@
 /* 
-  tblseparators.go
+  separators.go
   Description: This file contain constants and methods for drawing
   separators exclusively
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Aug 27 23:41:01 2015 Carlos Linares Lopez>
-  Last update <martes, 08 septiembre 2015 08:20:20 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 09 septiembre 2015 08:06:00 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
