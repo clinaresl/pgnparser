@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <miércoles, 09 septiembre 2015 17:51:26 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 09 septiembre 2015 22:59:01 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -84,14 +84,6 @@ var reVerbatimSeparator = regexp.MustCompile (`^@\{(?P<text>[^}]*)\}`)
 // Likewise, fixed widths are processed separately with an additional regular
 // expression to extract the width
 var reFixedWidth = regexp.MustCompile (`^p\{(?P<width>[^}]*)\}`)
-
-// While the full width is passed to the LaTeX code, only the integer part is
-// used to set the width of a column. Thus, an additional regexp is used just to
-// extract it
-var reIntegerFixedWidth = regexp.MustCompile (`^(?P<value>[\d]+).*`)
-
-// clines are recognized with the following regular expression
-var reCLine = regexp.MustCompile (`(?P<from>\d+)-(?P<to>\d+)`)
 
 
 // typedefs
@@ -296,7 +288,7 @@ func (table *Tbl) AddRow (row []string) (err error) {
 	
 	// insert all cells of this line: those provided by the user and others
 	// provided in the specification string. Since this line does not
-	// contain horizontal rules, from and to equal are null
+	// contain horizontal rules, from and to are null
 	newRow := tblLine{TEXT,
 		tblRule{VOID, 0, 0},
 		[]cellType{}}
@@ -384,8 +376,8 @@ func (table *Tbl) AddRow (row []string) (err error) {
 			// compute the width of this cell as the maximum between
 			// the current width of the column and the width of the
 			// text to insert here (since only one line is used!)
-			// and add it to the table with a blank space after as
-			// well
+			// and add it to the table with a blank space following
+			// immediate after as well
 			table.width [jdx] = int (math.Max (float64 (table.width[jdx]),
 				float64 (utf8.RuneCountInString (content))))
 			newRow.cell = append (newRow.cell,
@@ -452,66 +444,16 @@ func (table *Tbl) HThickRule () {
 // This function is implemented in imitation to the LaTeX package booktabs
 func (table *Tbl) TopRule () {
 
-	// Since it is possible to concatenate horizontal rules, redo the last
-	// one if necessary
-	table.redoLastLine ()
-	
-	// create a new row whose contents will be computed in this
-	// function. Importantly, the beginning of the rule depends on whether
-	// there is an initial column at location 0 or not: if there is a column
-	// at location 0, the rule starts at location 1 so that when redrawing
-	// this horizontal rule the first character is set properly
-	var newRow tblLine
-	if table.column[0].content >= VERTICAL_SINGLE &&
-		table.column[0].content <= VERTICAL_THICK {
-		newRow = tblLine{HORIZONTAL_TOP_RULE,
-			tblRule{HORIZONTAL_TOP_RULE, 1, len (table.column)-1},
-			[]cellType{}}
-	} else {
-		newRow = tblLine{HORIZONTAL_TOP_RULE,
-			tblRule{HORIZONTAL_TOP_RULE, 0, len (table.column)-1},
-			[]cellType{}}
-	}
-	
-	for idx := range table.column {
-		newRow.cell = append (newRow.cell, cellType {HORIZONTAL_THICK,
-			table.width[idx], ""})
-	}
-	table.row = append (table.row, newRow)
+	table.rule (HORIZONTAL_TOP_RULE, HORIZONTAL_THICK)
 }
 
-// Add a thin horizontal rule to the current table. Mid rules do not draw
+// Add a single horizontal rule to the current table. Mid rules do not draw
 // intersections with column separators (they break them instead)
 //
 // This function is implemented in imitation to the LaTeX package booktabs
 func (table *Tbl) MidRule () {
 
-	// Since it is possible to concatenate horizontal rules, redo the last
-	// one if necessary
-	table.redoLastLine ()
-	
-	// create a new row whose contents will be computed in this
-	// function. Importantly, the beginning of the rule depends on whether
-	// there is an initial column at location 0 or not: if there is a column
-	// at location 0, the rule starts at location 1 so that when redrawing
-	// this horizontal rule the first character is set properly
-	var newRow tblLine
-	if table.column[0].content >= VERTICAL_SINGLE &&
-		table.column[0].content <= VERTICAL_THICK {
-		newRow = tblLine{HORIZONTAL_MID_RULE,
-			tblRule{HORIZONTAL_MID_RULE, 1, len (table.column)-1},
-			[]cellType{}}
-	} else {
-		newRow = tblLine{HORIZONTAL_MID_RULE,
-			tblRule{HORIZONTAL_MID_RULE, 0, len (table.column)-1},
-			[]cellType{}}
-	}
-	
-	for idx := range table.column {
-		newRow.cell = append (newRow.cell, cellType {HORIZONTAL_SINGLE,
-			table.width[idx], ""})
-	}
-	table.row = append (table.row, newRow)
+	table.rule (HORIZONTAL_MID_RULE, HORIZONTAL_SINGLE)
 }
 
 // Add a thick horizontal rule to the current table. Bottom rules do not draw
@@ -520,220 +462,28 @@ func (table *Tbl) MidRule () {
 // This function is implemented in imitation to the LaTeX package booktabs
 func (table *Tbl) BottomRule () {
 
-	table.TopRule ()
+	table.rule (HORIZONTAL_TOP_RULE, HORIZONTAL_THICK)
 }
 
-// draws a horizontal single rule from a specific column to other. The specific
+// Draw a horizontal single rule from a specific column to another. The specific
 // region to draw is specified in LaTeX format in the given command
 func (table *Tbl) CSingleLine (cmd string) {
 
-	var err error
-	var from, to int
-	
-	// parse the given command
-	if reCLine.MatchString (cmd) {
-		tag := reCLine.FindStringSubmatchIndex (cmd)
-
-		// extract the limits of this cline
-		from, err = strconv.Atoi (cmd[tag[2]:tag[3]]); if err != nil {
-			log.Fatalf (" It was not feasible to extract the first bound from '%v'",
-				cmd[tag[2]:tag[3]])
-		}
-		to, err = strconv.Atoi (cmd[tag[4]:tag[5]]); if err != nil {
-			log.Fatalf (" It was not feasible to extract the second bound from '%v'",
-				cmd[tag[4]:tag[5]])
-		}
-	} else {
-		log.Fatalf ("Incorrect cline specification: '%v'",
-			cmd)
-	}
-
-	// 'from' and 'to' are given as user column indexes. Translate them into
-	// effective column indexes
-	from, to = table.getEffectiveColumn (from), table.getEffectiveColumn (to)
-	
-	// Since it is possible to concatenate horizontal rules, redo the last
-	// one if necessary
-	table.redoLastLine ()
-	
-	// A cline consists of thin lines in those areas specified by the user
-	// and blank characters otherwise
-	newRow := tblLine{HORIZONTAL_SINGLE,
-		tblRule{HORIZONTAL_SINGLE, from, to},
-		[]cellType{}}
-	for idx, cell := range table.column {
-
-		// first update the column number of this one wrt columns with
-		// content ---ie., ignoring separators
-		if cell.content == LEFT ||
-			cell.content == CENTER ||
-			cell.content == RIGHT ||
-			cell.content == VERTICAL_VERBATIM ||
-			cell.content == VERTICAL_FIXED_WIDTH {
-
-			// and now check whether this one shall be drawn
-			if idx < from || idx > to {
-				newRow.cell = append (newRow.cell,
-					cellType {BLANK,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType {HORIZONTAL_SINGLE,
-						table.width[idx], ""})
-			}
-		} else {
-
-			// in case we are out of bounds, just simply preserve
-			// the type of column at this position
-			newRow.cell = append (newRow.cell,
-				cellType {cell.content, table.width[idx], ""})
-		}
-	}
-
-	// and add this row to the bottom of the table
-	table.row = append (table.row, newRow)
+	table.cline (cmd, HORIZONTAL_SINGLE)
 }
 
-// draws a horizontal double rule from a specific column to other. The specific
+// Draw a horizontal double rule from a specific column to another. The specific
 // region to draw is specified in LaTeX format in the given command
 func (table *Tbl) CDoubleLine (cmd string) {
 
-	var err error
-	var from, to int
-	
-	// parse the given command
-	if reCLine.MatchString (cmd) {
-		tag := reCLine.FindStringSubmatchIndex (cmd)
-
-		// extract the limits of this cline
-		from, err = strconv.Atoi (cmd[tag[2]:tag[3]]); if err != nil {
-			log.Fatalf (" It was not feasible to extract the first bound from '%v'",
-				cmd[tag[2]:tag[3]])
-		}
-		to, err = strconv.Atoi (cmd[tag[4]:tag[5]]); if err != nil {
-			log.Fatalf (" It was not feasible to extract the second bound from '%v'",
-				cmd[tag[4]:tag[5]])
-		}
-	} else {
-		log.Fatalf ("Incorrect cline specification: '%v'",
-			cmd)
-	}
-
-	// 'from' and 'to' are given as user column indexes. Translate them into
-	// effective column indexes
-	from, to = table.getEffectiveColumn (from), table.getEffectiveColumn (to)
-	
-	// Since it is possible to concatenate horizontal rules, redo the last
-	// one if necessary
-	table.redoLastLine ()
-	
-	// A cline consists of double lines in those areas specified by the user
-	// and blank characters otherwise
-	newRow := tblLine{HORIZONTAL_DOUBLE,
-		tblRule{HORIZONTAL_DOUBLE, from, to},
-		[]cellType{}}
-	for idx, cell := range table.column {
-
-		// first update the column number of this one wrt columns with
-		// content ---ie., ignoring separators
-		if cell.content == LEFT ||
-			cell.content == CENTER ||
-			cell.content == RIGHT ||
-			cell.content == VERTICAL_VERBATIM ||
-			cell.content == VERTICAL_FIXED_WIDTH {
-
-			// and now check whether this one shall be drawn
-			if idx < from || idx > to {
-				newRow.cell = append (newRow.cell,
-					cellType {BLANK,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType {HORIZONTAL_DOUBLE,
-						table.width[idx], ""})
-			}
-		} else {
-
-			// in case we are out of bounds, just simply preserve
-			// the type of column at this position
-			newRow.cell = append (newRow.cell,
-				cellType {cell.content, table.width[idx], ""})
-		}
-	}
-
-	// and add this row to the bottom of the table
-	table.row = append (table.row, newRow)
+	table.cline (cmd, HORIZONTAL_DOUBLE)
 }
 
-// draws a horizontal thick rule from a specific column to other. The specific
+// Draw a horizontal thick rule from a specific column to another. The specific
 // region to draw is specified in LaTeX format in the given command
 func (table *Tbl) CThickLine (cmd string) {
 
-	var err error
-	var from, to int
-	
-	// parse the given command
-	if reCLine.MatchString (cmd) {
-		tag := reCLine.FindStringSubmatchIndex (cmd)
-
-		// extract the limits of this cline
-		from, err = strconv.Atoi (cmd[tag[2]:tag[3]]); if err != nil {
-			log.Fatalf (" It was not feasible to extract the first bound from '%v'",
-				cmd[tag[2]:tag[3]])
-		}
-		to, err = strconv.Atoi (cmd[tag[4]:tag[5]]); if err != nil {
-			log.Fatalf (" It was not feasible to extract the second bound from '%v'",
-				cmd[tag[4]:tag[5]])
-		}
-	} else {
-		log.Fatalf ("Incorrect cline specification: '%v'",
-			cmd)
-	}
-
-	// 'from' and 'to' are given as user column indexes. Translate them into
-	// effective column indexes
-	from, to = table.getEffectiveColumn (from), table.getEffectiveColumn (to)
-	
-	// Since it is possible to concatenate horizontal rules, redo the last
-	// one if necessary
-	table.redoLastLine ()
-	
-	// A cline consists of thick lines in those areas specified by the user
-	// and blank characters otherwise
-	newRow := tblLine{HORIZONTAL_THICK,
-		tblRule{HORIZONTAL_THICK, from, to},
-		[]cellType{}}
-	for idx, cell := range table.column {
-
-		// first update the column number of this one wrt columns with
-		// content ---ie., ignoring separators
-		if cell.content == LEFT ||
-			cell.content == CENTER ||
-			cell.content == RIGHT ||
-			cell.content == VERTICAL_VERBATIM ||
-			cell.content == VERTICAL_FIXED_WIDTH {
-
-			// and now check whether this one shall be drawn
-			if idx < from || idx > to {
-				newRow.cell = append (newRow.cell,
-					cellType {BLANK,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType {HORIZONTAL_THICK,
-						table.width[idx], ""})
-			}
-		} else {
-
-			// in case we are out of bounds, just simply preserve
-			// the type of column at this position
-			newRow.cell = append (newRow.cell,
-				cellType {cell.content, table.width[idx], ""})
-		}
-	}
-
-	// and add this row to the bottom of the table
-	table.row = append (table.row, newRow)
+	table.cline (cmd, HORIZONTAL_THICK)
 }
 
 // Cells draw themselves producing a string which takes into account the width
