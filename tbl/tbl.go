@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <miércoles, 09 septiembre 2015 22:59:01 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 11 septiembre 2015 14:23:03 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -469,21 +469,30 @@ func (table *Tbl) BottomRule () {
 // region to draw is specified in LaTeX format in the given command
 func (table *Tbl) CSingleLine (cmd string) {
 
-	table.cline (cmd, HORIZONTAL_SINGLE)
+	table.cline (cmd, HORIZONTAL_SINGLE,
+		LIGHT_UP_AND_RIGHT, LIGHT_UP_AND_LEFT, LIGHT_UP_AND_HORIZONTAL,
+		UP_DOUBLE_AND_RIGHT_SINGLE, UP_DOUBLE_AND_LEFT_SINGLE, UP_DOUBLE_AND_HORIZONTAL_SINGLE,
+		UP_HEAVY_AND_RIGHT_LIGHT, UP_HEAVY_AND_LEFT_LIGHT, UP_HEAVY_AND_HORIZONTAL_LIGHT)
 }
 
 // Draw a horizontal double rule from a specific column to another. The specific
 // region to draw is specified in LaTeX format in the given command
 func (table *Tbl) CDoubleLine (cmd string) {
 
-	table.cline (cmd, HORIZONTAL_DOUBLE)
+	table.cline (cmd, HORIZONTAL_DOUBLE,
+		UP_SINGLE_AND_RIGHT_DOUBLE, UP_SINGLE_AND_LEFT_DOUBLE, UP_SINGLE_AND_HORIZONTAL_DOUBLE,
+		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL,
+		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL)
 }
 
 // Draw a horizontal thick rule from a specific column to another. The specific
 // region to draw is specified in LaTeX format in the given command
 func (table *Tbl) CThickLine (cmd string) {
 
-	table.cline (cmd, HORIZONTAL_THICK)
+	table.cline (cmd, HORIZONTAL_THICK,
+		UP_LIGHT_AND_RIGHT_HEAVY, UP_LIGHT_AND_LEFT_HEAVY, UP_LIGHT_AND_HORIZONTAL_HEAVY,
+		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL,
+		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL)
 }
 
 // Cells draw themselves producing a string which takes into account the width

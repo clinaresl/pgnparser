@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <miércoles, 09 septiembre 2015 17:52:47 Carlos Linares Lopez (clinares)>
+  Last update <martes, 22 septiembre 2015 07:49:37 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -419,10 +419,43 @@ func TestNewTable6 (t *testing.T) {
 		t.Fatal ("Error adding a new row")
 	}
 
-	table.HDoubleRule ()
+	table.HThickRule ()
 	
 	fmt.Println (table)	
 }
+
+func TestNewTable7 (t *testing.T) {
+	var spec = "l|llll||llll|"
+
+	table, err := NewTable (spec); if err != nil {
+		t.Fatal (" Fatal error while constructing the table")
+	}
+
+	table.CSingleLine ("2-9")
+
+	if table.AddRow ([]string{"", "Cell 12", "Cell 13", "Cell 14", "Cell 15", "Cell 16", "Cell 17", "Cell 18", "Cell 19"})!=nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	table.CSingleLine ("1-9")
+
+	if table.AddRow ([]string{"Cell 21", "Cell 22", "Cell 23", "Cell 24", "Cell 25", "Cell 26", "Cell 27", "Cell 28", "Cell 29"})!=nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	if table.AddRow ([]string{"Cell 31", "Cell 32", "Cell 33", "Cell 34", "Cell 35", "Cell 36", "Cell 37", "Cell 38", "Cell 39"})!=nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	if table.AddRow ([]string{"Cell 41", "Cell 42", "Cell 43", "Cell 44", "Cell 45", "Cell 46", "Cell 47", "Cell 48", "Cell 49"})!=nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	table.CSingleLine ("1-9")
+	
+	fmt.Println (table)	
+}
+
 
 
 

@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed Sep  9 08:06:09 2015 Carlos Linares Lopez>
-  Last update <miércoles, 09 septiembre 2015 22:55:01 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 11 septiembre 2015 08:26:12 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -189,7 +189,11 @@ func (table *Tbl) rule (content, thickness contentType) {
 //
 // The type of line is specified with content which should take one of the
 // values HORIZONTAL_SINGLE, HORIZONTAL_DOUBLE or HORIZONTAL_THICK
-func (table *Tbl) cline (cmd string, content contentType) {
+func (table *Tbl) cline (cmd string,
+	content,
+	light_sw, light_se, light_s,
+	double_sw, double_se, double_s,
+	thick_sw, thick_se, thick_s contentType) {
 
 	var err error
 	var from, to int
@@ -225,35 +229,76 @@ func (table *Tbl) cline (cmd string, content contentType) {
 	newRow := tblLine{content,
 		tblRule{content, from, to},
 		[]cellType{}}
-	for idx, cell := range table.column {
 
-		// first update the column number of this one wrt columns with
-		// content ---ie., ignoring separators
-		if cell.content == LEFT ||
-			cell.content == CENTER ||
-			cell.content == RIGHT ||
-			cell.content == VERTICAL_VERBATIM ||
-			cell.content == VERTICAL_FIXED_WIDTH {
+	// consider now all columns from the general specification of the table
+	// and draw the intersections accordingly
+	for idx, column := range table.column {
 
-			// and now check whether this one shall be drawn
-			if idx < from || idx > to {
+		// in case we are within the area to draw, choose the right
+		// character to show
+		if idx >= from && idx <= to {
+		
+			switch column.content {
+			case VERTICAL_SINGLE:
+				if idx==0 {
+					newRow.cell = append (newRow.cell,
+						cellType {light_sw,
+							table.width[idx], ""})
+				} else if idx == len (table.column) - 1 {
+					newRow.cell = append (newRow.cell,
+						cellType {light_se,
+							table.width[idx], ""})
+				} else {
+					newRow.cell = append (newRow.cell,
+						cellType{light_s,
+							table.width[idx], ""})
+				}
+
+			case VERTICAL_DOUBLE:
+
+				if idx==0 {
+					newRow.cell = append (newRow.cell,
+						cellType {double_sw,
+							table.width[idx], ""})
+				} else if idx == len (table.column) - 1 {
+					newRow.cell = append (newRow.cell,
+						cellType {double_se,
+							table.width[idx], ""})
+				} else {
+					newRow.cell = append (newRow.cell,
+						cellType{double_s,
+							table.width[idx], ""})
+				}
+			
+			case VERTICAL_THICK:
+
+				if idx==0 {
+					newRow.cell = append (newRow.cell,
+						cellType {thick_sw,
+							table.width[idx], ""})
+				} else if idx == len (table.column) - 1 {
+					newRow.cell = append (newRow.cell,
+						cellType {thick_se,
+							table.width[idx], ""})
+				} else {
+					newRow.cell = append (newRow.cell,
+						cellType{thick_s,
+							table.width[idx], ""})
+				}
+			default:
 				newRow.cell = append (newRow.cell,
-					cellType {BLANK,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType {content,
+					cellType {content, 
 						table.width[idx], ""})
 			}
 		} else {
 
-			// in case we are out of bounds, just simply preserve
-			// the type of column at this position
+			// otherwise, just preserve here the type of the column
+			// without any contents
 			newRow.cell = append (newRow.cell,
-				cellType {cell.content, table.width[idx], ""})
+				cellType {column.content, table.width[idx], ""})
 		}
 	}
-
+	
 	// and add this row to the bottom of the table
 	table.row = append (table.row, newRow)
 }
