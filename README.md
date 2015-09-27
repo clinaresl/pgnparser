@@ -97,6 +97,7 @@ $ ./pgnparser --file=examples/mygames.pgn
 
 The output shown is then of the form:
 
+```
 │ DBGameNo  │    Date       Time   │ White        ELO │ Black      ELO │ ECO │ Time  │ Moves │ Result │
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 │ 375431273 │ 2015.05.04  17:18:00 │ samotnik    1618 │ clinares  1520 │ C20 │ 180+0 │  60   │  1-0   │
@@ -108,6 +109,7 @@ The output shown is then of the form:
 
 
  # Games found: 5
+```
 
 If `--select` is used, then attention is restricted only to those
 games that match the given query. For example:
@@ -160,6 +162,7 @@ sorts all games in ascending order of the name of the white player
 and, in case of a tie, it sorts games in decreasing order of the
 number of plies (half-moves) of the game. The output is shown below:
 
+```
 │ DBGameNo  │    Date       Time   │ White        ELO │ Black      ELO │ ECO │ Time  │ Moves │ Result │
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 │ 375458181 │ 2015.05.05  11:21:00 │ clinares    1514 │ walls     1532 │ C00 │ 180+0 │  67   │  ½-½   │
@@ -171,7 +174,7 @@ number of plies (half-moves) of the game. The output is shown below:
 
 
  # Games found: 5
-
+```
 
 # License #
 
