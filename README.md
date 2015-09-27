@@ -63,13 +63,13 @@ consist of either constants (integer or string) or variables. As in
 the case of the LaTeX templates, variables are preceded by the
 character '%' and any tag appearing in the header of a PGN game can be
 used as a variable. To obtain more information about expressions use
-the directive `--help-expressions`. In case a query is done with
+the directive `--help-expressions`. In case a query is requested with
 `--select` any other operations (e.g., generating LaTeX files or
 sorting games) are performed only over the filtered games.
 
 `--sorting` can be used to sort any collection of chess games
 retrieved from a PGN file. If given, it should be accompanied of an
-arbitrary number of keys of the form `<|> <variable>` where
+arbitrary number of keys of the form `(<>) <variable>` where
 `<variable>` should be a reference to a valid variable which shall be
 prefixed with `%`. In case `<` is used, games are sorted in increasing
 order of the given variable; otherwise, they are sorted in decreasing
