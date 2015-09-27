@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Aug 27 23:41:01 2015 Carlos Linares Lopez>
-  Last update <miércoles, 09 septiembre 2015 08:06:00 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 27 septiembre 2015 20:50:27 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -283,7 +283,7 @@ func (table *Tbl) redoSingleRule () {
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
-			if idx+1 == row.rule.from {
+			if idx == row.rule.from {
 				if last == 0 {
 					row.cell[idx]=cellType{LIGHT_DOWN_AND_RIGHT,
 						column.width, ""}
@@ -300,20 +300,25 @@ func (table *Tbl) redoSingleRule () {
 							column.width, ""}
 				}
 			} else {
-				if last == 0 {
-					row.cell[idx]=cellType{LIGHT_DOWN_AND_HORIZONTAL,
+				if idx < row.rule.from || idx > row.rule.to {
+					row.cell[idx]=cellType{VERTICAL_SINGLE,
 						column.width, ""}
 				} else {
-					if idx >= row.rule.from &&
-						idx <= row.rule.to {
-						row.cell[idx]=cellType{LIGHT_VERTICAL_AND_HORIZONTAL,
+					if last == 0 {
+						row.cell[idx]=cellType{LIGHT_DOWN_AND_HORIZONTAL,
 							column.width, ""}
+					} else {
+						if idx >= row.rule.from &&
+							idx <= row.rule.to {
+							row.cell[idx]=cellType{LIGHT_VERTICAL_AND_HORIZONTAL,
+								column.width, ""}
+						}
 					}
 				}
 			}
 			
 		case VERTICAL_DOUBLE:
-			if idx+1 == row.rule.from {
+			if idx == row.rule.from {
 				if last == 0 {
 					row.cell[idx]=cellType{DOWN_DOUBLE_AND_RIGHT_SINGLE,
 						column.width, ""}
@@ -330,21 +335,26 @@ func (table *Tbl) redoSingleRule () {
 							column.width, ""}
 				}
 			} else {
-				if last == 0 {
-					row.cell[idx]=cellType{UP_DOUBLE_AND_HORIZONTAL_SINGLE,
+				if idx < row.rule.from || idx > row.rule.to {
+					row.cell[idx]=cellType{VERTICAL_DOUBLE,
 						column.width, ""}
 				} else {
-					if idx >= row.rule.from &&
-						idx<= row.rule.to {
-						row.cell[idx]=cellType{VERTICAL_DOUBLE_AND_HORIZONTAL_SINGLE,
+					if last == 0 {
+						row.cell[idx]=cellType{UP_DOUBLE_AND_HORIZONTAL_SINGLE,
 							column.width, ""}
+					} else {
+						if idx >= row.rule.from &&
+							idx<= row.rule.to {
+							row.cell[idx]=cellType{VERTICAL_DOUBLE_AND_HORIZONTAL_SINGLE,
+								column.width, ""}
+						}
 					}
 				}
 			}
 
 		case VERTICAL_THICK:
 
-			if idx+1 == row.rule.from {
+			if idx == row.rule.from {
 				if last == 0 {
 					row.cell[idx]=cellType{DOWN_HEAVY_AND_RIGHT_LIGHT,
 						column.width, ""}
@@ -361,14 +371,19 @@ func (table *Tbl) redoSingleRule () {
 						column.width, ""}
 				}
 			} else {
-				if last == 0 {
-					row.cell[idx] = cellType{DOWN_HEAVY_AND_HORIZONTAL_RIGHT,
+				if idx < row.rule.from || idx > row.rule.to {
+					row.cell[idx]=cellType{VERTICAL_THICK,
 						column.width, ""}
 				} else {
-					if idx >= row.rule.from &&
-						idx <= row.rule.to {
-						row.cell[idx] = cellType{VERTICAL_HEAVY_AND_HORIZONTAL_LIGHT,
+					if last == 0 {
+						row.cell[idx] = cellType{DOWN_HEAVY_AND_HORIZONTAL_RIGHT,
 							column.width, ""}
+					} else {
+						if idx >= row.rule.from &&
+							idx <= row.rule.to {
+							row.cell[idx] = cellType{VERTICAL_HEAVY_AND_HORIZONTAL_LIGHT,
+								column.width, ""}
+						}
 					}
 				}
 			}
@@ -389,7 +404,7 @@ func (table *Tbl) redoDoubleRule () {
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
-			if idx+1 == row.rule.from {
+			if idx == row.rule.from {
 				if last == 0 {
 					row.cell[idx]=cellType{DOWN_SINGLE_AND_RIGHT_DOUBLE,
 						column.width, ""}
@@ -406,23 +421,29 @@ func (table *Tbl) redoDoubleRule () {
 						column.width, ""}
 				}
 			} else {
-				if last == 0 {
-					row.cell[idx]=cellType{DOWN_SINGLE_AND_HORIZONTAL_DOUBLE,
+				if idx < row.rule.from || idx > row.rule.to {
+					row.cell[idx]=cellType{VERTICAL_SINGLE,
 						column.width, ""}
 				} else {
-					if idx >= row.rule.from &&
-						idx <= row.rule.to {
-						row.cell[idx]=cellType{VERTICAL_SINGLE_AND_HORIZONTAL_DOUBLE,
+					if last == 0 {
+						row.cell[idx]=cellType{DOWN_SINGLE_AND_HORIZONTAL_DOUBLE,
 							column.width, ""}
+					} else {
+						if idx >= row.rule.from &&
+							idx <= row.rule.to {
+							row.cell[idx]=cellType{VERTICAL_SINGLE_AND_HORIZONTAL_DOUBLE,
+								column.width, ""}
+						}
 					}
 				}
 			}
+			
 		case VERTICAL_DOUBLE, VERTICAL_THICK:
 
 			// note that both cases are dealt with in the same way
 			// since there are no UTF-8 characters which combine
 			// them
-			if idx+1 == row.rule.from {
+			if idx == row.rule.from {
 				if last == 0 {
 					row.cell[idx]=cellType{DOUBLE_DOWN_AND_RIGHT,
 						column.width, ""}
@@ -439,14 +460,19 @@ func (table *Tbl) redoDoubleRule () {
 						column.width, ""}
 				}
 			} else {
-				if last == 0 {
-					row.cell[idx] = cellType{DOUBLE_DOWN_AND_HORIZONTAL,
+				if idx < row.rule.from || idx > row.rule.to {
+					row.cell[idx]=cellType{column.content,
 						column.width, ""}
 				} else {
-					if idx >= row.rule.from &&
-						idx <= row.rule.to {
-						row.cell[idx] = cellType{DOUBLE_VERTICAL_AND_HORIZONTAL,
+					if last == 0 {
+						row.cell[idx] = cellType{DOUBLE_DOWN_AND_HORIZONTAL,
 							column.width, ""}
+					} else {
+						if idx >= row.rule.from &&
+							idx <= row.rule.to {
+							row.cell[idx] = cellType{DOUBLE_VERTICAL_AND_HORIZONTAL,
+								column.width, ""}
+						}
 					}
 				}
 			}
@@ -467,7 +493,7 @@ func (table *Tbl) redoThickRule () {
 	for idx, column := range table.column {
 		switch column.content {
 		case VERTICAL_SINGLE:
-			if idx+1 == row.rule.from {
+			if idx == row.rule.from {
 				if last == 0 {
 					row.cell[idx]=cellType{DOWN_LIGHT_AND_RIGHT_HEAVY,
 						column.width, ""}
@@ -484,14 +510,19 @@ func (table *Tbl) redoThickRule () {
 						column.width, ""}
 				}
 			} else {
-				if last == 0 {
-					row.cell[idx]=cellType{DOWN_LIGHT_AND_HORIZONTAL_HEAVY,
+				if idx < row.rule.from || idx > row.rule.to {
+					row.cell[idx]=cellType{VERTICAL_SINGLE,
 						column.width, ""}
 				} else {
-					if idx >= row.rule.from &&
-						idx <= row.rule.to {
-						row.cell[idx]=cellType{VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY,
+					if last == 0 {
+						row.cell[idx]=cellType{DOWN_LIGHT_AND_HORIZONTAL_HEAVY,
 							column.width, ""}
+					} else {
+						if idx >= row.rule.from &&
+							idx <= row.rule.to {
+							row.cell[idx]=cellType{VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY,
+								column.width, ""}
+						}
 					}
 				}
 			}
@@ -500,7 +531,7 @@ func (table *Tbl) redoThickRule () {
 			// note that both cases are dealt with in the same way
 			// since there are no UTF-8 characters which combine
 			// them
-			if idx+1 == row.rule.from {
+			if idx == row.rule.from {
 				if last == 0 {
 					row.cell[idx]=cellType{HEAVY_DOWN_AND_RIGHT,
 						column.width, ""}
@@ -517,14 +548,19 @@ func (table *Tbl) redoThickRule () {
 						column.width, ""}
 				}
 			} else {
-				if last == 0 {
-					row.cell[idx] = cellType{HEAVY_DOWN_AND_HORIZONTAL,
+				if idx < row.rule.from || idx > row.rule.to {
+					row.cell[idx]=cellType{column.content,
 						column.width, ""}
 				} else {
-					if idx >= row.rule.from &&
-						idx <= row.rule.to {
-						row.cell[idx] = cellType{HEAVY_VERTICAL_AND_HORIZONTAL,
+					if last == 0 {
+						row.cell[idx] = cellType{HEAVY_DOWN_AND_HORIZONTAL,
 							column.width, ""}
+					} else {
+						if idx >= row.rule.from &&
+							idx <= row.rule.to {
+							row.cell[idx] = cellType{HEAVY_VERTICAL_AND_HORIZONTAL,
+								column.width, ""}
+						}
 					}
 				}
 			}

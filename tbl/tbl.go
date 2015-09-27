@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <viernes, 11 septiembre 2015 14:23:03 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 23 septiembre 2015 08:34:39 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -244,28 +244,29 @@ func NewTable (cmd string) (table Tbl, err error) {
 
 // this private service translates a *user* column index into an effective
 // column index. User columns are those with user contents. Effective columns
-// are those defined in the specification string. Importantly, while the user
-// column index is 1-based, the effective column index is 0-based
+// are those defined in the specification string and consist also of column
+// separators. Importantly, while the user column index is 1-based, the
+// effective column index is 0-based
 func (table *Tbl) getEffectiveColumn (user int) (int) {
 
 	// iterate over all columns until the specified user column has been
 	// found
-	for idx, jdx := 0, 1; idx < len (table.column) ; idx += 1 {
+	for idx, jdx := 0, 0; idx < len (table.column) ; idx += 1 {
 		if table.column[idx].content == LEFT ||
 			table.column[idx].content == CENTER ||
 			table.column[idx].content == RIGHT ||
 			table.column[idx].content == VERTICAL_VERBATIM ||
 			table.column[idx].content == VERTICAL_FIXED_WIDTH {
 
+			// increment the number of user column indexes found so
+			// far
+			jdx += 1
+			
 			// if this is the user column index requested then
 			// return its effective counter
 			if jdx == user {
 				return idx
 			}
-
-			// increment the number of user column indexes found so
-			// far
-			jdx += 1
 		}
 	}
 

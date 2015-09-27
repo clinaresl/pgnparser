@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <martes, 22 septiembre 2015 07:49:37 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 27 septiembre 2015 20:52:18 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -425,7 +425,7 @@ func TestNewTable6 (t *testing.T) {
 }
 
 func TestNewTable7 (t *testing.T) {
-	var spec = "l|llll||llll|"
+	var spec = "|l|llll|llll|"
 
 	table, err := NewTable (spec); if err != nil {
 		t.Fatal (" Fatal error while constructing the table")
@@ -455,7 +455,6 @@ func TestNewTable7 (t *testing.T) {
 	
 	fmt.Println (table)	
 }
-
 
 
 

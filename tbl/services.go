@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed Sep  9 08:06:09 2015 Carlos Linares Lopez>
-  Last update <viernes, 11 septiembre 2015 08:26:12 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 27 septiembre 2015 20:43:04 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -54,31 +54,19 @@ var reCLine = regexp.MustCompile (`(?P<from>\d+)-(?P<to>\d+)`)
 //    *_sw, *_se, *_s - south/west, south/east and south separators used for
 //    different types of vertical separators as specified in '*' that can take
 //    the following values: light, double and thick
-func (table *Tbl) hrule (content,
-	light_sw, light_se, light_s,
-	double_sw, double_se, double_s,
-	thick_sw, thick_se, thick_s contentType) {
+func (table *Tbl) hrule (content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
 
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
 	table.redoLastLine ()
 
 	// create a new row whose contents will be computed in this
-	// function. Importantly, the beginning of the rule depends on whether
-	// there is an initial column at location 0 or not: if there is a column
-	// at location 0, the rule starts at location 1 so that when redrawing
-	// this horizontal rule the first character is set properly
+	// function. Obviously, the rule goes from the first column until the
+	// last one
 	var newRow tblLine
-	if table.column[0].content >= VERTICAL_SINGLE &&
-		table.column[0].content <= VERTICAL_THICK {
-		newRow = tblLine{content,
-			tblRule{content, 1, len (table.column)-1},
-			[]cellType{}}
-	} else {
-		newRow = tblLine{content,
-			tblRule{content, 0, len (table.column)-1},
-			[]cellType{}}
-	}
+	newRow = tblLine{content,
+		tblRule{content, 0, len (table.column)-1},
+		[]cellType{}}
 
 	// consider now all columns from the general specification of the table
 	// and draw the intersections accordingly
@@ -157,21 +145,12 @@ func (table *Tbl) rule (content, thickness contentType) {
 	table.redoLastLine ()
 	
 	// create a new row whose contents will be computed in this
-	// function. Importantly, the beginning of the rule depends on whether
-	// there is an initial column at location 0 or not: if there is a column
-	// at location 0, the rule starts at location 1 so that when redrawing
-	// this horizontal rule the first character is set properly
+	// function. Obviously, the rule goes from the first column until the
+	// last one
 	var newRow tblLine
-	if table.column[0].content >= VERTICAL_SINGLE &&
-		table.column[0].content <= VERTICAL_THICK {
-		newRow = tblLine{content,
-			tblRule{content, 1, len (table.column)-1},
-			[]cellType{}}
-	} else {
-		newRow = tblLine{content,
-			tblRule{content, 0, len (table.column)-1},
-			[]cellType{}}
-	}
+	newRow = tblLine{content,
+		tblRule{content, 0, len (table.column)-1},
+		[]cellType{}}
 	
 	for idx := range table.column {
 		newRow.cell = append (newRow.cell, cellType {thickness,
@@ -189,12 +168,8 @@ func (table *Tbl) rule (content, thickness contentType) {
 //
 // The type of line is specified with content which should take one of the
 // values HORIZONTAL_SINGLE, HORIZONTAL_DOUBLE or HORIZONTAL_THICK
-func (table *Tbl) cline (cmd string,
-	content,
-	light_sw, light_se, light_s,
-	double_sw, double_se, double_s,
-	thick_sw, thick_se, thick_s contentType) {
-
+func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
+		
 	var err error
 	var from, to int
 	
@@ -218,8 +193,31 @@ func (table *Tbl) cline (cmd string,
 
 	// 'from' and 'to' are given as user column indexes. Translate them into
 	// effective column indexes
-	from, to = table.getEffectiveColumn (from), table.getEffectiveColumn (to)
+	from = table.getEffectiveColumn (from)
+	to = table.getEffectiveColumn (to)
+
+	// there is however two exceptions:
+
+	// 1. if the user specified a user column as 'from' which is preceded of
+	// a vertical separator, then start the cline in the previous column
+	if from >= 1 && table.column[from-1].content != LEFT &&
+		table.column[from-1].content != CENTER &&
+		table.column[from-1].content != RIGHT &&
+		table.column[from-1].content != VERTICAL_VERBATIM &&
+		table.column[from-1].content != VERTICAL_FIXED_WIDTH {
+		from -= 1
+	}
 	
+	// 2. if the user specified a user column as 'to' which is continued by
+	// a vertical separator, then end the cline in the next column
+	if (to < len (table.column) - 1) && table.column[to+1].content != LEFT &&
+		table.column[to+1].content != CENTER &&
+		table.column[to+1].content != RIGHT &&
+		table.column[to+1].content != VERTICAL_VERBATIM &&
+		table.column[to+1].content != VERTICAL_FIXED_WIDTH {
+		to += 1
+	}
+
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
 	table.redoLastLine ()
