@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Aug 27 23:41:01 2015 Carlos Linares Lopez>
-  Last update <domingo, 27 septiembre 2015 20:50:27 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 28 septiembre 2015 17:52:08 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -261,19 +261,110 @@ func (table *Tbl) redoLastLine () {
 		// rule since we know now that a new lines is about to be
 		// inserted. Thus, the connectors shall be updated accordingly
 		if table.row[len (table.row)-1].content == HORIZONTAL_SINGLE {
-			table.redoSingleRule ()
+			table.redoRule (
+
+				// vertical single separators
+				LIGHT_DOWN_AND_RIGHT,
+				LIGHT_VERTICAL_AND_RIGHT,
+				LIGHT_DOWN_AND_LEFT,
+				LIGHT_VERTICAL_AND_LEFT,
+				VERTICAL_SINGLE,
+				LIGHT_DOWN_AND_HORIZONTAL,
+				LIGHT_VERTICAL_AND_HORIZONTAL,
+
+				// vertical double separators
+				DOWN_DOUBLE_AND_RIGHT_SINGLE,
+				VERTICAL_DOUBLE_AND_RIGHT_SINGLE,
+				DOWN_DOUBLE_AND_LEFT_SINGLE,
+				VERTICAL_DOUBLE_AND_LEFT_SINGLE,
+				VERTICAL_DOUBLE,
+				UP_DOUBLE_AND_HORIZONTAL_SINGLE,
+				VERTICAL_DOUBLE_AND_HORIZONTAL_SINGLE,
+
+				// vertical thick separators
+				DOWN_HEAVY_AND_RIGHT_LIGHT,
+				VERTICAL_HEAVY_AND_RIGHT_LIGHT,
+				DOWN_HEAVY_AND_LEFT_LIGHT,
+				VERTICAL_HEAVY_AND_LEFT_LIGHT,
+				VERTICAL_THICK,
+				DOWN_HEAVY_AND_HORIZONTAL_RIGHT,
+				VERTICAL_HEAVY_AND_HORIZONTAL_LIGHT)
+
 		} else if table.row[len (table.row)-1].content == HORIZONTAL_DOUBLE {
-			table.redoDoubleRule ()
+			table.redoRule (
+
+				// vertical single separators
+				DOWN_SINGLE_AND_RIGHT_DOUBLE,
+				VERTICAL_SINGLE_AND_RIGHT_DOUBLE,
+				DOWN_SINGLE_AND_LEFT_DOUBLE,
+				VERTICAL_SINGLE_AND_LEFT_DOUBLE,
+				VERTICAL_SINGLE,
+				DOWN_SINGLE_AND_HORIZONTAL_DOUBLE,
+				VERTICAL_SINGLE_AND_HORIZONTAL_DOUBLE,
+
+				// vertical double separators
+				DOUBLE_DOWN_AND_RIGHT,
+				DOUBLE_VERTICAL_AND_RIGHT,
+				DOUBLE_DOWN_AND_LEFT,
+				DOUBLE_VERTICAL_AND_LEFT,
+				VERTICAL_DOUBLE,
+				DOUBLE_DOWN_AND_HORIZONTAL,
+				DOUBLE_VERTICAL_AND_HORIZONTAL,
+
+				// vertical thick separators
+				DOUBLE_DOWN_AND_RIGHT,
+				DOUBLE_VERTICAL_AND_RIGHT,
+				DOUBLE_DOWN_AND_LEFT,
+				DOUBLE_VERTICAL_AND_LEFT,
+				VERTICAL_DOUBLE,
+				DOUBLE_DOWN_AND_HORIZONTAL,
+				DOUBLE_VERTICAL_AND_HORIZONTAL)
 		} else if table.row[len (table.row)-1].content == HORIZONTAL_THICK {
-			table.redoThickRule ()
+			table.redoRule (
+
+				// vertical single separators
+				DOWN_LIGHT_AND_RIGHT_HEAVY,
+				VERTICAL_LIGHT_AND_RIGHT_HEAVY,
+				DOWN_LIGHT_AND_LEFT_HEAVY,
+				VERTICAL_LIGHT_AND_LEFT_HEAVY,
+				VERTICAL_SINGLE,
+				DOWN_LIGHT_AND_HORIZONTAL_HEAVY,
+				VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY,
+
+				// vertical double separators
+				HEAVY_DOWN_AND_RIGHT,
+				HEAVY_VERTICAL_AND_RIGHT,
+				HEAVY_DOWN_AND_LEFT,
+				HEAVY_VERTICAL_AND_LEFT,
+				VERTICAL_DOUBLE,
+				HEAVY_DOWN_AND_HORIZONTAL,
+				HEAVY_VERTICAL_AND_HORIZONTAL,
+
+				// vertical thick separators
+				HEAVY_DOWN_AND_RIGHT,
+				HEAVY_VERTICAL_AND_RIGHT,
+				HEAVY_DOWN_AND_LEFT,
+				HEAVY_VERTICAL_AND_LEFT,
+				VERTICAL_THICK,
+				HEAVY_DOWN_AND_HORIZONTAL,
+				HEAVY_VERTICAL_AND_HORIZONTAL)
 		}
 	}
 }
 
-// Redraw the last line in case it is a horizontal single rule. This is
-// necessary in case more lines are added after a horizontal rule so that the
-// connectors are now drawn properly
-func (table *Tbl) redoSingleRule () {
+// Redraw the last line in case it is a horizontal rule. This is necessary in
+// case more lines are added after a horizontal rule so that the connectors are
+// now drawn properly
+// 
+// What characters should be used is specified in the following parameters:
+//
+//    *_nw, *_w, *_ne, *_e, *_vertical, *_n, *_center: north/west, west,
+//    north/east, east, vertical, north and central characters where '*' can
+//    take the following values: light, double and thick
+//
+// The importance of the prefix light/double/thick comes from the fact that the
+// character to draw depends upon the type of the column specification. 
+func (table *Tbl) redoRule (light_nw, light_w, light_ne, light_e, light_vertical, light_n, light_center, double_nw, double_w, double_ne, double_e, double_vertical, double_n, double_center, thick_nw, thick_w, thick_ne, thick_e, thick_vertical, thick_n, thick_center contentType) {
 
 	// first, a few shortcuts
 	last := len (table.row) - 1
@@ -281,287 +372,82 @@ func (table *Tbl) redoSingleRule () {
 
 	// and now, iterate over all columns
 	for idx, column := range table.column {
+
+		// only in case a vertical separator is found at this location,
+		// decide what character to use. Otherwise, the character
+		// already at that position shall be legal
 		switch column.content {
 		case VERTICAL_SINGLE:
-			if idx == row.rule.from {
-				if last == 0 {
-					row.cell[idx]=cellType{LIGHT_DOWN_AND_RIGHT,
-						column.width, ""}
-				} else {
-					row.cell[idx]=cellType{LIGHT_VERTICAL_AND_RIGHT,
-						column.width, ""}
-				}
-			} else if idx == row.rule.to {
-				if last == 0 {
-					row.cell[idx]=cellType{LIGHT_DOWN_AND_LEFT,
-						column.width, ""}
-				} else {
-						row.cell[idx]=cellType{LIGHT_VERTICAL_AND_LEFT,
-							column.width, ""}
-				}
-			} else {
-				if idx < row.rule.from || idx > row.rule.to {
-					row.cell[idx]=cellType{VERTICAL_SINGLE,
-						column.width, ""}
-				} else {
-					if last == 0 {
-						row.cell[idx]=cellType{LIGHT_DOWN_AND_HORIZONTAL,
-							column.width, ""}
-					} else {
-						if idx >= row.rule.from &&
-							idx <= row.rule.to {
-							row.cell[idx]=cellType{LIGHT_VERTICAL_AND_HORIZONTAL,
-								column.width, ""}
-						}
-					}
-				}
-			}
+			table.redoRuleColumn (idx, column, last, row, light_nw, light_w, light_ne, light_e, light_vertical, light_n, light_center)
 			
 		case VERTICAL_DOUBLE:
-			if idx == row.rule.from {
-				if last == 0 {
-					row.cell[idx]=cellType{DOWN_DOUBLE_AND_RIGHT_SINGLE,
-						column.width, ""}
-				} else {
-					row.cell[idx]=cellType{VERTICAL_DOUBLE_AND_RIGHT_SINGLE,
-						column.width, ""}
-				}
-			} else if idx == row.rule.to {
-				if last == 0 {
-					row.cell[idx]=cellType{DOWN_DOUBLE_AND_LEFT_SINGLE,
-						column.width, ""}
-				} else {
-						row.cell[idx]=cellType{VERTICAL_DOUBLE_AND_LEFT_SINGLE,
-							column.width, ""}
-				}
-			} else {
-				if idx < row.rule.from || idx > row.rule.to {
-					row.cell[idx]=cellType{VERTICAL_DOUBLE,
-						column.width, ""}
-				} else {
-					if last == 0 {
-						row.cell[idx]=cellType{UP_DOUBLE_AND_HORIZONTAL_SINGLE,
-							column.width, ""}
-					} else {
-						if idx >= row.rule.from &&
-							idx<= row.rule.to {
-							row.cell[idx]=cellType{VERTICAL_DOUBLE_AND_HORIZONTAL_SINGLE,
-								column.width, ""}
-						}
-					}
-				}
-			}
+			table.redoRuleColumn (idx, column, last, row, double_nw, double_w, double_ne, double_e, double_vertical, double_n, double_center)
 
 		case VERTICAL_THICK:
+			table.redoRuleColumn (idx, column, last, row, thick_nw, thick_w, thick_ne, thick_e, thick_vertical, thick_n, thick_center)
 
-			if idx == row.rule.from {
-				if last == 0 {
-					row.cell[idx]=cellType{DOWN_HEAVY_AND_RIGHT_LIGHT,
-						column.width, ""}
-				} else {
-					row.cell[idx] = cellType{VERTICAL_HEAVY_AND_RIGHT_LIGHT,
-						column.width, ""}
-				}
-			} else if idx == row.rule.to {
-				if last == 0 {
-					row.cell[idx] = cellType{DOWN_HEAVY_AND_LEFT_LIGHT,
-						column.width, ""}
-				} else {
-					row.cell[idx] = cellType{VERTICAL_HEAVY_AND_LEFT_LIGHT,
-						column.width, ""}
-				}
-			} else {
-				if idx < row.rule.from || idx > row.rule.to {
-					row.cell[idx]=cellType{VERTICAL_THICK,
-						column.width, ""}
-				} else {
-					if last == 0 {
-						row.cell[idx] = cellType{DOWN_HEAVY_AND_HORIZONTAL_RIGHT,
-							column.width, ""}
-					} else {
-						if idx >= row.rule.from &&
-							idx <= row.rule.to {
-							row.cell[idx] = cellType{VERTICAL_HEAVY_AND_HORIZONTAL_LIGHT,
-								column.width, ""}
-						}
-					}
-				}
-			}
 		}
 	}
 }
 
-// Redraw the last line in case it is a horizontal double rule. This is necessary
-// in case more lines are added after a horizontal rule so that the connectors
-// are now drawn properly
-func (table *Tbl) redoDoubleRule () {
+// Redraw a single character in the last line in case it is a horizontal
+// rule. The column is identified by its effective index (idx) and its
+// specification (column). Analogously, the row is identified by its idex (last)
+// and its specification (row). 
+// 
+// What characters should be used is specified in the following parameters:
+//
+//    nw, w, ne, e, vertical, n, center: north/west, west, north/east, east,
+//    vertical, north and central characters to use
+func (table *Tbl) redoRuleColumn (idx int, column tblColumn, last int, row tblLine, nw, w, ne, e, vertical, n, center contentType) {
 
-	// first, a few shortcuts
-	last := len (table.row) - 1
-	row := table.row[last]
+	// this is a simple implementation of a case-per-case analysis
 
-	// and now, iterate over all columns
-	for idx, column := range table.column {
-		switch column.content {
-		case VERTICAL_SINGLE:
-			if idx == row.rule.from {
-				if last == 0 {
-					row.cell[idx]=cellType{DOWN_SINGLE_AND_RIGHT_DOUBLE,
-						column.width, ""}
-				} else {
-					row.cell[idx]=cellType{VERTICAL_SINGLE_AND_RIGHT_DOUBLE,
-						column.width, ""}
-				}
-			} else if idx == row.rule.to {
-				if last == 0 {
-					row.cell[idx]=cellType{DOWN_SINGLE_AND_LEFT_DOUBLE,
-						column.width, ""}
-				} else {
-					row.cell[idx]=cellType{VERTICAL_SINGLE_AND_LEFT_DOUBLE,
-						column.width, ""}
-				}
-			} else {
-				if idx < row.rule.from || idx > row.rule.to {
-					row.cell[idx]=cellType{VERTICAL_SINGLE,
-						column.width, ""}
-				} else {
-					if last == 0 {
-						row.cell[idx]=cellType{DOWN_SINGLE_AND_HORIZONTAL_DOUBLE,
-							column.width, ""}
-					} else {
-						if idx >= row.rule.from &&
-							idx <= row.rule.to {
-							row.cell[idx]=cellType{VERTICAL_SINGLE_AND_HORIZONTAL_DOUBLE,
-								column.width, ""}
-						}
-					}
-				}
-			}
-			
-		case VERTICAL_DOUBLE, VERTICAL_THICK:
+	// in case we are at the beginning of a rule
+	if idx == row.rule.from {
 
-			// note that both cases are dealt with in the same way
-			// since there are no UTF-8 characters which combine
-			// them
-			if idx == row.rule.from {
-				if last == 0 {
-					row.cell[idx]=cellType{DOUBLE_DOWN_AND_RIGHT,
-						column.width, ""}
-				} else {
-					row.cell[idx] = cellType{DOUBLE_VERTICAL_AND_RIGHT,
-						column.width, ""}
-				}
-			} else if idx == row.rule.to {
-				if last == 0 {
-					row.cell[idx] = cellType{DOUBLE_DOWN_AND_LEFT,
-						column.width, ""}
-				} else {
-					row.cell[idx] = cellType{DOUBLE_VERTICAL_AND_LEFT,
-						column.width, ""}
-				}
-			} else {
-				if idx < row.rule.from || idx > row.rule.to {
-					row.cell[idx]=cellType{column.content,
-						column.width, ""}
-				} else {
-					if last == 0 {
-						row.cell[idx] = cellType{DOUBLE_DOWN_AND_HORIZONTAL,
-							column.width, ""}
-					} else {
-						if idx >= row.rule.from &&
-							idx <= row.rule.to {
-							row.cell[idx] = cellType{DOUBLE_VERTICAL_AND_HORIZONTAL,
-								column.width, ""}
-						}
-					}
-				}
-			}
+		// if the last line is the first lie of the table, ...
+		if last == 0 {
+			row.cell[idx]=cellType{nw,
+				column.width, ""}
+		} else {
+
+			// otherwise, if this is not the last one
+			row.cell[idx]=cellType{w,
+				column.width, ""}
 		}
-	}
-}
+	} else if idx == row.rule.to {
+		// in case we are ending a rule at this specific column then, in
+		// case this is the first line of the table ...
+		if last == 0 {
+			row.cell[idx]=cellType{ne,
+				column.width, ""}
+		} else {
 
-// Redraw the last line in case it is a horizontal thick rule. This is necessary
-// in case more lines are added after a horizontal rule so that the connectors
-// are now drawn properly
-func (table *Tbl) redoThickRule () {
+			// otherwise, in case this is not the last one
+			row.cell[idx]=cellType{e,
+				column.width, ""}
+		}
+	} else {
 
-	// first, a few shortcuts
-	last := len (table.row) - 1
-	row := table.row[last]
+		// Check, whether we are in one of the columns in between a rule
+		if idx < row.rule.from || idx > row.rule.to {
+			row.cell[idx]=cellType{vertical,
+				column.width, ""}
+		} else {
 
-	// and now, iterate over all columns
-	for idx, column := range table.column {
-		switch column.content {
-		case VERTICAL_SINGLE:
-			if idx == row.rule.from {
-				if last == 0 {
-					row.cell[idx]=cellType{DOWN_LIGHT_AND_RIGHT_HEAVY,
-						column.width, ""}
-				} else {
-					row.cell[idx]=cellType{VERTICAL_LIGHT_AND_RIGHT_HEAVY,
-						column.width, ""}
-				}
-			} else if idx == row.rule.to {
-				if last == 0 {
-					row.cell[idx]=cellType{DOWN_LIGHT_AND_LEFT_HEAVY,
-						column.width, ""}
-				} else {
-					row.cell[idx]=cellType{VERTICAL_LIGHT_AND_LEFT_HEAVY,
-						column.width, ""}
-				}
+			// if not, check whether this was the first line of the
+			// table
+			if last == 0 {
+				row.cell[idx]=cellType{n,
+					column.width, ""}
 			} else {
-				if idx < row.rule.from || idx > row.rule.to {
-					row.cell[idx]=cellType{VERTICAL_SINGLE,
-						column.width, ""}
-				} else {
-					if last == 0 {
-						row.cell[idx]=cellType{DOWN_LIGHT_AND_HORIZONTAL_HEAVY,
-							column.width, ""}
-					} else {
-						if idx >= row.rule.from &&
-							idx <= row.rule.to {
-							row.cell[idx]=cellType{VERTICAL_LIGHT_AND_HORIZONTAL_HEAVY,
-								column.width, ""}
-						}
-					}
-				}
-			}
-		case VERTICAL_DOUBLE, VERTICAL_THICK:
 
-			// note that both cases are dealt with in the same way
-			// since there are no UTF-8 characters which combine
-			// them
-			if idx == row.rule.from {
-				if last == 0 {
-					row.cell[idx]=cellType{HEAVY_DOWN_AND_RIGHT,
+				// or any other one
+				if idx >= row.rule.from &&
+					idx <= row.rule.to {
+					row.cell[idx]=cellType{center,
 						column.width, ""}
-				} else {
-					row.cell[idx] = cellType{HEAVY_VERTICAL_AND_RIGHT,
-						column.width, ""}
-				}
-			} else if idx == row.rule.to {
-				if last == 0 {
-					row.cell[idx] = cellType{HEAVY_DOWN_AND_LEFT,
-						column.width, ""}
-				} else {
-					row.cell[idx] = cellType{HEAVY_VERTICAL_AND_LEFT,
-						column.width, ""}
-				}
-			} else {
-				if idx < row.rule.from || idx > row.rule.to {
-					row.cell[idx]=cellType{column.content,
-						column.width, ""}
-				} else {
-					if last == 0 {
-						row.cell[idx] = cellType{HEAVY_DOWN_AND_HORIZONTAL,
-							column.width, ""}
-					} else {
-						if idx >= row.rule.from &&
-							idx <= row.rule.to {
-							row.cell[idx] = cellType{HEAVY_VERTICAL_AND_HORIZONTAL,
-								column.width, ""}
-						}
-					}
 				}
 			}
 		}
