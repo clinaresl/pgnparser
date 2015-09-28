@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed Sep  9 08:06:09 2015 Carlos Linares Lopez>
-  Last update <domingo, 27 septiembre 2015 20:43:04 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 28 septiembre 2015 20:08:00 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -56,75 +56,9 @@ var reCLine = regexp.MustCompile (`(?P<from>\d+)-(?P<to>\d+)`)
 //    the following values: light, double and thick
 func (table *Tbl) hrule (content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
 
-	// Since it is possible to concatenate horizontal rules, redo the last
-	// one if necessary
-	table.redoLastLine ()
-
-	// create a new row whose contents will be computed in this
-	// function. Obviously, the rule goes from the first column until the
-	// last one
-	var newRow tblLine
-	newRow = tblLine{content,
-		tblRule{content, 0, len (table.column)-1},
-		[]cellType{}}
-
-	// consider now all columns from the general specification of the table
-	// and draw the intersections accordingly
-	for idx, column := range table.column {
-		switch column.content {
-		case VERTICAL_SINGLE:
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {light_sw,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {light_se,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{light_s,
-						table.width[idx], ""})
-			}
-
-		case VERTICAL_DOUBLE:
-
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {double_sw,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {double_se,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{double_s,
-						table.width[idx], ""})
-			}
-			
-		case VERTICAL_THICK:
-
-			if idx==0 {
-				newRow.cell = append (newRow.cell,
-					cellType {thick_sw,
-						table.width[idx], ""})
-			} else if idx == len (table.column) - 1 {
-				newRow.cell = append (newRow.cell,
-					cellType {thick_se,
-						table.width[idx], ""})
-			} else {
-				newRow.cell = append (newRow.cell,
-					cellType{thick_s,
-						table.width[idx], ""})
-			}
-		default:
-			newRow.cell = append (newRow.cell,
-				cellType {content, 
-					table.width[idx], ""})
-		}
-	}
-	table.row = append (table.row, newRow)	
+	// simply draw a line (ie., a single rule) that goes over all columns of
+	// the table
+	table.line (0, len (table.column) - 1, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s)
 }
 
 // Add a horizontal rule to the bottom of the current table as in the LaTeX
@@ -218,12 +152,35 @@ func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, doubl
 		to += 1
 	}
 
+	// and now, simply draw a line (ie., a single rule) from the specified
+	// bounds
+	table.line (from, to, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s)
+}
+
+// Add a horizontal line (ie., a partial rule from two specified effective
+// column indexes 'from' and 'to') that intersects with the vertical separators
+// provided that any have been specified. The type of rule is defined by the
+// parameter:
+//
+//    content - specifies whether this is a single/double/thick horizonntal
+//    rule. Legal values are: HORIZONTAL_SINGLE, HORIZONTAL_DOUBLE and
+//    HORIZONTAL_THICK
+//
+// When adding a rule, intersections with vertical separators specified in the
+// creation of the table are taken into account as well. What characters should
+// be used is specified in the following parameters:
+//
+//    *_sw, *_se, *_s - south/west, south/east and south separators used for
+//    different types of vertical separators as specified in '*' that can take
+//    the following values: light, double and thick
+func (table *Tbl) line (from, to int, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
+
 	// Since it is possible to concatenate horizontal rules, redo the last
 	// one if necessary
 	table.redoLastLine ()
-	
-	// A cline consists of lines in those areas specified by the user and
-	// blank characters otherwise
+
+	// create a new row with a single line between the specified bounds
+	// whose contents will be computed in this function.
 	newRow := tblLine{content,
 		tblRule{content, from, to},
 		[]cellType{}}
@@ -233,56 +190,20 @@ func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, doubl
 	for idx, column := range table.column {
 
 		// in case we are within the area to draw, choose the right
-		// character to show
+		// character to show according to the type of this vertical
+		// separator
 		if idx >= from && idx <= to {
 		
 			switch column.content {
 			case VERTICAL_SINGLE:
-				if idx==0 {
-					newRow.cell = append (newRow.cell,
-						cellType {light_sw,
-							table.width[idx], ""})
-				} else if idx == len (table.column) - 1 {
-					newRow.cell = append (newRow.cell,
-						cellType {light_se,
-							table.width[idx], ""})
-				} else {
-					newRow.cell = append (newRow.cell,
-						cellType{light_s,
-							table.width[idx], ""})
-				}
+				table.lineColumn (idx, &newRow, light_sw, light_se, light_s)
 
 			case VERTICAL_DOUBLE:
-
-				if idx==0 {
-					newRow.cell = append (newRow.cell,
-						cellType {double_sw,
-							table.width[idx], ""})
-				} else if idx == len (table.column) - 1 {
-					newRow.cell = append (newRow.cell,
-						cellType {double_se,
-							table.width[idx], ""})
-				} else {
-					newRow.cell = append (newRow.cell,
-						cellType{double_s,
-							table.width[idx], ""})
-				}
+				table.lineColumn (idx, &newRow, double_sw, double_se, double_s)
 			
 			case VERTICAL_THICK:
+				table.lineColumn (idx, &newRow, thick_sw, thick_se, thick_s)
 
-				if idx==0 {
-					newRow.cell = append (newRow.cell,
-						cellType {thick_sw,
-							table.width[idx], ""})
-				} else if idx == len (table.column) - 1 {
-					newRow.cell = append (newRow.cell,
-						cellType {thick_se,
-							table.width[idx], ""})
-				} else {
-					newRow.cell = append (newRow.cell,
-						cellType{thick_s,
-							table.width[idx], ""})
-				}
 			default:
 				newRow.cell = append (newRow.cell,
 					cellType {content, 
@@ -300,6 +221,42 @@ func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, doubl
 	// and add this row to the bottom of the table
 	table.row = append (table.row, newRow)
 }
+
+// Add a single character to 'row' wrt to the effective column index 'idx'. This
+// function already takes into account that the row to draw is delimited by
+// [from, to] as stored in row.rule. The type of rule generated by consecutive
+// invocations to this service is defined by the following parameters:
+//
+//    sw, se, s - south/west, south/east and south separators used for different
+//    types of vertical separators
+//
+// INVARIANT - This function is invoked solely to draw characters that fall
+// within the interval of the rule in row. Character falling outside the rule
+// are drawn easily by preserving the content of other vertical separators (ie.,
+// columns)
+func (table *Tbl) lineColumn (idx int, row *tblLine, sw, se, s contentType) {
+
+	// if a line starts at this particular location, draw the sw character
+	if idx==row.rule.from {
+		row.cell = append (row.cell,
+			cellType {sw,
+				table.width[idx], ""})
+	} else if idx == row.rule.to {
+
+		// otherwise, in case a line is ended at this specific column,
+		// then draw the se character
+		row.cell = append (row.cell,
+			cellType {se,
+				table.width[idx], ""})
+	} else {
+
+		// and, by default, just draw the south item
+		row.cell = append (row.cell,
+			cellType{s,
+				table.width[idx], ""})
+	}
+}
+
 
 
 /* Local Variables: */
