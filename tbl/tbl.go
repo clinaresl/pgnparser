@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <miércoles, 23 septiembre 2015 08:34:39 Carlos Linares Lopez (clinares)>
+  Last update <martes, 29 septiembre 2015 17:28:11 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -84,6 +84,11 @@ var reVerbatimSeparator = regexp.MustCompile (`^@\{(?P<text>[^}]*)\}`)
 // Likewise, fixed widths are processed separately with an additional regular
 // expression to extract the width
 var reFixedWidth = regexp.MustCompile (`^p\{(?P<width>[^}]*)\}`)
+
+// While the full width is passed to the LaTeX code, only the integer part is
+// used to set the width of a column. Thus, an additional regexp is used just to
+// extract it
+var reIntegerFixedWidth = regexp.MustCompile (`^(?P<value>[\d]+).*`)
 
 
 // typedefs

@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed Sep  9 08:06:09 2015 Carlos Linares Lopez>
-  Last update <lunes, 28 septiembre 2015 20:08:00 Carlos Linares Lopez (clinares)>
+  Last update <martes, 29 septiembre 2015 17:27:58 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -26,11 +26,6 @@ import (
 
 // global variables
 // ----------------------------------------------------------------------------
-
-// While the full width is passed to the LaTeX code, only the integer part is
-// used to set the width of a column. Thus, an additional regexp is used just to
-// extract it
-var reIntegerFixedWidth = regexp.MustCompile (`^(?P<value>[\d]+).*`)
 
 // clines are recognized with the following regular expression
 var reCLine = regexp.MustCompile (`(?P<from>\d+)-(?P<to>\d+)`)
@@ -57,7 +52,7 @@ var reCLine = regexp.MustCompile (`(?P<from>\d+)-(?P<to>\d+)`)
 func (table *Tbl) hrule (content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
 
 	// simply draw a line (ie., a single rule) that goes over all columns of
-	// the table
+	// the table, ie., from 0 to the last column
 	table.line (0, len (table.column) - 1, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s)
 }
 
