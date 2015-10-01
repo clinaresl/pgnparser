@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <lunes, 28 septiembre 2015 20:06:27 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 01 octubre 2015 09:38:11 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -23,7 +23,7 @@ import (
 	"testing"
 )
 
-func TestNewTable0 (t *testing.T) {
+func _testNewTable0 (t *testing.T) {
 
 	var spec = "ccc"
 	
@@ -54,7 +54,7 @@ func TestNewTable0 (t *testing.T) {
 `, table)
 }
 
-func TestNewTable1 (t *testing.T) {
+func _testNewTable1 (t *testing.T) {
 
 	var spec = "||l|||c|||ccl|||l||"
 	
@@ -93,7 +93,7 @@ func TestNewTable1 (t *testing.T) {
 	fmt.Println (table)
 }
 
-func TestNewTable2 (t *testing.T) {
+func _testNewTable2 (t *testing.T) {
 	var spec = "|l|@{ (}r@{) }|c|"
 
 	table, err := NewTable (spec); if err != nil {
@@ -134,7 +134,7 @@ func TestNewTable2 (t *testing.T) {
 }
 
 
-func TestNewTable3 (t *testing.T) {
+func _testNewTable3 (t *testing.T) {
 	var spec = "|cllp{12.5mm}r|"
 
 	table, err := NewTable (spec); if err != nil {
@@ -172,7 +172,7 @@ func TestNewTable3 (t *testing.T) {
 	fmt.Println (table)	
 }
 
-func TestNewTable4 (t *testing.T) {
+func _testNewTable4 (t *testing.T) {
 	var spec = "l|l|rr@{% }"
 
 	table, err := NewTable (spec); if err != nil {
@@ -256,7 +256,7 @@ func TestNewTable4 (t *testing.T) {
 	fmt.Println (table)	
 }
 
-func TestNewTable5 (t *testing.T) {
+func _testNewTable5 (t *testing.T) {
 	var spec = "l||l||rr@{% }"
 
 	table, err := NewTable (spec); if err != nil {
@@ -340,7 +340,7 @@ func TestNewTable5 (t *testing.T) {
 	fmt.Println (table)	
 }
 
-func TestNewTable6 (t *testing.T) {
+func _testNewTable6 (t *testing.T) {
 	var spec = "l|||l|||rr@{% }"
 
 	table, err := NewTable (spec); if err != nil {
@@ -424,7 +424,7 @@ func TestNewTable6 (t *testing.T) {
 	fmt.Println (table)	
 }
 
-func TestNewTable7 (t *testing.T) {
+func _testNewTable7 (t *testing.T) {
 	var spec = "|l|llll|llll|"
 
 	table, err := NewTable (spec); if err != nil {
@@ -452,6 +452,38 @@ func TestNewTable7 (t *testing.T) {
 	}
 	
 	table.CSingleLine ("1-9")
+	
+	fmt.Println (table)	
+}
+
+func TestNewTable8 (t *testing.T) {
+	var spec = "|l|llll|llll|"
+
+	table, err := NewTable (spec); if err != nil {
+		t.Fatal (" Fatal error while constructing the table")
+	}
+
+	table.CSingleLine ("5-6, 2-3, 8-8")
+
+	if table.AddRow ([]string{"", "Cell 12", "Cell 13", "Cell 14", "Cell 15", "Cell 16", "Cell 17", "Cell 18", "Cell 19"})!=nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	table.CSingleLine ("1-2, 4-7")
+
+	if table.AddRow ([]string{"Cell 21", "Cell 22", "Cell 23", "Cell 24", "Cell 25", "Cell 26", "Cell 27", "Cell 28", "Cell 29"})!=nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	if table.AddRow ([]string{"Cell 31", "Cell 32", "Cell 33", "Cell 34", "Cell 35", "Cell 36", "Cell 37", "Cell 38", "Cell 39"})!=nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	if table.AddRow ([]string{"Cell 41", "Cell 42", "Cell 43", "Cell 44", "Cell 45", "Cell 46", "Cell 47", "Cell 48", "Cell 49"})!=nil {
+		t.Fatal ("Error adding a new row")
+	}
+	
+	table.CSingleLine ("2-4, 7-9")
 	
 	fmt.Println (table)	
 }

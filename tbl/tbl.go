@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <martes, 29 septiembre 2015 17:28:11 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 01 octubre 2015 09:41:23 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -120,6 +120,10 @@ type tblRule struct {
 	content contentType
 	from, to int
 }
+
+// Rules are grouped in collections of rules so that they can be sorted if
+// needed
+type tblRuleCollection []tblRule
 
 // Lines can either contain text (content=TEXT) or a horizontal rule. In case it
 // is a horizontal rule, the line stores the beginning and end of it. In any
