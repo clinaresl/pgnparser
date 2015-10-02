@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <jueves, 01 octubre 2015 09:41:23 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 02 octubre 2015 07:59:03 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -130,7 +130,7 @@ type tblRuleCollection []tblRule
 // case, lines are made up of cells of different types
 type tblLine struct {
 	content contentType
-	rule tblRule
+	rules tblRuleCollection
 	cell []cellType
 }
 
@@ -300,7 +300,7 @@ func (table *Tbl) AddRow (row []string) (err error) {
 	// provided in the specification string. Since this line does not
 	// contain horizontal rules, from and to are null
 	newRow := tblLine{TEXT,
-		tblRule{VOID, 0, 0},
+		tblRuleCollection{tblRule{VOID, 0, 0}},
 		[]cellType{}}
 	idx := 0
 	for jdx, value := range (table.column) {

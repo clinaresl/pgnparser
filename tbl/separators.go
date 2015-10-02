@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Aug 27 23:41:01 2015 Carlos Linares Lopez>
-  Last update <lunes, 28 septiembre 2015 17:52:08 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 02 octubre 2015 08:06:57 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -367,24 +367,34 @@ func (table *Tbl) redoLastLine () {
 func (table *Tbl) redoRule (light_nw, light_w, light_ne, light_e, light_vertical, light_n, light_center, double_nw, double_w, double_ne, double_e, double_vertical, double_n, double_center, thick_nw, thick_w, thick_ne, thick_e, thick_vertical, thick_n, thick_center contentType) {
 
 	// first, a few shortcuts
-	last := len (table.row) - 1
-	row := table.row[last]
+	last := len (table.row) - 1		// number of lines already drawn
+	row := table.row[last]			// contents of the last row (to draw now)
 
+	// now, go over all columns but paying attention to the rules. These are
+	// indexed by jdx
+	jdx := 0
+	
 	// and now, iterate over all columns
 	for idx, column := range table.column {
 
+		// update the counter of rules in case the last one has been
+		// already traversed and there are still more rules to consider
+		if jdx < len (row.rules) - 1 && idx > row.rules[jdx].to {
+			jdx += 1
+		}
+		
 		// only in case a vertical separator is found at this location,
 		// decide what character to use. Otherwise, the character
 		// already at that position shall be legal
 		switch column.content {
 		case VERTICAL_SINGLE:
-			table.redoRuleColumn (idx, column, last, row, light_nw, light_w, light_ne, light_e, light_vertical, light_n, light_center)
+			table.redoRuleColumn (idx, column, last, row, row.rules[jdx], light_nw, light_w, light_ne, light_e, light_vertical, light_n, light_center)
 			
 		case VERTICAL_DOUBLE:
-			table.redoRuleColumn (idx, column, last, row, double_nw, double_w, double_ne, double_e, double_vertical, double_n, double_center)
+			table.redoRuleColumn (idx, column, last, row, row.rules[jdx], double_nw, double_w, double_ne, double_e, double_vertical, double_n, double_center)
 
 		case VERTICAL_THICK:
-			table.redoRuleColumn (idx, column, last, row, thick_nw, thick_w, thick_ne, thick_e, thick_vertical, thick_n, thick_center)
+			table.redoRuleColumn (idx, column, last, row, row.rules[jdx], thick_nw, thick_w, thick_ne, thick_e, thick_vertical, thick_n, thick_center)
 
 		}
 	}
@@ -392,63 +402,53 @@ func (table *Tbl) redoRule (light_nw, light_w, light_ne, light_e, light_vertical
 
 // Redraw a single character in the last line in case it is a horizontal
 // rule. The column is identified by its effective index (idx) and its
-// specification (column). Analogously, the row is identified by its idex (last)
-// and its specification (row). 
+// specification (column). Analogously, the row is identified by its index
+// (last) and its specification (row).
 // 
 // What characters should be used is specified in the following parameters:
 //
 //    nw, w, ne, e, vertical, n, center: north/west, west, north/east, east,
 //    vertical, north and central characters to use
-func (table *Tbl) redoRuleColumn (idx int, column tblColumn, last int, row tblLine, nw, w, ne, e, vertical, n, center contentType) {
+func (table *Tbl) redoRuleColumn (idx int, column tblColumn, last int, row tblLine, rule tblRule, nw, w, ne, e, vertical, n, center contentType) {
 
 	// this is a simple implementation of a case-per-case analysis
 
 	// in case we are at the beginning of a rule
-	if idx == row.rule.from {
+	if idx == rule.from {
 
 		// if the last line is the first lie of the table, ...
 		if last == 0 {
-			row.cell[idx]=cellType{nw,
-				column.width, ""}
+			row.cell[idx]=cellType{nw, column.width, ""}
 		} else {
 
 			// otherwise, if this is not the last one
-			row.cell[idx]=cellType{w,
-				column.width, ""}
+			row.cell[idx]=cellType{w, column.width, ""}
 		}
-	} else if idx == row.rule.to {
+	} else if idx == rule.to {
 		// in case we are ending a rule at this specific column then, in
 		// case this is the first line of the table ...
 		if last == 0 {
-			row.cell[idx]=cellType{ne,
-				column.width, ""}
+			row.cell[idx]=cellType{ne, column.width, ""}
 		} else {
 
 			// otherwise, in case this is not the last one
-			row.cell[idx]=cellType{e,
-				column.width, ""}
+			row.cell[idx]=cellType{e, column.width, ""}
 		}
 	} else {
 
 		// Check, whether we are in one of the columns in between a rule
-		if idx < row.rule.from || idx > row.rule.to {
-			row.cell[idx]=cellType{vertical,
-				column.width, ""}
+		if idx < rule.from || idx > rule.to {
+			row.cell[idx]=cellType{vertical, column.width, ""}
 		} else {
 
 			// if not, check whether this was the first line of the
 			// table
 			if last == 0 {
-				row.cell[idx]=cellType{n,
-					column.width, ""}
+				row.cell[idx]=cellType{n, column.width, ""}
 			} else {
 
 				// or any other one
-				if idx >= row.rule.from &&
-					idx <= row.rule.to {
-					row.cell[idx]=cellType{center,
-						column.width, ""}
-				}
+				row.cell[idx]=cellType{center, column.width, ""}
 			}
 		}
 	}

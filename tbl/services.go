@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed Sep  9 08:06:09 2015 Carlos Linares Lopez>
-  Last update <jueves, 01 octubre 2015 09:49:06 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 02 octubre 2015 09:14:15 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -102,7 +102,7 @@ func (table *Tbl) rule (content, thickness contentType) {
 	// last one
 	var newRow tblLine
 	newRow = tblLine{content,
-		tblRule{content, 0, len (table.column)-1},
+		tblRuleCollection{tblRule{content, 0, len (table.column)-1}},
 		[]cellType{}}
 	
 	for idx := range table.column {
@@ -200,7 +200,16 @@ func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, doubl
 	// have to be processed in ascending order of the 'from' field, sort
 	// them now
 	sort.Sort (rules)
-	
+
+	// verify that the rules are non-overlapping
+	for idx := 1 ; idx < len (rules) ; idx++ {
+		if rules[idx].from < rules[idx-1].to {
+			log.Fatalf (" The rule [%v, %v] overlaps with the rule [%v, %v]\n",
+				rules[idx-1].from, rules[idx-1].to,
+				rules[idx].from, rules[idx].to)
+		}
+	}
+
 	// and now, simply draw the rules in the current line
 	table.line (rules, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s)
 }
@@ -221,7 +230,7 @@ func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, doubl
 //    *_sw, *_se, *_s - south/west, south/east and south separators used for
 //    different types of vertical separators as specified in '*' that can take
 //    the following values: light, double and thick
-func (table *Tbl) line (rules []tblRule, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
+func (table *Tbl) line (rules tblRuleCollection, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
 
 	// INVARIANT: this code assumes that rule consists of a disjoint
 	// sequence of rules which are sorted in increasing order of 'from'
@@ -230,12 +239,10 @@ func (table *Tbl) line (rules []tblRule, content, light_sw, light_se, light_s, d
 	// one if necessary
 	table.redoLastLine ()
 
-	from, to := rules[0].from, rules[0].to
-
-	// create a new row with a single line between the specified bounds
-	// whose contents will be computed in this function.
+	// create a new row with all the specified rules whose contents will be
+	// computed in this function
 	newRow := tblLine{content,
-		tblRule{content, from, to},
+		rules,
 		[]cellType{}}
 
 	// traverse the slice of disjoint rules in ascending order of
