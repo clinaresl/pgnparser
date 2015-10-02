@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed Sep  9 08:06:09 2015 Carlos Linares Lopez>
-  Last update <viernes, 02 octubre 2015 09:14:15 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 02 octubre 2015 09:17:06 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -201,9 +201,14 @@ func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, doubl
 	// them now
 	sort.Sort (rules)
 
-	// verify that the rules are non-overlapping
-	for idx := 1 ; idx < len (rules) ; idx++ {
-		if rules[idx].from < rules[idx-1].to {
+	// verify that the rules are non-overlapping and that to>=from for every
+	// rule
+	for idx := 0 ; idx < len (rules) ; idx++ {
+		if rules[idx].from > rules[idx].to {
+			log.Fatalf (" The rule [%v, %v] starts after its end\n",
+				rules[idx].from, rules[idx].to)
+		}
+		if idx >0 && rules[idx].from < rules[idx-1].to {
 			log.Fatalf (" The rule [%v, %v] overlaps with the rule [%v, %v]\n",
 				rules[idx-1].from, rules[idx-1].to,
 				rules[idx].from, rules[idx].to)
