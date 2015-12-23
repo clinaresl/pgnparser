@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Thu Aug 27 23:41:01 2015 Carlos Linares Lopez>
-  Last update <viernes, 02 octubre 2015 08:06:57 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 05 octubre 2015 08:53:50 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -258,8 +258,9 @@ func (table *Tbl) redoLastLine () {
 	if len (table.row) > 0 {
 	
 		// The last line shall be redrawn in case it is a horizontal
-		// rule since we know now that a new lines is about to be
-		// inserted. Thus, the connectors shall be updated accordingly
+		// rule (of either type) since we know now that a new lines is
+		// about to be inserted. Thus, the connectors shall be updated
+		// accordingly
 		if table.row[len (table.row)-1].content == HORIZONTAL_SINGLE {
 			table.redoRule (
 
@@ -363,7 +364,8 @@ func (table *Tbl) redoLastLine () {
 //    take the following values: light, double and thick
 //
 // The importance of the prefix light/double/thick comes from the fact that the
-// character to draw depends upon the type of the column specification. 
+// character to draw depends upon the type of the vertical separator found in
+// each case.
 func (table *Tbl) redoRule (light_nw, light_w, light_ne, light_e, light_vertical, light_n, light_center, double_nw, double_w, double_ne, double_e, double_vertical, double_n, double_center, thick_nw, thick_w, thick_ne, thick_e, thick_vertical, thick_n, thick_center contentType) {
 
 	// first, a few shortcuts
@@ -403,7 +405,8 @@ func (table *Tbl) redoRule (light_nw, light_w, light_ne, light_e, light_vertical
 // Redraw a single character in the last line in case it is a horizontal
 // rule. The column is identified by its effective index (idx) and its
 // specification (column). Analogously, the row is identified by its index
-// (last) and its specification (row).
+// (last) and its specification (row). 'rule' contains information about the
+// line to draw
 // 
 // What characters should be used is specified in the following parameters:
 //

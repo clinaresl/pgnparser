@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed Sep  9 08:06:09 2015 Carlos Linares Lopez>
-  Last update <viernes, 02 octubre 2015 09:17:06 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 08 octubre 2015 08:42:37 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -29,19 +29,19 @@ import (
 // ----------------------------------------------------------------------------
 
 // a cline can be specified as a single line or an arbitrary collection of them
-// separated by either commas or blank characters. The following regexp is used
-// just to process each cline separately.
+// separated by commas. The following regexp is used just to process each cline
+// separately.
 var reCLines = regexp.MustCompile (`^(\s*\d+\s*-\s*\d+)[,]?`)
 
-// single clines are recognized with the following regular expression
-// var reCLine = regexp.MustCompile (`(?P<from>\d+)-(?P<to>\d+)`)
+// single clines are recognized with the following regular expression which is
+// used to extract the begin and end user columns
 var reCLine = regexp.MustCompile (`^\s*(?P<from>\d+)\s*-\s*(?P<to>\d+)[,]?`)
 
 
 // Methods
 // ----------------------------------------------------------------------------
 
-// Return the number of items in a specific collection
+// Return the number of items in a specific collection of rules
 func (rules tblRuleCollection) Len () int {
 	return len (rules)
 }
@@ -65,8 +65,8 @@ func (rules tblRuleCollection) Less (i, j int) bool {
 //    HORIZONTAL_THICK
 //
 // When adding a rule, intersections with vertical separators specified in the
-// creation of the table are taken into account as well. What characters should
-// be used is specified in the following parameters:
+// creation of the table are taken into account. What characters should be used
+// is specified in the following parameters:
 //
 //    *_sw, *_se, *_s - south/west, south/east and south separators used for
 //    different types of vertical separators as specified in '*' that can take
@@ -84,9 +84,9 @@ func (table *Tbl) hrule (content, light_sw, light_se, light_s, double_sw, double
 // package booktabs. This type of rules do not draw intersections with column
 // separators (they break them instead).
 //
-// The type of rule is identified with the content which might be either
-// HORIZONTAL_TOP_RULE or HORIZONTAL_MID_RULE. Bottom rules are exactly equal to
-// top rules
+// The type of rule is specified with the parameter 'content' which might be
+// either HORIZONTAL_TOP_RULE or HORIZONTAL_MID_RULE. Bottom rules are exactly
+// equal to top rules
 //
 // Additionally, the thickness of each type of rule is described with an
 // additional attribute, thickness, which should usually be either
@@ -113,26 +113,31 @@ func (table *Tbl) rule (content, thickness contentType) {
 }
 
 // Add a partial line (or more, see below) to the bottom of the current table as
-// in the LaTeX command \cline. These lines intersect with the vertical
-// separators provided that any have been specified. The bounds of the line are
-// specified in a command string which follows the LaTeX syntax: "begin-end"
-// where begin and end are user columns or columns that contain text ---whereas
-// *effective* columns are those defined in the specification string given when
-// creating the table.
-//
-// This specification can be extended to indicate an arbitrary number of clines
-// in the same line with the syntax: "begin-end[, begin-end]*"
+// in the LaTeX command \cline. The bounds of each line are specified in a
+// command string 'cmd' which follows the LaTeX syntax: "begin-end" where begin
+// and end are user columns or columns that contain text ---whereas *effective*
+// columns are those defined in the specification string given when creating the
+// table; an arbitrary number of partial lines is specified with a
+// comma-separated list of pairs.
 //
 // The type of lines to draw is specified with content which should take one of
-// the values HORIZONTAL_SINGLE, HORIZONTAL_DOUBLE or HORIZONTAL_THICK
-func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
+// the values HORIZONTAL_SINGLE, HORIZONTAL_DOUBLE or HORIZONTAL_THICK.
+// 
+// When adding a partial line, intersections with vertical separators specified
+// in the creation of the table are taken into account. What characters should
+// be used is specified in the following parameters:
+//
+//    *_sw, *_se, *_s - south/west, south/east and south separators used for
+//    different types of vertical separators as specified in '*' that can take
+//    the following values: light, double and thick
+//
+// This function specifically parses the specification string, checks its
+// correctness and invokes the service to effectively update the information on
+// the table so that it is correctly drawn.
+func (table *Tbl) parseCLine (cmd string) (rules tblRuleCollection) {
 		
 	var err error
 	var from, to int
-	
-	// the following slice shall hold the rules specified in the
-	// specification string
-	var rules tblRuleCollection
 	
 	// While a specification of a cline is found at the beginning of the strinng
 	for ;reCLines.MatchString (cmd); {
@@ -191,7 +196,7 @@ func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, doubl
 	}
 
 	// verify now that the whole specification string was exhausted. If not,
-	// a regexp could not be applied, thus, there were a syntax error
+	// there were a syntax error
 	if len (cmd) > 0 {
 		log.Fatalf (" Syntax error in the cline specification string '%v'\n", cmd)
 	}
@@ -215,14 +220,14 @@ func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, doubl
 		}
 	}
 
-	// and now, simply draw the rules in the current line
-	table.line (rules, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s)
+	return
 }
 
-// Add a horizontal line (ie., a partial rule from two specified effective
-// column indexes 'from' and 'to') that intersects with the vertical separators
-// provided that any have been specified. The type of rule is defined by the
-// parameter:
+// Add a partial line (ie., a partial rule from two specified effective column
+// indexes) to the bottom of the table, or more, that intersect with the
+// vertical separators provided that any have been specified. Information about
+// the lines to draw is given in the collection 'rules'. The type of rule is
+// defined by the parameter:
 //
 //    content - specifies whether this is a single/double/thick horizonntal
 //    rule. Legal values are: HORIZONTAL_SINGLE, HORIZONTAL_DOUBLE and
@@ -235,7 +240,7 @@ func (table *Tbl) cline (cmd string, content, light_sw, light_se, light_s, doubl
 //    *_sw, *_se, *_s - south/west, south/east and south separators used for
 //    different types of vertical separators as specified in '*' that can take
 //    the following values: light, double and thick
-func (table *Tbl) line (rules tblRuleCollection, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
+func (table *Tbl) cline (rules tblRuleCollection, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s contentType) {
 
 	// INVARIANT: this code assumes that rule consists of a disjoint
 	// sequence of rules which are sorted in increasing order of 'from'
@@ -298,9 +303,11 @@ func (table *Tbl) line (rules tblRuleCollection, content, light_sw, light_se, li
 }
 
 // Add a single character to 'row' wrt to the effective column index 'idx'. This
-// function already takes into account that the row to draw is delimited by
-// [from, to] as stored in row.rule. The type of rule generated by consecutive
-// invocations to this service is defined by the following parameters:
+// row shall receive the line (specified as a rule) to draw so that it can
+// differentiate between the following cases: either drawing an extreme point of
+// the line or a point falling within the line. The type of rule generated by
+// consecutive invocations to this service is defined by the following
+// parameters:
 //
 //    sw, se, s - south/west, south/east and south separators used for different
 //    types of vertical separators

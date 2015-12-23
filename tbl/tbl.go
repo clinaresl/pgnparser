@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <viernes, 02 octubre 2015 07:59:03 Carlos Linares Lopez (clinares)>
+  Last update <jueves, 08 octubre 2015 08:43:46 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -25,22 +25,21 @@
 // 
 // A separator can be present or not and it can be one among the following
 // types:
-//    void   - no separator
 //    |      - a single bar
 //    ||     - a double bar
 //    |||    - a thick bar
 //    @{...} - a verbatim separator where '...' stands for anything but '}'
-//    p{width} - creates a column with a fixed width which can be specified in
-//    LaTeX format. This package however, takes only the first digits and
-//    interpretes them as a number of characters
+//    p{width} - creates a column with a fixed width which is specified in LaTeX
+//    format. When formatting the table in LaTeX the units specified are
+//    honoured; when rendering the table in textual mode, the units are always
+//    assumed to be chars
 // 
 // The column is one of the types:
 //    c - centered
 //    l - left
 //    r - right
 //
-// Text cells and separators can be provided in any order. The tbl package fully
-// supports utf-8 characters
+// The tbl package fully supports utf-8 characters
 package tbl
 
 import (
@@ -58,18 +57,19 @@ import (
 // ----------------------------------------------------------------------------
 
 // A string specification consists of an indication how the text is justified in
-// a cell and also about the separators. It is made of pairs separator/column
-// specification.
+// all cells in the same column and also how separators shall be
+// formatted. Thus, they can refer to either text cells or column separators.
 // 
-// The separator can be present or not and it can be one among the following
+// A separator can be present or not and it can be one among the following
 // types:
 //    |      - a single bar
 //    ||     - a double bar
 //    |||    - a thick bar
 //    @{...} - a verbatim separator where '...' stands for anything but '}'
-//    p{width} - creates a column with a fixed width which can be specified in
-//    LaTeX format. This package however, takes only the first digits and
-//    interpretes them as a number of characters
+//    p{width} - creates a column with a fixed width which is specified in LaTeX
+//    format. When formatting the table in LaTeX the units specified are
+//    honoured; when rendering the table in textual mode, the units are always
+//    assumed to be chars
 // 
 // The column is one of the types:
 //    c - centered
@@ -86,8 +86,8 @@ var reVerbatimSeparator = regexp.MustCompile (`^@\{(?P<text>[^}]*)\}`)
 var reFixedWidth = regexp.MustCompile (`^p\{(?P<width>[^}]*)\}`)
 
 // While the full width is passed to the LaTeX code, only the integer part is
-// used to set the width of a column. Thus, an additional regexp is used just to
-// extract it
+// used to set the width of a column in textual mode. Thus, an additional regexp
+// is used just to extract it
 var reIntegerFixedWidth = regexp.MustCompile (`^(?P<value>[\d]+).*`)
 
 
@@ -103,15 +103,18 @@ type contentType int
 // separators or text cells and they have their own width. In case the cell
 // contains text, its contents are specified separately in a string. Cells
 // contain the minimal necessary information to draw themselves. This means that
-// they have no idea about their current location or their surrounding
-// environment. Thus, they have to be carefully set to the right type of cell.
+// they have no information about their current location or their surrounding
+// environment.
 type cellType struct {
 	content contentType
 	width int
 	text string
 }
 
-// A column is specified with a cell type
+// A column type is specified with a cell type so that it has its own type (and
+// all items in the same column are expected to be of the same type), it has its
+// own width and, in case it is a verbatim column, it holds a copy of the text
+// to write
 type tblColumn cellType
 
 // A horizontal rule (of a specific type) is characterized by its beginning and
@@ -121,13 +124,14 @@ type tblRule struct {
 	from, to int
 }
 
-// Rules are grouped in collections of rules so that they can be sorted if
-// needed
+// Rules are grouped in collections of rules so that the same line can hold an
+// arbitrary number of rules if required
 type tblRuleCollection []tblRule
 
-// Lines can either contain text (content=TEXT) or a horizontal rule. In case it
-// is a horizontal rule, the line stores the beginning and end of it. In any
-// case, lines are made up of cells of different types
+// Lines can either contain text (content=TEXT) or a horizontal rule (of any
+// type, ie, booktabs rules, ordinary rules or clines). In case it is a
+// horizontal rule, the slice rules stores information about them. In any case,
+// lines are made up of cells of different types
 type tblLine struct {
 	content contentType
 	rules tblRuleCollection
@@ -135,10 +139,8 @@ type tblLine struct {
 }
 
 // A table consists mainly of two components: information about the columns and
-// information about the rows. The former is stored as a slice of columns. Rows
-// are specified as a slice of lines, each one of its own type and with its own
-// cells. Additionally, a table contains a slice of widths with the overall
-// width of each cell in every line.
+// information about the rows. Additionally, a table contains a slice of widths
+// with the overall width of each cell in every line.
 type Tbl struct {
 	column []tblColumn
 	row []tblLine
@@ -243,7 +245,7 @@ func NewTable (cmd string) (table Tbl, err error) {
 		errors.New (fmt.Sprintf ("Syntax error in a specification string at '%v'\n", cmd))
 	}
 
-	// otherwise, return with the table and no error
+	// otherwise, return the table and no error
 	return
 }
 
@@ -251,11 +253,14 @@ func NewTable (cmd string) (table Tbl, err error) {
 // Methods
 // ----------------------------------------------------------------------------
 
-// this private service translates a *user* column index into an effective
-// column index. User columns are those with user contents. Effective columns
-// are those defined in the specification string and consist also of column
-// separators. Importantly, while the user column index is 1-based, the
-// effective column index is 0-based
+// translate a *user* column index into an *effective* column index:
+// 
+//    * User columns those with user contents.
+//    * Effective columns: those defined in the specification string: either
+//                         text or column separators.
+//
+// Importantly, while the user column index is 1-based, the effective column
+// index is 0-based
 func (table *Tbl) getEffectiveColumn (user int) (int) {
 
 	// iterate over all columns until the specified user column has been
@@ -298,9 +303,9 @@ func (table *Tbl) AddRow (row []string) (err error) {
 	
 	// insert all cells of this line: those provided by the user and others
 	// provided in the specification string. Since this line does not
-	// contain horizontal rules, from and to are null
+	// contain horizontal rules, an empty rule is used
 	newRow := tblLine{TEXT,
-		tblRuleCollection{tblRule{VOID, 0, 0}},
+		tblRuleCollection{},
 		[]cellType{}}
 	idx := 0
 	for jdx, value := range (table.column) {
@@ -316,9 +321,10 @@ func (table *Tbl) AddRow (row []string) (err error) {
 
 		case VERTICAL_FIXED_WIDTH:
 
-			// if there are no more contents provided by the user,
-			// paddle the remainin entries with blank
-			// spaces. Otherwise, add the user text
+			// compute the contents of this cell: in case a string
+			// has been given, and it fits the cell, then just add
+			// it after addig as many spaces as necessary to make it
+			// fit the width of the cell
 			var text string
 			if idx < len (row) {
 				content := row[idx]
@@ -327,9 +333,14 @@ func (table *Tbl) AddRow (row []string) (err error) {
 						value.width -
 							utf8.RuneCountInString (content))
 				} else {
+
+					// otherwise trim the string
 					text = content[0:value.width-1] + "►"
 				}				
 			} else {
+
+				// and, if no string was given, then
+				// artificially add empty strings
 				text = strings.Repeat (" ", value.width)
 			}
 
@@ -359,9 +370,8 @@ func (table *Tbl) AddRow (row []string) (err error) {
 			
 		case LEFT, CENTER, RIGHT:
 
-			// if there are no more contents provided by the user,
-			// paddle the remainin entries with blank
-			// spaces. Otherwise, add the user text
+			// compute the contents of this cell which also consists
+			// of surrounding blank characters if needed
 			content := " "
 			if idx < len (row) {
 
@@ -475,31 +485,40 @@ func (table *Tbl) BottomRule () {
 	table.rule (HORIZONTAL_TOP_RULE, HORIZONTAL_THICK)
 }
 
-// Draw a horizontal single rule from a specific column to another. The specific
-// region to draw is specified in LaTeX format in the given command
+// Draw an arbitrary number of single horizontal lines from a specific user
+// column to another as specified in cmd which cosists of a comma-separated list
+// of pairs [begin]-[end] with the user column of the first and last column of
+// each line.
 func (table *Tbl) CSingleLine (cmd string) {
 
-	table.cline (cmd, HORIZONTAL_SINGLE,
+	rules := table.parseCLine(cmd)
+	table.cline (rules, HORIZONTAL_SINGLE,
 		LIGHT_UP_AND_RIGHT, LIGHT_UP_AND_LEFT, LIGHT_UP_AND_HORIZONTAL,
 		UP_DOUBLE_AND_RIGHT_SINGLE, UP_DOUBLE_AND_LEFT_SINGLE, UP_DOUBLE_AND_HORIZONTAL_SINGLE,
 		UP_HEAVY_AND_RIGHT_LIGHT, UP_HEAVY_AND_LEFT_LIGHT, UP_HEAVY_AND_HORIZONTAL_LIGHT)
 }
 
-// Draw a horizontal double rule from a specific column to another. The specific
-// region to draw is specified in LaTeX format in the given command
+// Draw an arbitrary number of double horizontal lines from a specific user
+// column to another as specified in cmd which cosists of a comma-separated list
+// of pairs [begin]-[end] with the user column of the first and last column of
+// each line.
 func (table *Tbl) CDoubleLine (cmd string) {
 
-	table.cline (cmd, HORIZONTAL_DOUBLE,
+	rules := table.parseCLine(cmd)
+	table.cline (rules, HORIZONTAL_DOUBLE,
 		UP_SINGLE_AND_RIGHT_DOUBLE, UP_SINGLE_AND_LEFT_DOUBLE, UP_SINGLE_AND_HORIZONTAL_DOUBLE,
 		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL,
 		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL)
 }
 
-// Draw a horizontal thick rule from a specific column to another. The specific
-// region to draw is specified in LaTeX format in the given command
+// Draw an arbitrary number of thick horizontal lines from a specific user
+// column to another as specified in cmd which cosists of a comma-separated list
+// of pairs [begin]-[end] with the user column of the first and last column of
+// each line.
 func (table *Tbl) CThickLine (cmd string) {
 
-	table.cline (cmd, HORIZONTAL_THICK,
+	rules := table.parseCLine(cmd)
+	table.cline (rules, HORIZONTAL_THICK,
 		UP_LIGHT_AND_RIGHT_HEAVY, UP_LIGHT_AND_LEFT_HEAVY, UP_LIGHT_AND_HORIZONTAL_HEAVY,
 		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL,
 		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL)
