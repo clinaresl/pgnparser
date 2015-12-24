@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Wed Sep  9 08:06:09 2015 Carlos Linares Lopez>
-  Last update <jueves, 08 octubre 2015 08:42:37 Carlos Linares Lopez (clinares)>
+  Last update <miércoles, 23 diciembre 2015 20:03:03 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -77,7 +77,7 @@ func (table *Tbl) hrule (content, light_sw, light_se, light_s, double_sw, double
 	// the table, ie., from 0 to the last column ---and this is specified
 	// with a slice of rules which consist of a single rule whose bounds are
 	// literally specified
-	table.line ([]tblRule{tblRule{content, 0, len (table.column) - 1}}, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s)
+	table.cline ([]tblRule{tblRule{content, 0, len (table.column) - 1}}, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s)
 }
 
 // Add a horizontal rule to the bottom of the current table as in the LaTeX
@@ -120,20 +120,8 @@ func (table *Tbl) rule (content, thickness contentType) {
 // table; an arbitrary number of partial lines is specified with a
 // comma-separated list of pairs.
 //
-// The type of lines to draw is specified with content which should take one of
-// the values HORIZONTAL_SINGLE, HORIZONTAL_DOUBLE or HORIZONTAL_THICK.
-// 
-// When adding a partial line, intersections with vertical separators specified
-// in the creation of the table are taken into account. What characters should
-// be used is specified in the following parameters:
-//
-//    *_sw, *_se, *_s - south/west, south/east and south separators used for
-//    different types of vertical separators as specified in '*' that can take
-//    the following values: light, double and thick
-//
 // This function specifically parses the specification string, checks its
-// correctness and invokes the service to effectively update the information on
-// the table so that it is correctly drawn.
+// correctness and returns a list with partial rules
 func (table *Tbl) parseCLine (cmd string) (rules tblRuleCollection) {
 		
 	var err error
@@ -187,8 +175,10 @@ func (table *Tbl) parseCLine (cmd string) (rules tblRuleCollection) {
 				to += 1
 			}
 
-			// add this two bounds to the current slice
-			rules = append (rules, tblRule{content, from, to})
+			// add this two bounds to the current
+			// slice. HORIZONTAL_SINGLE is used but this is
+			// arbitrary
+			rules = append (rules, tblRule{HORIZONTAL_SINGLE, from, to})
 		}
 
 		// move forward in the specification string
