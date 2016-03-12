@@ -1,10 +1,10 @@
-/* 
+/*
   tbl.go
   Description: Automated generation of text and LaTeX tables
-  ----------------------------------------------------------------------------- 
+  -----------------------------------------------------------------------------
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <jueves, 08 octubre 2015 08:43:46 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 25 diciembre 2015 17:46:48 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -22,7 +22,7 @@
 // A string specification consists of an indication how the text is justified in
 // all cells in the same column and also how separators shall be
 // formatted. Thus, they can refer to either text cells or column separators.
-// 
+//
 // A separator can be present or not and it can be one among the following
 // types:
 //    |      - a single bar
@@ -33,7 +33,7 @@
 //    format. When formatting the table in LaTeX the units specified are
 //    honoured; when rendering the table in textual mode, the units are always
 //    assumed to be chars
-// 
+//
 // The column is one of the types:
 //    c - centered
 //    l - left
@@ -43,14 +43,14 @@
 package tbl
 
 import (
-	"errors"		// for raising errors
-	"fmt"			// printing services
-	"log"			// Fatal messages
-	"math"			// Max
-	"regexp"		// for processing specification strings
-	"strconv"		// Atoi
-	"strings"		// for repeating characters
-	"unicode/utf8"		// provides support for UTF-8 characters
+	"errors"       // for raising errors
+	"fmt"          // printing services
+	"log"          // Fatal messages
+	"math"         // Max
+	"regexp"       // for processing specification strings
+	"strconv"      // Atoi
+	"strings"      // for repeating characters
+	"unicode/utf8" // provides support for UTF-8 characters
 )
 
 // global variables
@@ -59,7 +59,7 @@ import (
 // A string specification consists of an indication how the text is justified in
 // all cells in the same column and also how separators shall be
 // formatted. Thus, they can refer to either text cells or column separators.
-// 
+//
 // A separator can be present or not and it can be one among the following
 // types:
 //    |      - a single bar
@@ -70,33 +70,32 @@ import (
 //    format. When formatting the table in LaTeX the units specified are
 //    honoured; when rendering the table in textual mode, the units are always
 //    assumed to be chars
-// 
+//
 // The column is one of the types:
 //    c - centered
 //    l - left
 //    r - right
-var reSpecification = regexp.MustCompile (`^(p{[^}]*\}|\@\{[^}]*\}|\|\|\||\|\||\||c|l|r)`)
+var reSpecification = regexp.MustCompile(`^(p{[^}]*\}|\@\{[^}]*\}|\|\|\||\|\||\||c|l|r)`)
 
 // Verbatim separators are also processed with their own regular expression for
 // extracting the text
-var reVerbatimSeparator = regexp.MustCompile (`^@\{(?P<text>[^}]*)\}`)
+var reVerbatimSeparator = regexp.MustCompile(`^@\{(?P<text>[^}]*)\}`)
 
 // Likewise, fixed widths are processed separately with an additional regular
 // expression to extract the width
-var reFixedWidth = regexp.MustCompile (`^p\{(?P<width>[^}]*)\}`)
+var reFixedWidth = regexp.MustCompile(`^p\{(?P<width>[^}]*)\}`)
 
 // While the full width is passed to the LaTeX code, only the integer part is
 // used to set the width of a column in textual mode. Thus, an additional regexp
 // is used just to extract it
-var reIntegerFixedWidth = regexp.MustCompile (`^(?P<value>[\d]+).*`)
-
+var reIntegerFixedWidth = regexp.MustCompile(`^(?P<value>[\d]+).*`)
 
 // typedefs
 // ----------------------------------------------------------------------------
 
 // Any specific cell of a table can be one among different types: either
 // separators or text cells. The legal values are represented as integer
-// constants. 
+// constants.
 type contentType int
 
 // Cells are the bricks used to build up the tables. They can be either
@@ -107,8 +106,8 @@ type contentType int
 // environment.
 type cellType struct {
 	content contentType
-	width int
-	text string
+	width   int
+	text    string
 }
 
 // A column type is specified with a cell type so that it has its own type (and
@@ -120,7 +119,7 @@ type tblColumn cellType
 // A horizontal rule (of a specific type) is characterized by its beginning and
 // end.
 type tblRule struct {
-	content contentType
+	content  contentType
 	from, to int
 }
 
@@ -134,8 +133,8 @@ type tblRuleCollection []tblRule
 // lines are made up of cells of different types
 type tblLine struct {
 	content contentType
-	rules tblRuleCollection
-	cell []cellType
+	rules   tblRuleCollection
+	cell    []cellType
 }
 
 // A table consists mainly of two components: information about the columns and
@@ -143,10 +142,9 @@ type tblLine struct {
 // with the overall width of each cell in every line.
 type Tbl struct {
 	column []tblColumn
-	row []tblLine
-	width []int
+	row    []tblLine
+	width  []int
 }
-
 
 // Functions
 // ----------------------------------------------------------------------------
@@ -154,7 +152,7 @@ type Tbl struct {
 // Return the information of a column according to the given string. Note that
 // columns are specified as cells and thus, their width and text (if applicable)
 // shall be computed as well.
-func getColumnType (cmd string) (column tblColumn) {
+func getColumnType(cmd string) (column tblColumn) {
 
 	switch cmd {
 	case "":
@@ -177,95 +175,95 @@ func getColumnType (cmd string) (column tblColumn) {
 
 		// Still, this might be a legal column only if it is a verbatim,
 		// or ...
-		if reVerbatimSeparator.MatchString (cmd) {
+		if reVerbatimSeparator.MatchString(cmd) {
 
 			// if this has been recognized as a legal verbatim
 			// column, extract its contents and return them. Note
 			// that in this case no extra spaces are added either
 			// before or after the separator
-			tag := reVerbatimSeparator.FindStringSubmatchIndex (cmd)
+			tag := reVerbatimSeparator.FindStringSubmatchIndex(cmd)
 			return tblColumn{VERTICAL_VERBATIM,
-				utf8.RuneCountInString (cmd[tag[2]:tag[3]]),
+				utf8.RuneCountInString(cmd[tag[2]:tag[3]]),
 				cmd[tag[2]:tag[3]]}
-		} else if reFixedWidth.MatchString (cmd) {
+		} else if reFixedWidth.MatchString(cmd) {
 
 			// ... or a fixed widht column
-			tag0 := reFixedWidth.FindStringSubmatchIndex (cmd)
-			arg  := cmd[tag0[2]:tag0[3]]
-			
+			tag0 := reFixedWidth.FindStringSubmatchIndex(cmd)
+			arg := cmd[tag0[2]:tag0[3]]
+
 			// If this is the case, create a column of the proper
 			// type indicating the width provided by the user
-			if reIntegerFixedWidth.MatchString (arg) {
+			if reIntegerFixedWidth.MatchString(arg) {
 
-				tag1 := reIntegerFixedWidth.FindStringSubmatchIndex (arg)
-				width, err := strconv.Atoi (arg[tag1[2]:tag1[3]]); if err != nil {
-					log.Fatalf (" Impossible to extract the width from '%v'",
+				tag1 := reIntegerFixedWidth.FindStringSubmatchIndex(arg)
+				width, err := strconv.Atoi(arg[tag1[2]:tag1[3]])
+				if err != nil {
+					log.Fatalf(" Impossible to extract the width from '%v'",
 						arg[tag1[2]:tag1[3]])
 				} else {
-					return tblColumn {VERTICAL_FIXED_WIDTH,
+					return tblColumn{VERTICAL_FIXED_WIDTH,
 						width, ""}
 				}
 			} else {
-				log.Fatalf (" Impossible to extract an integer width from '%v'",
+				log.Fatalf(" Impossible to extract an integer width from '%v'",
 					arg)
 			}
 		}
 
 		// otherwise, raise an error
-		log.Fatalf (" Unknown column type '%v'\n", cmd)
+		log.Fatalf(" Unknown column type '%v'\n", cmd)
 	}
 
 	return
 }
 
 // Return a new instance of Tbl from a string specification
-func NewTable (cmd string) (table Tbl, err error) {
+func NewTable(cmd string) (table Tbl, err error) {
 
 	// just simply process the string specification
-	for ; reSpecification.MatchString (cmd) ; {
+	for reSpecification.MatchString(cmd) {
 
 		// get the next item in the specification string and add it to
 		// the collection of columns of this table
-		tag := reSpecification.FindStringSubmatchIndex (cmd)
-		column := getColumnType (cmd[tag[2]:tag[3]])
-		table.column = append (table.column, column)
+		tag := reSpecification.FindStringSubmatchIndex(cmd)
+		column := getColumnType(cmd[tag[2]:tag[3]])
+		table.column = append(table.column, column)
 
 		// Initialize also the width of each cell
-		table.width = append (table.width, column.width)
-		
+		table.width = append(table.width, column.width)
+
 		// move forward
 		cmd = cmd[tag[1]:]
 	}
 
 	// In case the specification string has not been fully processed, a
 	// syntax error has been found
-	if (cmd != "") {
+	if cmd != "" {
 
 		return Tbl{},
-		errors.New (fmt.Sprintf ("Syntax error in a specification string at '%v'\n", cmd))
+			errors.New(fmt.Sprintf("Syntax error in a specification string at '%v'\n", cmd))
 	}
 
 	// otherwise, return the table and no error
 	return
 }
 
-
 // Methods
 // ----------------------------------------------------------------------------
 
 // translate a *user* column index into an *effective* column index:
-// 
-//    * User columns those with user contents.
-//    * Effective columns: those defined in the specification string: either
+//
+//    * User columns: those with user contents.
+//    * Effective columns: those defined in the specification string, either
 //                         text or column separators.
 //
 // Importantly, while the user column index is 1-based, the effective column
 // index is 0-based
-func (table *Tbl) getEffectiveColumn (user int) (int) {
+func (table *Tbl) getEffectiveColumn(user int) int {
 
 	// iterate over all columns until the specified user column has been
 	// found
-	for idx, jdx := 0, 0; idx < len (table.column) ; idx += 1 {
+	for idx, jdx := 0, 0; idx < len(table.column); idx += 1 {
 		if table.column[idx].content == LEFT ||
 			table.column[idx].content == CENTER ||
 			table.column[idx].content == RIGHT ||
@@ -275,7 +273,7 @@ func (table *Tbl) getEffectiveColumn (user int) (int) {
 			// increment the number of user column indexes found so
 			// far
 			jdx += 1
-			
+
 			// if this is the user column index requested then
 			// return its effective counter
 			if jdx == user {
@@ -286,7 +284,7 @@ func (table *Tbl) getEffectiveColumn (user int) (int) {
 
 	// if all columns have been processed and the user column index
 	// requested has not been found, then show an error
-	log.Fatalf (" User column index '%v' out of bounds!", user)
+	log.Fatalf(" User column index '%v' out of bounds!", user)
 	return -1
 }
 
@@ -295,12 +293,12 @@ func (table *Tbl) getEffectiveColumn (user int) (int) {
 // the number of columns, the row is paddled with empty strings. If the number
 // of items in the given slice exceeds the number of columns in this table, an
 // error is raised
-func (table *Tbl) AddRow (row []string) (err error) {
+func (table *Tbl) AddRow(row []string) (err error) {
 
 	// First of all, in case the last line was a horizontal rule, redo it
 	// since we are about to generate a new line
-	table.redoLastLine ()
-	
+	table.redoLastLine()
+
 	// insert all cells of this line: those provided by the user and others
 	// provided in the specification string. Since this line does not
 	// contain horizontal rules, an empty rule is used
@@ -308,16 +306,16 @@ func (table *Tbl) AddRow (row []string) (err error) {
 		tblRuleCollection{},
 		[]cellType{}}
 	idx := 0
-	for jdx, value := range (table.column) {
+	for jdx, value := range table.column {
 
 		// depending upon the type of this column cell
-		switch (value.content) {
+		switch value.content {
 
 		case VOID, BLANK, VERTICAL_SINGLE, VERTICAL_DOUBLE, VERTICAL_THICK, VERTICAL_VERBATIM:
 
 			// in case this cell does not contain text specified by
 			// the user, just copy its specification
-			newRow.cell = append (newRow.cell, cellType (value))
+			newRow.cell = append(newRow.cell, cellType(value))
 
 		case VERTICAL_FIXED_WIDTH:
 
@@ -326,22 +324,22 @@ func (table *Tbl) AddRow (row []string) (err error) {
 			// it after addig as many spaces as necessary to make it
 			// fit the width of the cell
 			var text string
-			if idx < len (row) {
+			if idx < len(row) {
 				content := row[idx]
-				if utf8.RuneCountInString (content) <= value.width {
-					text = content + strings.Repeat (" ",
-						value.width -
-							utf8.RuneCountInString (content))
+				if utf8.RuneCountInString(content) <= value.width {
+					text = content + strings.Repeat(" ",
+						value.width-
+							utf8.RuneCountInString(content))
 				} else {
 
 					// otherwise trim the string
 					text = content[0:value.width-1] + "►"
-				}				
+				}
 			} else {
 
 				// and, if no string was given, then
 				// artificially add empty strings
-				text = strings.Repeat (" ", value.width)
+				text = strings.Repeat(" ", value.width)
 			}
 
 			// finally, make sure user text is surrounded by blank
@@ -350,30 +348,30 @@ func (table *Tbl) AddRow (row []string) (err error) {
 				table.column[jdx-1].content != VERTICAL_VERBATIM {
 				text = " " + text
 			}
-			if jdx == len (table.column) - 1 ||
+			if jdx == len(table.column)-1 ||
 				table.column[jdx+1].content != VERTICAL_VERBATIM {
 				text = text + " "
 			}
 
 			// update the width of this column after taking into
 			// account the surrounding blank spaces
-			table.width [jdx] = int (math.Max (float64 (table.width[jdx]),
-				float64 (utf8.RuneCountInString (text))))
-			
+			table.width[jdx] = int(math.Max(float64(table.width[jdx]),
+				float64(utf8.RuneCountInString(text))))
+
 			// create the cell and add it to this row
-			newRow.cell = append (newRow.cell, cellType{value.content,
-				utf8.RuneCountInString (text),
+			newRow.cell = append(newRow.cell, cellType{value.content,
+				utf8.RuneCountInString(text),
 				text})
-			
+
 			// and move to the next entry provided by the user
 			idx += 1
-			
+
 		case LEFT, CENTER, RIGHT:
 
 			// compute the contents of this cell which also consists
 			// of surrounding blank characters if needed
 			content := " "
-			if idx < len (row) {
+			if idx < len(row) {
 
 				// make sure user text is surrounded by blank
 				// spaces unless the previous/next column are
@@ -384,12 +382,12 @@ func (table *Tbl) AddRow (row []string) (err error) {
 				} else {
 					content = row[idx]
 				}
-				if jdx == len (table.column) - 1 {
+				if jdx == len(table.column)-1 {
 					if table.column[jdx].content != VERTICAL_VERBATIM {
 						content += " "
 					}
 				} else if table.column[jdx+1].content != VERTICAL_VERBATIM {
-						content += " "
+					content += " "
 				}
 			}
 
@@ -398,35 +396,35 @@ func (table *Tbl) AddRow (row []string) (err error) {
 			// text to insert here (since only one line is used!)
 			// and add it to the table with a blank space following
 			// immediate after as well
-			table.width [jdx] = int (math.Max (float64 (table.width[jdx]),
-				float64 (utf8.RuneCountInString (content))))
-			newRow.cell = append (newRow.cell,
+			table.width[jdx] = int(math.Max(float64(table.width[jdx]),
+				float64(utf8.RuneCountInString(content))))
+			newRow.cell = append(newRow.cell,
 				cellType{value.content,
-					table.width [jdx],
+					table.width[jdx],
 					content})
-			
+
 			// and move to the next entry provided by the user
 			idx += 1
 		default:
-			return errors.New (fmt.Sprintf("Unknown column type '%v'\n", value))
+			return errors.New(fmt.Sprintf("Unknown column type '%v'\n", value))
 		}
 	}
 
 	// Check there are no left values in the given row
-	if idx < len (row) {
-		return errors.New (fmt.Sprintf ("%v items were given but there are only %v columns", len (row), idx))
+	if idx < len(row) {
+		return errors.New(fmt.Sprintf("%v items were given but there are only %v columns", len(row), idx))
 	}
-	
+
 	// add this row to the table and exit with no error
-	table.row = append (table.row, newRow)
+	table.row = append(table.row, newRow)
 	return nil
 }
 
 // Add a single horizontal rule that intersects with the vertical separators
 // provided that any have been specified.
-func (table *Tbl) HSingleRule () {
+func (table *Tbl) HSingleRule() {
 
-	table.hrule (HORIZONTAL_SINGLE,
+	table.hrule(HORIZONTAL_SINGLE,
 		LIGHT_UP_AND_RIGHT, LIGHT_UP_AND_LEFT, LIGHT_UP_AND_HORIZONTAL,
 		UP_DOUBLE_AND_RIGHT_SINGLE, UP_DOUBLE_AND_LEFT_SINGLE, UP_DOUBLE_AND_HORIZONTAL_SINGLE,
 		UP_HEAVY_AND_RIGHT_LIGHT, UP_HEAVY_AND_LEFT_LIGHT, UP_HEAVY_AND_HORIZONTAL_LIGHT)
@@ -434,25 +432,25 @@ func (table *Tbl) HSingleRule () {
 
 // Add a double horizontal rule that intersects with the vertical separators
 // provided that any have been specified.
-func (table *Tbl) HDoubleRule () {
+func (table *Tbl) HDoubleRule() {
 
 	// notice that the intersection of double rules with either double or
 	// thick vertical separators is computed with the same UTF-8 characters
 	// since other combinations are not allowed by UTF-8
-	table.hrule (HORIZONTAL_DOUBLE,
+	table.hrule(HORIZONTAL_DOUBLE,
 		UP_SINGLE_AND_RIGHT_DOUBLE, UP_SINGLE_AND_LEFT_DOUBLE, UP_SINGLE_AND_HORIZONTAL_DOUBLE,
 		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL,
 		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL)
-	}
+}
 
 // Add a thick horizontal rule that intersects with the vertical separators
 // provided that any have been specified.
-func (table *Tbl) HThickRule () {
+func (table *Tbl) HThickRule() {
 
 	// notice that the intersection of thick rules with either double or
 	// thick vertical separators is computed with the same UTF-8 characters
 	// since other combinations are not allowed by UTF-8
-	table.hrule (HORIZONTAL_THICK,
+	table.hrule(HORIZONTAL_THICK,
 		UP_LIGHT_AND_RIGHT_HEAVY, UP_LIGHT_AND_LEFT_HEAVY, UP_LIGHT_AND_HORIZONTAL_HEAVY,
 		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL,
 		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL)
@@ -462,63 +460,72 @@ func (table *Tbl) HThickRule () {
 // intersections with column separators (they break them instead).
 //
 // This function is implemented in imitation to the LaTeX package booktabs
-func (table *Tbl) TopRule () {
+func (table *Tbl) TopRule() {
 
-	table.rule (HORIZONTAL_TOP_RULE, HORIZONTAL_THICK)
+	table.rule(HORIZONTAL_TOP_RULE, HORIZONTAL_THICK)
 }
 
 // Add a single horizontal rule to the current table. Mid rules do not draw
 // intersections with column separators (they break them instead)
 //
 // This function is implemented in imitation to the LaTeX package booktabs
-func (table *Tbl) MidRule () {
+func (table *Tbl) MidRule() {
 
-	table.rule (HORIZONTAL_MID_RULE, HORIZONTAL_SINGLE)
+	table.rule(HORIZONTAL_MID_RULE, HORIZONTAL_SINGLE)
 }
 
 // Add a thick horizontal rule to the current table. Bottom rules do not draw
 // intersections with column separators (they break them instead)
 //
 // This function is implemented in imitation to the LaTeX package booktabs
-func (table *Tbl) BottomRule () {
+func (table *Tbl) BottomRule() {
 
-	table.rule (HORIZONTAL_TOP_RULE, HORIZONTAL_THICK)
+	table.rule(HORIZONTAL_TOP_RULE, HORIZONTAL_THICK)
 }
 
 // Draw an arbitrary number of single horizontal lines from a specific user
-// column to another as specified in cmd which cosists of a comma-separated list
+// column to another as specified in cmd which consists of a comma-separated list
 // of pairs [begin]-[end] with the user column of the first and last column of
 // each line.
-func (table *Tbl) CSingleLine (cmd string) {
+//
+// In case that more than a single cline is given, they can be provided in any
+// order
+func (table *Tbl) CSingleLine(cmd string) {
 
 	rules := table.parseCLine(cmd)
-	table.cline (rules, HORIZONTAL_SINGLE,
+	table.cline(rules, HORIZONTAL_SINGLE,
 		LIGHT_UP_AND_RIGHT, LIGHT_UP_AND_LEFT, LIGHT_UP_AND_HORIZONTAL,
 		UP_DOUBLE_AND_RIGHT_SINGLE, UP_DOUBLE_AND_LEFT_SINGLE, UP_DOUBLE_AND_HORIZONTAL_SINGLE,
 		UP_HEAVY_AND_RIGHT_LIGHT, UP_HEAVY_AND_LEFT_LIGHT, UP_HEAVY_AND_HORIZONTAL_LIGHT)
 }
 
 // Draw an arbitrary number of double horizontal lines from a specific user
-// column to another as specified in cmd which cosists of a comma-separated list
+// column to another as specified in cmd which consists of a comma-separated list
 // of pairs [begin]-[end] with the user column of the first and last column of
 // each line.
-func (table *Tbl) CDoubleLine (cmd string) {
+//
+// In case that more than a single cline is given, they can be provided in any
+// order
+func (table *Tbl) CDoubleLine(cmd string) {
 
 	rules := table.parseCLine(cmd)
-	table.cline (rules, HORIZONTAL_DOUBLE,
+	table.cline(rules, HORIZONTAL_DOUBLE,
 		UP_SINGLE_AND_RIGHT_DOUBLE, UP_SINGLE_AND_LEFT_DOUBLE, UP_SINGLE_AND_HORIZONTAL_DOUBLE,
 		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL,
 		DOUBLE_UP_AND_RIGHT, DOUBLE_UP_AND_LEFT, DOUBLE_UP_AND_HORIZONTAL)
 }
 
 // Draw an arbitrary number of thick horizontal lines from a specific user
-// column to another as specified in cmd which cosists of a comma-separated list
+// column to another as specified in cmd which consists of a comma-separated list
 // of pairs [begin]-[end] with the user column of the first and last column of
 // each line.
-func (table *Tbl) CThickLine (cmd string) {
+//
+// In case that more than a single cline is given, they can be provided in any
+// order
+func (table *Tbl) CThickLine(cmd string) {
 
 	rules := table.parseCLine(cmd)
-	table.cline (rules, HORIZONTAL_THICK,
+	table.cline(rules, HORIZONTAL_THICK,
 		UP_LIGHT_AND_RIGHT_HEAVY, UP_LIGHT_AND_LEFT_HEAVY, UP_LIGHT_AND_HORIZONTAL_HEAVY,
 		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL,
 		HEAVY_UP_AND_RIGHT, HEAVY_UP_AND_LEFT, HEAVY_UP_AND_HORIZONTAL)
@@ -526,10 +533,10 @@ func (table *Tbl) CThickLine (cmd string) {
 
 // Cells draw themselves producing a string which takes into account the width
 // of the cell.
-func (cell cellType) String () string {
+func (cell cellType) String() string {
 
 	var output string
-	
+
 	// depending upon the type of cell
 	switch cell.content {
 	case VERTICAL_VERBATIM:
@@ -537,24 +544,24 @@ func (cell cellType) String () string {
 	case VERTICAL_FIXED_WIDTH:
 		output = cell.text
 	case LEFT:
-		output = cell.text + strings.Repeat (" ",
-			cell.width - utf8.RuneCountInString (cell.text))
+		output = cell.text + strings.Repeat(" ",
+			cell.width-utf8.RuneCountInString(cell.text))
 	case CENTER:
-		output = strings.Repeat (" ", (cell.width - utf8.RuneCountInString (cell.text))/2) +
+		output = strings.Repeat(" ", (cell.width-utf8.RuneCountInString(cell.text))/2) +
 			cell.text +
-			strings.Repeat (" ", (cell.width - utf8.RuneCountInString (cell.text))/2 +
-			(cell.width - utf8.RuneCountInString (cell.text)) % 2)
+			strings.Repeat(" ", (cell.width-utf8.RuneCountInString(cell.text))/2+
+				(cell.width-utf8.RuneCountInString(cell.text))%2)
 	case RIGHT:
-		output = strings.Repeat (" ", cell.width - utf8.RuneCountInString (cell.text)) +
+		output = strings.Repeat(" ", cell.width-utf8.RuneCountInString(cell.text)) +
 			cell.text
 	default:
-		output = strings.Repeat (characterSet[cell.content], cell.width)
+		output = strings.Repeat(characterSet[cell.content], cell.width)
 	}
 	return output
 }
 
 // Return a string with a representation of the contents of the table
-func (table Tbl) String () string {
+func (table Tbl) String() string {
 
 	var output string
 
@@ -565,8 +572,8 @@ func (table Tbl) String () string {
 		for jdx, cell := range line.cell {
 
 			// draw this cell after updating its width
-			cell.width = table.width [jdx]
-			output += fmt.Sprintf ("%v", cell)
+			cell.width = table.width[jdx]
+			output += fmt.Sprintf("%v", cell)
 		}
 
 		// and start a newline
@@ -574,7 +581,6 @@ func (table Tbl) String () string {
 	}
 	return output
 }
-
 
 /* Local Variables: */
 /* mode:go */

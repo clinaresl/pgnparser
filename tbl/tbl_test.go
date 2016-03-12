@@ -1,10 +1,10 @@
-/* 
+/*
   tbl_test.go
   Description: Unit tests for the automated generation of tables
-  ----------------------------------------------------------------------------- 
+  -----------------------------------------------------------------------------
 
   Started on  <Mon Aug 17 18:06:33 2015 Carlos Linares Lopez>
-  Last update <viernes, 02 octubre 2015 09:17:50 Carlos Linares Lopez (clinares)>
+  Last update <viernes, 25 diciembre 2015 17:38:18 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -23,27 +23,28 @@ import (
 	"testing"
 )
 
-func TestNewTable0 (t *testing.T) {
+func TestNewTable0(t *testing.T) {
 
 	var spec = "ccc"
-	
-	table, err := NewTable (spec); if err != nil {
-		t.Fatal (" Fatal error while constructing the table")
+
+	table, err := NewTable(spec)
+	if err != nil {
+		t.Fatal(" Fatal error while constructing the table")
 	}
 
-	if table.AddRow ([]string{"10231", "2", "3242344857"})!= nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"10231", "2", "3242344857"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"489251", "5233", "67207"})!= nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"489251", "5233", "67207"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"7878074521374", "787", "9113"})!= nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"7878074521374", "787", "9113"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	fmt.Printf (`
+	fmt.Printf(`
  The first application of the package Tbl consists of arranging data contextually,
  i.e., wrt to other items surrounding it. For this, neither horizontal nor vertical
  separators are needed and it just suffices creating a table that either centers the 
@@ -54,443 +55,446 @@ func TestNewTable0 (t *testing.T) {
 `, table)
 }
 
-func TestNewTable1 (t *testing.T) {
+func TestNewTable1(t *testing.T) {
 
-	var spec = "||l|||c|||ccl|||l||"
-	
-	table, err := NewTable (spec); if err != nil {
-		t.Fatal (" Fatal error while constructing the table")
-	}
+	var spec = "||lc|||ccl|||l||"
 
-	table.HThickRule ()
-	
-	if table.AddRow ([]string{"Hola", "me", "llamo", "Carlos", "Linares", "López"})!= nil {
-		t.Fatal ("Error adding a new row")
+	table, err := NewTable(spec)
+	if err != nil {
+		t.Fatal(" Fatal error while constructing the table")
 	}
 
-	table.HSingleRule ()
-	
-	if table.AddRow ([]string{"", "Y", "tengo", "tres", "hijos"}) != nil {
-		t.Fatal ("Error adding a new row")
+	table.HThickRule()
+
+	if table.AddRow([]string{"My", "name", "is", "Carlos", "Linares", "López"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.HSingleRule ()
-	
-	if table.AddRow ([]string{"", "", "Roberto", "Linares", "Rollán"}) != nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	if table.AddRow ([]string{"", "", "Dario", "Linares", "Rollán"}) != nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	if table.AddRow ([]string{"", "", "Adriana", "Linares", "Rollán"}) != nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "I", "have", "three", "children"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.HThickRule ()
-	
-	fmt.Println (table)
+	table.HSingleRule()
+
+	if table.AddRow([]string{"", "", "Roberto", "Linares", "Rollán"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	if table.AddRow([]string{"", "", "Dario", "Linares", "Rollán"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	if table.AddRow([]string{"", "", "Adriana", "Linares", "Rollán"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.HThickRule()
+
+	fmt.Println(table)
 }
 
-func TestNewTable2 (t *testing.T) {
+func TestNewTable2(t *testing.T) {
 	var spec = "|l|@{ (}r@{) }|c|"
 
-	table, err := NewTable (spec); if err != nil {
-		t.Fatal (" Fatal error while constructing the table")
+	table, err := NewTable(spec)
+	if err != nil {
+		t.Fatal(" Fatal error while constructing the table")
 	}
 
-	table.TopRule ()
-	
-	if table.AddRow ([]string{"Player", "ELO", "Country"})!= nil {
-		t.Fatal ("Error adding a new row")
+	table.TopRule()
+
+	if table.AddRow([]string{"Player", "ELO", "Country"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.MidRule ()
+	table.MidRule()
 
-	if table.AddRow ([]string{"clinares", "1588", "Spain"})!= nil {
-		t.Fatal ("Error adding a new row")
-	}
-
-	if table.AddRow ([]string{"nemesis", "1631", "Egypt"}) != nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"clinares", "1588", "Spain"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"jemma", "1811", "Germany"}) != nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"nemesis", "1631", "Egypt"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
-	
-	if table.AddRow ([]string{"zco", "1880", "United Kingdom"}) != nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	if table.AddRow ([]string{"miercoles", "1893", "Spain"}) != nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.BottomRule ()
 
-	fmt.Println (table)	
+	if table.AddRow([]string{"jemma", "1811", "Germany"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	if table.AddRow([]string{"zco", "1880", "United Kingdom"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	if table.AddRow([]string{"miercoles", "1893", "Spain"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.BottomRule()
+
+	fmt.Println(table)
 }
 
-
-func TestNewTable3 (t *testing.T) {
+func TestNewTable3(t *testing.T) {
 	var spec = "|cllp{12.5mm}r|"
 
-	table, err := NewTable (spec); if err != nil {
-		t.Fatal (" Fatal error while constructing the table")
+	table, err := NewTable(spec)
+	if err != nil {
+		t.Fatal(" Fatal error while constructing the table")
 	}
 
-	table.HSingleRule ()
+	table.HSingleRule()
 
-	if table.AddRow ([]string{"Lisp", "1958", "❤", "Nice and old", "John McCarthy"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	if table.AddRow ([]string{"C", "1972", "❤❤❤", "A must to know!", "Dennis Ritchie"})!= nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"Lisp", "1958", "❤", "Nice and old", "John McCarthy"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"C++", "1985", "❤❤❤❤❤", "Fast, capable", "Bjarne Stroustrup"})!= nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"C", "1972", "❤❤❤", "A must to know!", "Dennis Ritchie"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"Python", "1989", "❤❤❤❤", "Quick development", "Guido van Rossum"}) != nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"C++", "1985", "❤❤❤❤❤", "Fast, capable", "Bjarne Stroustrup"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	if table.AddRow ([]string{"Go", "2007", "❤❤❤❤❤", "Amazing! Brilliant", "Robert Griesemer, Rob Pike & Ken Thompson"}) != nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"Python", "1989", "❤❤❤❤", "Quick development", "Guido van Rossum"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
-	
-	if table.AddRow ([]string{"Java", "1995", "", "Not my fave", "James Gosling"}) != nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.HSingleRule ()
 
-	fmt.Println (table)	
+	if table.AddRow([]string{"Go", "2007", "❤❤❤❤❤", "Amazing! Brilliant", "Robert Griesemer, Rob Pike & Ken Thompson"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	if table.AddRow([]string{"Java", "1995", "", "Not my fave", "James Gosling"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.HSingleRule()
+
+	fmt.Println(table)
 }
 
-func TestNewTable4 (t *testing.T) {
+func TestNewTable4(t *testing.T) {
 	var spec = "l|l|rr@{% }"
 
-	table, err := NewTable (spec); if err != nil {
-		t.Fatal (" Fatal error while constructing the table")
+	table, err := NewTable(spec)
+	if err != nil {
+		t.Fatal(" Fatal error while constructing the table")
 	}
 
-	table.HSingleRule ()
+	table.HSingleRule()
 
-	if table.AddRow ([]string{"", "", "Win", "31.5"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CSingleLine ("3-5")
-
-	if table.AddRow ([]string{"", "A07", "Loss", "62.8"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CSingleLine ("3-5")
-
-	if table.AddRow ([]string{"", "", "Draw", "5.7"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "", "Win", "31.5"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CSingleLine ("2-5")
+	table.CSingleLine("3-5")
 
-	if table.AddRow ([]string{"", "", "Win", "28.2"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CSingleLine ("3-5")
-
-	if table.AddRow ([]string{"", "B19", "Loss", "18.7"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CSingleLine ("3-5")
-
-	if table.AddRow ([]string{"2014", "", "Draw", "53.1"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "A07", "Loss", "62.8"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CSingleLine ("2-5")
+	table.CSingleLine("3-5")
 
-	if table.AddRow ([]string{"", "", "Win", "53.7"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CSingleLine ("3-5")
-
-	if table.AddRow ([]string{"", "B23", "Loss", "21.0"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CSingleLine ("3-5")
-
-	if table.AddRow ([]string{"", "", "Draw", "25.3"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "", "Draw", "5.7"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CSingleLine ("2-5")
+	table.CSingleLine("2-5")
 
-	if table.AddRow ([]string{"", "", "Win", "41.3"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CSingleLine ("3-5")
-
-	if table.AddRow ([]string{"", "C45", "Loss", "29.8"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CSingleLine ("3-5")
-
-	if table.AddRow ([]string{"", "", "Draw", "28.9"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "", "Win", "28.2"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.HSingleRule ()
-	
-	fmt.Println (table)	
+	table.CSingleLine("3-5")
+
+	if table.AddRow([]string{"", "B19", "Loss", "18.7"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CSingleLine("3-5")
+
+	if table.AddRow([]string{"2014", "", "Draw", "53.1"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CSingleLine("2-5")
+
+	if table.AddRow([]string{"", "", "Win", "53.7"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CSingleLine("3-5")
+
+	if table.AddRow([]string{"", "B23", "Loss", "21.0"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CSingleLine("3-5")
+
+	if table.AddRow([]string{"", "", "Draw", "25.3"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CSingleLine("2-5")
+
+	if table.AddRow([]string{"", "", "Win", "41.3"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CSingleLine("3-5")
+
+	if table.AddRow([]string{"", "C45", "Loss", "29.8"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CSingleLine("3-5")
+
+	if table.AddRow([]string{"", "", "Draw", "28.9"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.HSingleRule()
+
+	fmt.Println(table)
 }
 
-func TestNewTable5 (t *testing.T) {
+func TestNewTable5(t *testing.T) {
 	var spec = "l||l||rr@{% }"
 
-	table, err := NewTable (spec); if err != nil {
-		t.Fatal (" Fatal error while constructing the table")
+	table, err := NewTable(spec)
+	if err != nil {
+		t.Fatal(" Fatal error while constructing the table")
 	}
 
-	table.HDoubleRule ()
+	table.HDoubleRule()
 
-	if table.AddRow ([]string{"", "", "Win", "31.5"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CDoubleLine ("3-5")
-
-	if table.AddRow ([]string{"", "A07", "Loss", "62.8"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CDoubleLine ("3-5")
-
-	if table.AddRow ([]string{"", "", "Draw", "5.7"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "", "Win", "31.5"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CDoubleLine ("2-5")
+	table.CDoubleLine("3-5")
 
-	if table.AddRow ([]string{"", "", "Win", "28.2"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CDoubleLine ("3-5")
-
-	if table.AddRow ([]string{"", "B19", "Loss", "18.7"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CDoubleLine ("3-5")
-
-	if table.AddRow ([]string{"2014", "", "Draw", "53.1"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "A07", "Loss", "62.8"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CDoubleLine ("2-5")
+	table.CDoubleLine("3-5")
 
-	if table.AddRow ([]string{"", "", "Win", "53.7"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CDoubleLine ("3-5")
-
-	if table.AddRow ([]string{"", "B23", "Loss", "21.0"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CDoubleLine ("3-5")
-
-	if table.AddRow ([]string{"", "", "Draw", "25.3"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "", "Draw", "5.7"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CDoubleLine ("2-5")
+	table.CDoubleLine("2-5")
 
-	if table.AddRow ([]string{"", "", "Win", "41.3"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CDoubleLine ("3-5")
-
-	if table.AddRow ([]string{"", "C45", "Loss", "29.8"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CDoubleLine ("3-5")
-
-	if table.AddRow ([]string{"", "", "Draw", "28.9"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "", "Win", "28.2"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.HDoubleRule ()
-	
-	fmt.Println (table)	
+	table.CDoubleLine("3-5")
+
+	if table.AddRow([]string{"", "B19", "Loss", "18.7"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CDoubleLine("3-5")
+
+	if table.AddRow([]string{"2014", "", "Draw", "53.1"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CDoubleLine("2-5")
+
+	if table.AddRow([]string{"", "", "Win", "53.7"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CDoubleLine("3-5")
+
+	if table.AddRow([]string{"", "B23", "Loss", "21.0"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CDoubleLine("3-5")
+
+	if table.AddRow([]string{"", "", "Draw", "25.3"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CDoubleLine("2-5")
+
+	if table.AddRow([]string{"", "", "Win", "41.3"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CDoubleLine("3-5")
+
+	if table.AddRow([]string{"", "C45", "Loss", "29.8"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CDoubleLine("3-5")
+
+	if table.AddRow([]string{"", "", "Draw", "28.9"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.HDoubleRule()
+
+	fmt.Println(table)
 }
 
-func TestNewTable6 (t *testing.T) {
+func TestNewTable6(t *testing.T) {
 	var spec = "l|||l|||rr@{% }"
 
-	table, err := NewTable (spec); if err != nil {
-		t.Fatal (" Fatal error while constructing the table")
+	table, err := NewTable(spec)
+	if err != nil {
+		t.Fatal(" Fatal error while constructing the table")
 	}
 
-	table.HThickRule ()
+	table.HThickRule()
 
-	if table.AddRow ([]string{"", "", "Win", "31.5"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CThickLine ("3-5")
-
-	if table.AddRow ([]string{"", "A07", "Loss", "62.8"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CThickLine ("3-5")
-
-	if table.AddRow ([]string{"", "", "Draw", "5.7"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "", "Win", "31.5"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CThickLine ("2-5")
+	table.CThickLine("3-5")
 
-	if table.AddRow ([]string{"", "", "Win", "28.2"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CThickLine ("3-5")
-
-	if table.AddRow ([]string{"", "B19", "Loss", "18.7"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CThickLine ("3-5")
-
-	if table.AddRow ([]string{"2014", "", "Draw", "53.1"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "A07", "Loss", "62.8"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CThickLine ("2-5")
+	table.CThickLine("3-5")
 
-	if table.AddRow ([]string{"", "", "Win", "53.7"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CThickLine ("3-5")
-
-	if table.AddRow ([]string{"", "B23", "Loss", "21.0"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CThickLine ("3-5")
-
-	if table.AddRow ([]string{"", "", "Draw", "25.3"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "", "Draw", "5.7"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CThickLine ("2-5")
+	table.CThickLine("2-5")
 
-	if table.AddRow ([]string{"", "", "Win", "41.3"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CThickLine ("3-5")
-
-	if table.AddRow ([]string{"", "C45", "Loss", "29.8"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CThickLine ("3-5")
-
-	if table.AddRow ([]string{"", "", "Draw", "28.9"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "", "Win", "28.2"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.HThickRule ()
-	
-	fmt.Println (table)	
+	table.CThickLine("3-5")
+
+	if table.AddRow([]string{"", "B19", "Loss", "18.7"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CThickLine("3-5")
+
+	if table.AddRow([]string{"2014", "", "Draw", "53.1"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CThickLine("2-5")
+
+	if table.AddRow([]string{"", "", "Win", "53.7"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CThickLine("3-5")
+
+	if table.AddRow([]string{"", "B23", "Loss", "21.0"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CThickLine("3-5")
+
+	if table.AddRow([]string{"", "", "Draw", "25.3"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CThickLine("2-5")
+
+	if table.AddRow([]string{"", "", "Win", "41.3"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CThickLine("3-5")
+
+	if table.AddRow([]string{"", "C45", "Loss", "29.8"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CThickLine("3-5")
+
+	if table.AddRow([]string{"", "", "Draw", "28.9"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.HThickRule()
+
+	fmt.Println(table)
 }
 
-func TestNewTable7 (t *testing.T) {
+func TestNewTable7(t *testing.T) {
 	var spec = "|l|llll|llll|"
 
-	table, err := NewTable (spec); if err != nil {
-		t.Fatal (" Fatal error while constructing the table")
+	table, err := NewTable(spec)
+	if err != nil {
+		t.Fatal(" Fatal error while constructing the table")
 	}
 
-	table.CSingleLine ("2-9")
+	table.CSingleLine("2-9")
 
-	if table.AddRow ([]string{"", "Cell 12", "Cell 13", "Cell 14", "Cell 15", "Cell 16", "Cell 17", "Cell 18", "Cell 19"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "Cell 12", "Cell 13", "Cell 14", "Cell 15", "Cell 16", "Cell 17", "Cell 18", "Cell 19"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
-	
-	table.CSingleLine ("1-9")
 
-	if table.AddRow ([]string{"Cell 21", "Cell 22", "Cell 23", "Cell 24", "Cell 25", "Cell 26", "Cell 27", "Cell 28", "Cell 29"})!=nil {
-		t.Fatal ("Error adding a new row")
+	table.CSingleLine("1-9")
+
+	if table.AddRow([]string{"Cell 21", "Cell 22", "Cell 23", "Cell 24", "Cell 25", "Cell 26", "Cell 27", "Cell 28", "Cell 29"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
-	
-	if table.AddRow ([]string{"Cell 31", "Cell 32", "Cell 33", "Cell 34", "Cell 35", "Cell 36", "Cell 37", "Cell 38", "Cell 39"})!=nil {
-		t.Fatal ("Error adding a new row")
+
+	if table.AddRow([]string{"Cell 31", "Cell 32", "Cell 33", "Cell 34", "Cell 35", "Cell 36", "Cell 37", "Cell 38", "Cell 39"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
-	
-	if table.AddRow ([]string{"Cell 41", "Cell 42", "Cell 43", "Cell 44", "Cell 45", "Cell 46", "Cell 47", "Cell 48", "Cell 49"})!=nil {
-		t.Fatal ("Error adding a new row")
+
+	if table.AddRow([]string{"Cell 41", "Cell 42", "Cell 43", "Cell 44", "Cell 45", "Cell 46", "Cell 47", "Cell 48", "Cell 49"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
-	
-	table.CSingleLine ("1-9")
-	
-	fmt.Println (table)	
+
+	table.CSingleLine("1-9")
+
+	fmt.Println(table)
 }
 
-func TestNewTable8 (t *testing.T) {
+func TestNewTable8(t *testing.T) {
 	var spec = "|l|llll|llll|lllll|"
 
-	table, err := NewTable (spec); if err != nil {
-		t.Fatal (" Fatal error while constructing the table")
+	table, err := NewTable(spec)
+	if err != nil {
+		t.Fatal(" Fatal error while constructing the table")
 	}
 
-	table.CThickLine ("5-6, 2-3, 8-8")
+	table.CThickLine("5-6, 2-3, 8-8")
 
-	if table.AddRow ([]string{"", "Cell 12", "Cell 13", "Cell 14", "Cell 15", "Cell 16", "Cell 17", "Cell 18", "Cell 19", "Cell 1a", "Cell 1b", "Cell 1c", "Cell 1d", "Cell 1e"})!=nil {
-		t.Fatal ("Error adding a new row")
-	}
-	
-	table.CSingleLine ("1-2, 4-7")
-
-	if table.AddRow ([]string{"Cell 21", "Cell 22", "Cell 23", "Cell 24", "Cell 25", "Cell 26", "Cell 27", "Cell 28", "Cell 29", "Cell 1a", "Cell 1b", "Cell 1c", "Cell 1d", "Cell 1e"})!=nil {
-		t.Fatal ("Error adding a new row")
+	if table.AddRow([]string{"", "Cell 12", "Cell 13", "Cell 14", "Cell 15", "Cell 16", "Cell 17", "Cell 18", "Cell 19", "Cell 1a", "Cell 1b", "Cell 1c", "Cell 1d", "Cell 1e"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
 
-	table.CDoubleLine ("3-4, 6-8, 9-13")
-	
-	if table.AddRow ([]string{"Cell 31", "Cell 32", "Cell 33", "Cell 34", "Cell 35", "Cell 36", "Cell 37", "Cell 38", "Cell 39", "Cell 1a", "Cell 1b", "Cell 1c", "Cell 1d", "Cell 1e"})!=nil {
-		t.Fatal ("Error adding a new row")
+	table.CSingleLine("1-2, 4-7")
+
+	if table.AddRow([]string{"Cell 21", "Cell 22", "Cell 23", "Cell 24", "Cell 25", "Cell 26", "Cell 27", "Cell 28", "Cell 29", "Cell 1a", "Cell 1b", "Cell 1c", "Cell 1d", "Cell 1e"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
-	
-	if table.AddRow ([]string{"Cell 41", "Cell 42", "Cell 43", "Cell 44", "Cell 45", "Cell 46", "Cell 47", "Cell 48", "Cell 49", "Cell 1a", "Cell 1b", "Cell 1c", "Cell 1d", "Cell 1e"})!=nil {
-		t.Fatal ("Error adding a new row")
+
+	table.CDoubleLine("3-4, 6-8, 9-13")
+
+	if table.AddRow([]string{"Cell 31", "Cell 32", "Cell 33", "Cell 34", "Cell 35", "Cell 36", "Cell 37", "Cell 38", "Cell 39", "Cell 1a", "Cell 1b", "Cell 1c", "Cell 1d", "Cell 1e"}) != nil {
+		t.Fatal("Error adding a new row")
 	}
-	
-	table.CThickLine ("2-4, 7-9")
-	
-	fmt.Println (table)	
+
+	if table.AddRow([]string{"Cell 41", "Cell 42", "Cell 43", "Cell 44", "Cell 45", "Cell 46", "Cell 47", "Cell 48", "Cell 49", "Cell 1a", "Cell 1b", "Cell 1c", "Cell 1d", "Cell 1e"}) != nil {
+		t.Fatal("Error adding a new row")
+	}
+
+	table.CThickLine("2-4, 7-9")
+
+	fmt.Println(table)
 }
-
-
 
 /* Local Variables: */
 /* mode:go */
