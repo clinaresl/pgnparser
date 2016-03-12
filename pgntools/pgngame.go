@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <jueves, 20 agosto 2015 18:37:53 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 12 marzo 2016 17:07:43 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -24,9 +24,6 @@ import (
 	"log"			// logging services
 	"regexp"                // pgn files are parsed with a regexp
 	"strconv"		// to conver int to string
-
-	// import a user package to manage paths
-	"bitbucket.org/clinares/pgnparser/fstools"
 )
 
 // global variables
@@ -206,16 +203,16 @@ func (move PgnMove) getColorPrefix () (prefix string) {
 }
 
 // Produces a LaTeX string with a plain list of the moves of this game
-func (game *PgnGame) stringPlain () string {
+func (game *PgnGame) GetLaTeXMoves () (output string) {
 
 	// Initialization
-	output := `\mainline{`
+	output = `\mainline{`
 
 	// Iterate over all moves
 	for _, move := range game.moves {
 
 		// in case it is white's turn then precede this move by the move
-		// counter and the prefixo of the color
+		// counter and the prefix of the color
 		if move.color == 1 {		
 			output += fmt.Sprintf ("%v. %v", move.number, move)
 		} else {
@@ -225,8 +222,11 @@ func (game *PgnGame) stringPlain () string {
 		}
 	}
 
-	// add the closing curly brack and return the result
-	return output + "}"
+	// close the mainline
+	output += `}`
+
+	// and return the string
+	return
 }
 
 // Produces a LaTeX string with the list of moves of this game along with the
@@ -239,15 +239,12 @@ func (game *PgnGame) stringPlain () string {
 // 1. %emt which show the elapsed move time
 // 
 // 2. %show which generates a LaTeX command for showing the current board
-func (game *PgnGame) stringWithComments () string {
+func (game *PgnGame) GetLaTeXMovesWithComments () (output string) {
 
 	// the variable newMainLine is used to determine whether the next move
 	// should start with a LaTeX command \mainline. Obviously, this is
 	// initially true
 	newMainLine := true 
-
-	// Initialization
-	output := ""
 
 	// Iterate over all moves
 	for _, move := range game.moves {
@@ -293,7 +290,9 @@ func (game *PgnGame) stringWithComments () string {
 		// next iteration
 		newMainLine = (move.emt != -1 || move.comments != "")
 	}
-	return output
+
+	// and return the string computed so far
+	return
 }
 
 // Return the tags of this game as a map from tag names to tag values. Although
@@ -321,7 +320,7 @@ func (game *PgnGame) GetTagValue (name string) (value dataInterface, err error) 
 	}
 	
 	// when getting here, the required tag has not been found
-	return constString (""), errors.New ("tag not found!")
+	return constString (""), errors.New (fmt.Sprintf ("tag '%s' not found!", name))
 }
 
 // getAndCheckTag is a helper function whose purpose is just to retrieve the
@@ -398,55 +397,6 @@ func (game *PgnGame) getHeader () []string {
 		fmt.Sprintf("%v", timeControl),
 		strconv.Itoa(int(moves)),
 		scoreWhite + "-" + scoreBlack)
-}
-
-// returns the result of replacing all placeholders in template with their
-// value. Placeholders are identified with the string '%<name>'. All tag names
-// specified in this game are acknowledged. Additionally, '%moves' is
-// substituted by the list of moves func (game *PgnGame) replacePlaceholders
-func (game *PgnGame) replacePlaceholders (template string) string {
-
-	return reGroupPlaceholder.ReplaceAllStringFunc(template,
-		func (name string) string {
-
-			// get rid of the leading '%' character
-			placeholder := name[1:]
-			
-			// most placeholders are just tag names. However,
-			// 'moves' is also acknowledged
-			if placeholder == "moves" {
-				return fmt.Sprintf ("%v", game.stringPlain ())
-			} else if placeholder == "moves_comments" {
-				return fmt.Sprintf ("%v", game.stringWithComments ())
-			}
-
-			// otherwise, return the value of this tag
-			return fmt.Sprintf ("%v", game.tags [placeholder])
-		})
-}
-
-// Produces LaTeX code using the specified template with information of this
-// game. The string acknowledges various placeholders which have the format
-// '%<name>'. All tag names specified in this game are
-// acknowledged. Additionally, '%moves' is substituted by the list of moves
-func (game *PgnGame) GameToLaTeXFromString (template string) string {
-
-	// just substitute values over the given template and return the result
-	return game.replacePlaceholders (template)
-}
-
-// Produces LaTeX code using the template stored in the specified file with
-// information of this game. The string acknowledges various placeholders which
-// have the format '%<name>'. All tag names specified in this game are
-// acknowledged. Additionally, '%moves' is substituted by the list of moves
-func (game *PgnGame) GameToLaTeXFromFile (templateFile string) string {
-
-	// Open and read the given file and retrieve its contents
-	contents := fstools.Read (templateFile, -1)
-	template := string (contents[:len (contents)])
-
-	// and now, just return the results of parsing these contents
-	return game.GameToLaTeXFromString (template)
 }
 
 

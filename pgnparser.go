@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <jueves, 20 agosto 2015 18:14:34 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 12 marzo 2016 17:01:34 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -307,17 +307,10 @@ func main () {
 	
 	// in case a LaTeX template has been given, then generate a LaTeX file
 	// with the same name than the pgn file (and in the same location) with
-	// extension '.tex'
+	// extension '.tex' from the contents given in the specified template
 	if latexTemplate != "" {
 
-		// compute the contents to write to the file
-		contents := games.GamesToLaTeXFromFile (latexTemplate)
-
-		// now, write this contents to the specified file
-		_, err := fstools.Write (pgnfile + ".tex", []byte (contents))
-		if err != nil {
-			log.Fatalf ("An error was issued when writing data to the LaTeX file")
-		}
+		games.GamesToLaTeXFromTemplate (pgnfile + ".tex", latexTemplate)
 	}
 }
 

@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <sábado, 29 agosto 2015 03:22:02 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 12 marzo 2016 17:07:26 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -21,12 +21,11 @@ package pgntools
 
 import (
 	"log"			// logging services
-	"fmt"			// printing msgs
+	"os"			// access to file mgmt functions
 	"regexp"                // pgn files are parsed with a regexp
 	"strconv"		// to convert integers into strings
 
-	// import a user package to manage paths
-	"bitbucket.org/clinares/pgnparser/fstools"
+	"text/template"		// go facility for processing templates
 
 	// import the parser of propositional formulae
 	"bitbucket.org/clinares/pgnparser/pfparser"
@@ -532,69 +531,35 @@ func (games *PgnCollection) ShowHeaders () string {
 	return table.String ()
 }
 
-// Produces LaTeX code using the specified template with information
-// of all games in this collection. The string acknowledges various
-// placeholders which have the format '%<name>'. All tag names
-// specified in this game are acknowledged. Additionally, '%moves' is
-// substituted by the list of moves.
-//
-// To generate various games in the same latex file, it processes the
-// template and separates the main body of the document from the
-// preamble. The preamble is then shown only once and the main body is
-// repeated with as many games are found in this collection, all of
-// them separated by `\clearpage`
-func (games *PgnCollection) GamesToLaTeXFromString (template string) string {
+// Writes LaTeX code in the given file using the template stored in the
+// specified file with information of all games in this collection. The template
+// acknowledges all tags of a pgngame plus other functions. For a full
+// description, see the manual
+func (games *PgnCollection) GamesToLaTeXFromTemplate (latexFile, templateFile string) {
 
-	// locate the begin of the document
-	if !reBeginDocument.MatchString (template) {
-		log.Fatalf (" The begin of the document has not been found")
-	}
-	tagBegin := reBeginDocument.FindStringSubmatchIndex (template)
-
-	// and the end of the document
-	if !reEndDocument.MatchString (template) {
-		log.Fatalf (" The end of the document has not been found")
-	}
-	tagEnd := reEndDocument.FindStringSubmatchIndex (template)
-
-	// now, initialize the latex file with the preamble and make a
-	// copy of the body
-	output := template[:tagBegin[1]]
-	mainBody := template[tagBegin[1]:tagEnd[0]]
-	
-	// now, process each game in succession
-	for _, game := range games.slice {
-
-		// just performing substitutions in the main body and
-		// adding '\clearpage' after every game
-		output += fmt.Sprintf(`%v
-\clearpage
-`, game.replacePlaceholders (mainBody))
+	// access a template and parse its contents
+	template, err := template.ParseFiles (templateFile); if err != nil {
+		log.Fatal (err)
 	}
 
-	// and end the document
-	output += template[tagEnd[0]:]
-	
-	// and return the string
-	return output
+	// check if the file exists
+	if _, err = os.Stat(latexFile); err == nil {
+		log.Fatalf ("The file '%v' already exists", latexFile)
+	}
+
+	// now, open the file in read/write mode
+	file, err := os.Create(latexFile); if err != nil {
+		log.Fatalf ("It was not possible to create the file '%v'", latexFile)
+	}
+
+	// make sure the file is closed before leaving
+	defer file.Close ()
+
+	// and now execute the template
+	err = template.Execute (file, games); if err != nil {
+		log.Fatal (err)
+	}
 }
-
-// Produces LaTeX code using the template stored in the specified file
-// with information of all games in this collection. The string
-// acknowledges various placeholders which have the format
-// '%<name>'. All tag names specified in this game are
-// acknowledged. Additionally, '%moves' is substituted by the list of
-// moves
-func (games *PgnCollection) GamesToLaTeXFromFile (templateFile string) string {
-
-	// Open and read the given file and retrieve its contents
-	contents := fstools.Read (templateFile, -1)
-	template := string (contents[:len (contents)])
-
-	// and now, just return the results of parsing these contents
-	return games.GamesToLaTeXFromString (template)
-}
-
 
 
 /* Local Variables: */
