@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:59:21 2015 Carlos Linares Lopez>
-  Last update <sábado, 12 marzo 2016 17:07:43 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 13 marzo 2016 01:08:27 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -22,18 +22,8 @@ import (
 	"errors"		// for signaling errors
 	"fmt"			// printing msgs	
 	"log"			// logging services
-	"regexp"                // pgn files are parsed with a regexp
 	"strconv"		// to conver int to string
 )
-
-// global variables
-// ----------------------------------------------------------------------------
-
-// The following regexp matches any placeholder appearing in a LaTeX
-// file. Placeholder have the form '%name' where 'name' consists of any
-// combination of alpha and numeric characters.
-var reGroupPlaceholder = regexp.MustCompile (`%[\w\d_]+`)
-
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -188,6 +178,28 @@ func (outcome PgnOutcome) String () string {
 	return fmt.Sprintf ("%v - %v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
+// Return the tags of this game as a map from tag names to tag values. Although
+// tag values are given between double quotes, these are not shown.
+func (game *PgnGame) GetTags () map[string]dataInterface {
+	return game.tags
+}
+
+// Return a list of the moves of this game as a slice of PgnMove
+func (game *PgnGame) GetMoves () []PgnMove {
+	return game.moves
+}
+
+// Return an instance of PgnOutcome with the result of this game
+func (game *PgnGame) GetOutcome () PgnOutcome {
+	return game.outcome
+}
+
+// Templates
+//
+// All the following methods are used to handle templates both for generating
+// ascii and LaTeX output
+// ----------------------------------------------------------------------------
+
 // getColorPrefix is a helper function that returns the prefix of the color of
 // the receiving move. In case it is white's turn then '.' is returned;
 // otherwise '...' is returned
@@ -202,7 +214,8 @@ func (move PgnMove) getColorPrefix () (prefix string) {
 	return
 }
 
-// Produces a LaTeX string with a plain list of the moves of this game
+// Produces a LaTeX string with a plain list of the moves of this game. It is
+// intended to be used in LaTeX templates
 func (game *PgnGame) GetLaTeXMoves () (output string) {
 
 	// Initialization
@@ -239,6 +252,8 @@ func (game *PgnGame) GetLaTeXMoves () (output string) {
 // 1. %emt which show the elapsed move time
 // 
 // 2. %show which generates a LaTeX command for showing the current board
+//
+// It is intended to be used in LaTeX templates
 func (game *PgnGame) GetLaTeXMovesWithComments () (output string) {
 
 	// the variable newMainLine is used to determine whether the next move
@@ -295,24 +310,8 @@ func (game *PgnGame) GetLaTeXMovesWithComments () (output string) {
 	return
 }
 
-// Return the tags of this game as a map from tag names to tag values. Although
-// tag values are given between double quotes, these are not shown.
-func (game *PgnGame) GetTags () map[string]dataInterface {
-	return game.tags
-}
-
-// Return a list of the moves of this game as a slice of PgnMove
-func (game *PgnGame) GetMoves () []PgnMove {
-	return game.moves
-}
-
-// Return an instance of PgnOutcome with the result of this game
-func (game *PgnGame) GetOutcome () PgnOutcome {
-	return game.outcome
-}
-
 // Return the value of a specific tag and nil if it exists or any value and err
-// in case it does not exist
+// in case it does not exist. It is intended to be used in LaTeX templates
 func (game *PgnGame) GetTagValue (name string) (value dataInterface, err error) {
 
 	if value, ok := game.tags[name]; ok {
@@ -339,64 +338,73 @@ func (game* PgnGame) getAndCheckTag (tagname string) dataInterface {
 	return value
 }
 
-// Return a slice of strings with a summary of the main information stored in
-// this game. The slice is sorted according to the format output by
-// PgnCollection.ShowHeaders ()
+// A field is either a tag of the receiver game or a value computed from the
+// tags. Fields which are computed from tags are:
+// 
+//    Moves: number of moves (two plies each)
+//    Result: consists of a utf-8 string which contains the final result of the
+//    game
 //
-// In case any required data is not found, a fatal error is raised
-func (game *PgnGame) getHeader () []string {
+// This method is used to compute arbitrary fields to be shown in ascii tables
+func (game *PgnGame) getField (field string) string {
 
-	var result []string
+	// -- Moves
+	if field == "Moves" {
+
+		// get the ply count of this game
+		plyCount    := game.getAndCheckTag ("PlyCount")
+
+		// now, compute the number of moves from the number of plies. If
+		// the number of plies is even, then the number of moves is half
+		// the number of plies, otherwise, add 1
+		moves, ok := plyCount.(constInteger); if !ok {
+			log.Fatalf (fmt.Sprintf (" It was not possible to convert the PlyCount ('%v') into an integer", plyCount))
+		}
+		if 2*(moves/2) < moves {
+			moves = moves/2 + 1
+		} else {
+			moves /= 2
+		}
+
+		// and return the number of moves
+		return strconv.Itoa (int (moves))
+	}
+
+	// -- Moves
+	if field == "Result" {
+
+		var scoreWhite, scoreBlack string;
+		if game.outcome.scoreWhite == 0.5 {
+			scoreWhite, scoreBlack = "½", "½"
+		} else if game.outcome.scoreWhite == 1 {
+			scoreWhite, scoreBlack = "1", "0"
+		} else {
+			scoreWhite, scoreBlack = "0", "1"
+		}
+		return scoreWhite + "-" + scoreBlack
+	}
 	
-	// first, verify that all necessary tags are available
-	dbGameNo    := game.getAndCheckTag ("FICSGamesDBGameNo")
-	date        := game.getAndCheckTag ("Date")
-	time        := game.getAndCheckTag ("Time")
-	white       := game.getAndCheckTag ("White")
-	whiteELO    := game.getAndCheckTag ("WhiteElo")
-	black       := game.getAndCheckTag ("Black")
-	blackELO    := game.getAndCheckTag ("BlackElo")
-	ECO         := game.getAndCheckTag ("ECO")
-	timeControl := game.getAndCheckTag ("TimeControl")
-	plyCount    := game.getAndCheckTag ("PlyCount")
+	// -- tags
 
-	// now, compute the number of moves from the number of plies. If the
-	// number of plies is even, then the number of moves is half the number
-	// of plies, otherwise, add 1
-	moves, ok := plyCount.(constInteger); if !ok {
-		log.Fatalf (fmt.Sprintf (" It was not possible to convert the PlyCount ('%v') into an integer", plyCount))
-	}
-	if 2*(moves/2) < moves {
-		moves = moves/2 + 1
-	} else {
-		moves /=2
+	// after trying special fields, then tags defined in this game are
+	// tried. In case they do not exist, an error is automatically raisedx
+	return fmt.Sprintf("%v", game.getAndCheckTag (field))
+}
+
+// Return a slice of strings with the values of all given fields. This method is
+// used to compute the fields of a game to be shown on an ascii table
+func (game *PgnGame) getFields (fields []string) (result []string) {
+
+	// iterate over all fields
+	for _, field := range fields {
+
+		// compute the value of the next field and add it to the slice
+		// to return
+		result = append (result, game.getField (field))
 	}
 
-	// Finally, convert the information of the outcome in this PgnGame to a
-	// convenient string representation
-	var scoreWhite, scoreBlack string;
-	outcome := game.GetOutcome ()
-	if outcome.scoreWhite == 0.5 {
-		scoreWhite, scoreBlack = "½", "½"
-	} else if outcome.scoreWhite == 1 {
-		scoreWhite, scoreBlack = "1", "0"
-	} else {
-		scoreWhite, scoreBlack = "0", "1"
-	}
-
-	// and now, compute the slice of strings to be returned
-	return append (result,
-		fmt.Sprintf("%v", dbGameNo),
-		fmt.Sprintf("%v", date),
-		fmt.Sprintf("%v", time),
-		fmt.Sprintf("%v", white),
-		fmt.Sprintf("%v", whiteELO),
-		fmt.Sprintf("%v", black),
-		fmt.Sprintf("%v", blackELO),
-		fmt.Sprintf("%v", ECO),
-		fmt.Sprintf("%v", timeControl),
-		strconv.Itoa(int(moves)),
-		scoreWhite + "-" + scoreBlack)
+	// return the slice of strings computed so far
+	return
 }
 
 

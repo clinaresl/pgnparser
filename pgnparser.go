@@ -4,7 +4,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <sábado, 12 marzo 2016 17:01:34 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 13 marzo 2016 01:21:14 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -41,7 +41,7 @@ var EXIT_FAILURE int = 1		// exit with failure
 
 // Options
 var pgnfile string       		// base directory
-
+var tableTemplate string		// file with the table template
 var latexTemplate string		// file with the latex template
 var query string			// select query to filter games
 var sort string                         // sorting descriptor
@@ -62,8 +62,11 @@ func init () {
 	// Flag to store the pgn file to parse
 	flag.StringVar (&pgnfile, "file", "", "pgn file to parse. While this utility is expected to be generic, it specifically adheres to the format of ficsgames.org")
 
+	// Flag to store the template to use to generate the ascii table
+	flag.StringVar (&tableTemplate, "table", "templates/table/simple.tpl", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
+
 	// Flag to store the file with the LaTeX template
-	flag.StringVar (&latexTemplate, "template", "", "file with a LaTeX template to use. If given, a file with the same name used in 'file' and extension '.tex' is automatically generated in the same directory where the pgn file resides. For more information on how to create and use LaTeX templates see the documentation")
+	flag.StringVar (&latexTemplate, "latex", "", "file with a LaTeX template to use. If given, a file with the same name used in 'file' and extension '.tex' is automatically generated in the same directory where the pgn file resides. For more information on how to create and use LaTeX templates see the documentation")
 
 	// Flag to receive a select query
 	flag.StringVar (&query, "select", "", "if an expression is provided here, only games meeting it are accepted. For more information on expressions acknowledged by this directive use '--help-expressions'")
@@ -277,10 +280,17 @@ func verify () {
 	}
 
 	// verify that the pgn file given exists and is accessible
-	isregular, _ := fstools.IsRegular (pgnfile); if !isregular {
+	pgnisregular, _ := fstools.IsRegular (pgnfile); if !pgnisregular {
 		log.Fatalf ("the pgn file '%s' does not exist or is not accessible",
 			pgnfile)
 	}
+
+	// very that the tableTemplate file exists and is accessible
+	tableTemplateisregular, _ := fstools.IsRegular (tableTemplate); if !tableTemplateisregular {
+		log.Fatalf ("the table template file '%s' does not exist or is not accessible",
+			tableTemplate)
+	}
+
 }
 
 // Main body
@@ -292,11 +302,10 @@ func main () {
 	// process the contents of the given file
 	games := pgntools.GetGamesFromFile (pgnfile, query, sort, verbose)
 
-	// show the headers of all games
-	fmt.Printf ("\n")
-	fmt.Println (games.ShowHeaders ())
-	fmt.Printf ("\n")
-	fmt.Printf (" # Games found: %v\n\n", games.Len ())
+	// show a table with information of the games been processed. For this,
+	// a template is used: tableTemplate contains the location of a default
+	// template to use; others can be defined with --table
+	games.GamesToWriterFromTemplate (os.Stdout, tableTemplate)
 
 	// In case at least one histogram was given, then process it over the
 	// whole collection of pgn games
@@ -310,7 +319,7 @@ func main () {
 	// extension '.tex' from the contents given in the specified template
 	if latexTemplate != "" {
 
-		games.GamesToLaTeXFromTemplate (pgnfile + ".tex", latexTemplate)
+		games.GamesToFileFromTemplate (pgnfile + ".tex", latexTemplate)
 	}
 }
 

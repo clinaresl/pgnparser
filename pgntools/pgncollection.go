@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <sábado, 12 marzo 2016 17:07:26 Carlos Linares Lopez (clinares)>
+  Last update <domingo, 13 marzo 2016 01:20:25 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -20,6 +20,7 @@
 package pgntools
 
 import (
+	"io"			// io streams
 	"log"			// logging services
 	"os"			// access to file mgmt functions
 	"regexp"                // pgn files are parsed with a regexp
@@ -55,15 +56,6 @@ var reHistogramCmdVar = regexp.MustCompile (`^\s*([A-Za-z0-9]+)\s*:\s*%([A-Za-z]
 // which consists of a number of different regular expressions
 var reHistogramCmdCase = regexp.MustCompile (`^\s*(?P<title>[A-Za-z0-9]+)\s*:\s*\[(?P<cases>[^\]]+)\]`)
 var reHistogramCmdSubcase = regexp.MustCompile (`^\s*(?P<subtitle>[A-Za-z0-9]+)\s*:\s*{(?P<expression>[^}]+)}\s*`)
-
-// the following regexps are used just to locate the main body of the
-// LaTeX template
-
-// It is used to locate the beginning of the document of the LaTeX template
-var reBeginDocument = regexp.MustCompile (`\\begin{document}`)
-
-// It is used to locate the beginning of the document of the LaTeX template
-var reEndDocument = regexp.MustCompile (`\\end{document}`)
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -498,32 +490,44 @@ func (games *PgnCollection) ComputeHistogram (histCommandLine string) Histogram 
 	return hist
 }
 
-// Returns a string with a summary of the information of all games stored in
-// this collection. The summary is shown as an ASCII table with heading and
-// bottom lines.
+// Templates
 //
-// In case any required data is not found, a fatal error is raised
-func (games *PgnCollection) ShowHeaders () string {
+// All the following methods are used to handle templates both for generating
+// ascii and LaTeX output
+// ----------------------------------------------------------------------------
 
-	// Create a table
-	table, err := tbl.NewTable ("|c|cc|lr|lr|l|c|c|c|"); if err != nil {
+// this is an auxiliary function used in text/templates to generate slices of
+// strings to be given as argument to other methods
+func (games *PgnCollection) GetSlice (fields... string) []string {
+	return fields
+}
+
+// returns a table according to the specification given in first place. Columns
+// are populated with the tags given in fields. It is intended to be used in
+// ascii table templates
+func (games *PgnCollection) GetTable (specline string, fields []string) string {
+
+	// Create a table according to the given specification
+	table, err := tbl.NewTable (specline); if err != nil {
 		log.Fatal (" Fatal error while constructing the table")
 	}
 
 	// Add the header
-	table.AddRow ([]string{"DBGameNo", "Date", "Time", "White", "ELO", "Black", "ELO",
-		"ECO", "Time", "Moves", "Result"})
+	table.AddRow (fields)
 	table.TopRule ()
 
-	// Now, add the header of every single game in this collection
+	// Now, add a row per game
 	for idx, game := range games.slice {
+		
 		// show a separator every ten lines to make the table easier to
 		// read
 		if idx>0 && idx%10==0 {
 			table.MidRule ()
 		}
-		
-		table.AddRow (game.getHeader ())
+
+		// and show here the information from the specified fields for
+		// this game
+		table.AddRow (game.getFields (fields))
 	}
 
 	// End the table and return the table as a string
@@ -531,11 +535,28 @@ func (games *PgnCollection) ShowHeaders () string {
 	return table.String ()
 }
 
-// Writes LaTeX code in the given file using the template stored in the
-// specified file with information of all games in this collection. The template
-// acknowledges all tags of a pgngame plus other functions. For a full
-// description, see the manual
-func (games *PgnCollection) GamesToLaTeXFromTemplate (latexFile, templateFile string) {
+// Writes into the specified writer the result of instantiating the given
+// template file with information of all games in this collection. The template
+// acknowledges all tags of a pgngame plus others. For a full description, see
+// the manual.
+func (games *PgnCollection) GamesToWriterFromTemplate (dst io.Writer, templateFile string) {
+
+	// access a template and parse its contents
+	template, err := template.ParseFiles (templateFile); if err != nil {
+		log.Fatal (err)
+	}
+
+	// and now execute the template
+	err = template.Execute (dst, games); if err != nil {
+		log.Fatal (err)
+	}
+}
+
+// Writes into the specified dst file the result of instantiating the given
+// template file with information of all games in this collection. The template
+// acknowledges all tags of a pgngame plus others. For a full description, see
+// the manual.
+func (games *PgnCollection) GamesToFileFromTemplate (dst, templateFile string) {
 
 	// access a template and parse its contents
 	template, err := template.ParseFiles (templateFile); if err != nil {
@@ -543,13 +564,13 @@ func (games *PgnCollection) GamesToLaTeXFromTemplate (latexFile, templateFile st
 	}
 
 	// check if the file exists
-	if _, err = os.Stat(latexFile); err == nil {
-		log.Fatalf ("The file '%v' already exists", latexFile)
+	if _, err = os.Stat(dst); err == nil {
+		log.Fatalf ("The file '%v' already exists", dst)
 	}
 
 	// now, open the file in read/write mode
-	file, err := os.Create(latexFile); if err != nil {
-		log.Fatalf ("It was not possible to create the file '%v'", latexFile)
+	file, err := os.Create(dst); if err != nil {
+		log.Fatalf ("It was not possible to create the file '%v'", dst)
 	}
 
 	// make sure the file is closed before leaving
