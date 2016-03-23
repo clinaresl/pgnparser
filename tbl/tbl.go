@@ -4,7 +4,7 @@
   -----------------------------------------------------------------------------
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <viernes, 25 diciembre 2015 17:46:48 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 19 marzo 2016 14:38:50 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -17,9 +17,9 @@
 */
 
 // This package provides means to automatically generating text and LaTeX tables
-// from simple string specifications as those used in LaTeX.
+// from simple specification strings as those used in LaTeX.
 //
-// A string specification consists of an indication how the text is justified in
+// A specification string consists of an indication how the text is justified in
 // all cells in the same column and also how separators shall be
 // formatted. Thus, they can refer to either text cells or column separators.
 //
@@ -56,7 +56,7 @@ import (
 // global variables
 // ----------------------------------------------------------------------------
 
-// A string specification consists of an indication how the text is justified in
+// A specification string consists of an indication how the text is justified in
 // all cells in the same column and also how separators shall be
 // formatted. Thus, they can refer to either text cells or column separators.
 //
@@ -121,6 +121,7 @@ type tblColumn cellType
 type tblRule struct {
 	content  contentType
 	from, to int
+	specification string
 }
 
 // Rules are grouped in collections of rules so that the same line can hold an
@@ -139,11 +140,13 @@ type tblLine struct {
 
 // A table consists mainly of two components: information about the columns and
 // information about the rows. Additionally, a table contains a slice of widths
-// with the overall width of each cell in every line.
+// with the overall width of each cell in every line. It also stores the
+// specification string used to create it.
 type Tbl struct {
-	column []tblColumn
-	row    []tblLine
-	width  []int
+	column        []tblColumn
+	row           []tblLine
+	width         []int
+	specification string
 }
 
 // Functions
@@ -217,10 +220,13 @@ func getColumnType(cmd string) (column tblColumn) {
 	return
 }
 
-// Return a new instance of Tbl from a string specification
+// Return a new instance of Tbl from a specification string
 func NewTable(cmd string) (table Tbl, err error) {
 
-	// just simply process the string specification
+	// before starting to consume the specification string, copy it
+	table.specification = cmd
+
+	// just simply process the specification string
 	for reSpecification.MatchString(cmd) {
 
 		// get the next item in the specification string and add it to
@@ -244,7 +250,8 @@ func NewTable(cmd string) (table Tbl, err error) {
 			errors.New(fmt.Sprintf("Syntax error in a specification string at '%v'\n", cmd))
 	}
 
-	// otherwise, return the table and no error
+	// otherwise, copy the specification string and return the table with no
+	// error
 	return
 }
 
@@ -533,9 +540,7 @@ func (table *Tbl) CThickLine(cmd string) {
 
 // Cells draw themselves producing a string which takes into account the width
 // of the cell.
-func (cell cellType) String() string {
-
-	var output string
+func (cell cellType) String() (output string) {
 
 	// depending upon the type of cell
 	switch cell.content {
@@ -557,13 +562,13 @@ func (cell cellType) String() string {
 	default:
 		output = strings.Repeat(characterSet[cell.content], cell.width)
 	}
-	return output
+
+	// and return the string computed so far
+	return
 }
 
 // Return a string with a representation of the contents of the table
-func (table Tbl) String() string {
-
-	var output string
+func (table Tbl) String() (output string) {
 
 	// for every single line
 	for _, line := range table.row {
@@ -579,7 +584,85 @@ func (table Tbl) String() string {
 		// and start a newline
 		output += "\n"
 	}
-	return output
+
+	// and return the string computed so far
+	return
+}
+
+// Return a LaTeX implementation of the contents of this table in a tabular
+// environment
+func (table Tbl) ToLaTeX() (output string) {
+
+	// start the string with the center and tabular environments
+	output = `\begin{center}
+  \begin{tabular}{`
+
+	// next, add the specification string
+	output += table.specification + "}\n"
+
+	// for every single line in the table
+	for _, line := range table.row {
+
+		// now, according to the type of line
+		switch line.content {
+
+		case TEXT:
+
+			// if this is a line of text, then extract the contents
+			// of all the user columns
+			var contents []string
+			for _, column := range line.cell[:len(line.cell)] {
+
+				// if this cell contains text, then add it
+				if column.content == VERTICAL_FIXED_WIDTH ||
+					column.content == LEFT ||
+					column.content == CENTER ||
+					column.content == RIGHT {
+					contents = append (contents, column.text)
+				}
+			}
+
+			// if and only if there are items to show
+			if (len (contents) > 0) {
+
+				// now, interleave the contents extracted from this line
+				// with the symbol "&"
+				for _, column := range contents[:len (contents)-1] {
+					output += fmt.Sprintf(" %v &", column)
+				}
+
+				// show now the contents of the last user column
+				output += fmt.Sprintf(" %v ", contents[len (contents)-1])
+			}
+			
+			// and end the current line
+			output += "\\\\ \n"
+
+		default:
+
+			// if this is not a line of text, then it is expected to
+			// be either a horizontal rule or a cline. Traverse then
+			// all the rules and print out all the specification
+			// strings
+			for _, rule := range line.rules {
+
+				output += fmt.Sprintf ("%v ", rule.specification)
+			}
+			
+			// if this is not a line of text, then it is expected to
+			// be either a horizontal rule or a cline
+			// output += "\\hline\n"
+		}
+
+	}
+
+	// end the string closing the tabular and center environments
+	output += `
+  \end{tabular}
+\end{center}`
+
+	// finally exit returning the string computed so far
+	return
 }
 
 /* Local Variables: */

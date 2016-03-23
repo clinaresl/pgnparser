@@ -1,11 +1,17 @@
 {{/*
 
-	This template provides the basic functionality to just show
-	each game of a collection in a different page.
+	This template creates a document with sections where each
+	section is a game. Sections are indexed in a table of contents
+	at the beginning of the document, each identified with the
+	players' names.
 
-	Every page starts with a nice header showing some
-	administrative information about the game including players'
-	names, their ELO, the winner, ECO, ... 
+	Immediately after the table of contents, a summary table is
+	shown. This is expected to be useful only for short documents
+	---as long collections could actually make this list to go
+	beyond the physical limits of the page.
+
+	Every section contains then the same information portrayed in
+	the simple template.
 
 */}}
 
@@ -15,6 +21,7 @@
 \usepackage[english]{babel}
 \usepackage{mathpazo}
 \usepackage{skak}
+\usepackage{booktabs}
 
 \def\hrulefill{\leavevmode\leaders\hrule height 10pt\hfill\kern\z@}
 
@@ -22,12 +29,34 @@
 
 \begin{document}
 
+{{/* -------------------------- Table of Contents ------------------------ */}}
+
+\cleardoublepage
+
+\tableofcontents
+
+\cleardoublepage
+
+{{/* --------------------------- Summary table --------------------------- */}}
+
+{{with $x := .GetTable "|lr|lr|c|" (.GetSlice "White" "WhiteElo" "Black" "BlackElo" "Result")}}
+\vspace*{\fill}
+{{printf "%v" $x.ToLaTeX}}
+\vspace*{\fill}
+{{end}}
+
+\clearpage
+
 {{/*
 	For all games, just show the header and then the moves
 	Finally, show a diagram with the final position of the game
 */}}
 
-{{range .GetGames}} 
+{{range .GetGames}}
+
+{{/* ------------------------------- Section ----------------------------- */}}
+
+\section{ {{.GetTagValue ("White")}} -- {{.GetTagValue ("Black")}} }
 
 {{/* ------------------------------- Header ------------------------------ */}}
 

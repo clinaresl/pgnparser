@@ -5,7 +5,7 @@
   ----------------------------------------------------------------------------- 
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <domingo, 13 marzo 2016 01:20:25 Carlos Linares Lopez (clinares)>
+  Last update <martes, 22 marzo 2016 19:54:17 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -505,7 +505,7 @@ func (games *PgnCollection) GetSlice (fields... string) []string {
 // returns a table according to the specification given in first place. Columns
 // are populated with the tags given in fields. It is intended to be used in
 // ascii table templates
-func (games *PgnCollection) GetTable (specline string, fields []string) string {
+func (games *PgnCollection) GetTable (specline string, fields []string) tbl.Tbl {
 
 	// Create a table according to the given specification
 	table, err := tbl.NewTable (specline); if err != nil {
@@ -532,7 +532,7 @@ func (games *PgnCollection) GetTable (specline string, fields []string) string {
 
 	// End the table and return the table as a string
 	table.BottomRule ()
-	return table.String ()
+	return table
 }
 
 // Writes into the specified writer the result of instantiating the given

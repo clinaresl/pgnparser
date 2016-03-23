@@ -4,7 +4,7 @@
   -----------------------------------------------------------------------------
 
   Started on  <Wed Sep  9 08:06:09 2015 Carlos Linares Lopez>
-  Last update <miércoles, 23 diciembre 2015 20:03:03 Carlos Linares Lopez (clinares)>
+  Last update <lunes, 21 marzo 2016 00:20:41 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -19,6 +19,7 @@
 package tbl
 
 import (
+	"fmt"     // Sprintf
 	"log"     // Fatal messages
 	"regexp"  // for processing specification strings
 	"sort"    // used for sorting rules
@@ -76,7 +77,8 @@ func (table *Tbl) hrule(content, light_sw, light_se, light_s, double_sw, double_
 	// the table, ie., from 0 to the last column ---and this is specified
 	// with a slice of rules which consist of a single rule whose bounds are
 	// literally specified
-	table.cline([]tblRule{tblRule{content, 0, len(table.column) - 1}}, content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s)
+	table.cline([]tblRule{tblRule{content, 0, len(table.column) - 1, `\hline`}},
+		content, light_sw, light_se, light_s, double_sw, double_se, double_s, thick_sw, thick_se, thick_s)
 }
 
 // Add a horizontal rule to the bottom of the current table as in the LaTeX
@@ -101,7 +103,7 @@ func (table *Tbl) rule(content, thickness contentType) {
 	// last one
 	var newRow tblLine
 	newRow = tblLine{content,
-		tblRuleCollection{tblRule{content, 0, len(table.column) - 1}},
+		tblRuleCollection{tblRule{content, 0, len(table.column) - 1, `\toprule`}},
 		[]cellType{}}
 
 	for idx := range table.column {
@@ -126,7 +128,8 @@ func (table *Tbl) parseCLine(cmd string) (rules tblRuleCollection) {
 	var err error
 	var from, to int
 
-	// While a specification of a cline is found at the beginning of the strinng
+	// While a specification of a cline is found at the beginning of the
+	// strinng
 	for reCLines.MatchString(cmd) {
 
 		// extract the specification of the next cline
@@ -150,36 +153,37 @@ func (table *Tbl) parseCLine(cmd string) (rules tblRuleCollection) {
 					interval[itag[4]:itag[5]])
 			}
 
-			// 'from' and 'to' are given as user column indexes. Translate them into
-			// effective column indexes
-			from = table.getEffectiveColumn(from)
-			to = table.getEffectiveColumn(to)
+			// 'from' and 'to' are given as user column
+			// indexes. Translate them into effective column indexes
+			efrom := table.getEffectiveColumn(from)
+			eto := table.getEffectiveColumn(to)
 
 			// there is however two exceptions:
 			// 1. if the user specified a user column as 'from' which is preceded of
 			// a vertical separator, then start the cline in the previous column
-			if from >= 1 && table.column[from-1].content != LEFT &&
-				table.column[from-1].content != CENTER &&
-				table.column[from-1].content != RIGHT &&
-				table.column[from-1].content != VERTICAL_VERBATIM &&
-				table.column[from-1].content != VERTICAL_FIXED_WIDTH {
-				from -= 1
+			if efrom >= 1 && table.column[efrom-1].content != LEFT &&
+				table.column[efrom-1].content != CENTER &&
+				table.column[efrom-1].content != RIGHT &&
+				table.column[efrom-1].content != VERTICAL_VERBATIM &&
+				table.column[efrom-1].content != VERTICAL_FIXED_WIDTH {
+				efrom -= 1
 			}
 
 			// 2. if the user specified a user column as 'to' which is continued by
 			// a vertical separator, then end the cline in the next column
-			if (to < len(table.column)-1) && table.column[to+1].content != LEFT &&
-				table.column[to+1].content != CENTER &&
-				table.column[to+1].content != RIGHT &&
-				table.column[to+1].content != VERTICAL_VERBATIM &&
-				table.column[to+1].content != VERTICAL_FIXED_WIDTH {
-				to += 1
+			if (eto < len(table.column)-1) && table.column[eto+1].content != LEFT &&
+				table.column[eto+1].content != CENTER &&
+				table.column[eto+1].content != RIGHT &&
+				table.column[eto+1].content != VERTICAL_VERBATIM &&
+				table.column[eto+1].content != VERTICAL_FIXED_WIDTH {
+				eto += 1
 			}
 
 			// add this two bounds to the current
 			// slice. HORIZONTAL_SINGLE is used but this is
 			// arbitrary
-			rules = append(rules, tblRule{HORIZONTAL_SINGLE, from, to})
+			rules = append(rules, tblRule{HORIZONTAL_SINGLE, efrom, eto,
+				fmt.Sprintf(`\cline{%v-%v}`, from, to)})
 		}
 
 		// move forward in the specification string
