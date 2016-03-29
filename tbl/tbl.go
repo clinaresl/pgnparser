@@ -4,7 +4,7 @@
   -----------------------------------------------------------------------------
 
   Started on  <Mon Aug 17 17:48:55 2015 Carlos Linares Lopez>
-  Last update <sábado, 19 marzo 2016 14:38:50 Carlos Linares Lopez (clinares)>
+  Last update <martes, 29 marzo 2016 20:13:51 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -119,8 +119,8 @@ type tblColumn cellType
 // A horizontal rule (of a specific type) is characterized by its beginning and
 // end.
 type tblRule struct {
-	content  contentType
-	from, to int
+	content       contentType
+	from, to      int
 	specification string
 }
 
@@ -618,23 +618,23 @@ func (table Tbl) ToLaTeX() (output string) {
 					column.content == LEFT ||
 					column.content == CENTER ||
 					column.content == RIGHT {
-					contents = append (contents, column.text)
+					contents = append(contents, column.text)
 				}
 			}
 
 			// if and only if there are items to show
-			if (len (contents) > 0) {
+			if len(contents) > 0 {
 
 				// now, interleave the contents extracted from this line
 				// with the symbol "&"
-				for _, column := range contents[:len (contents)-1] {
+				for _, column := range contents[:len(contents)-1] {
 					output += fmt.Sprintf(" %v &", column)
 				}
 
 				// show now the contents of the last user column
-				output += fmt.Sprintf(" %v ", contents[len (contents)-1])
+				output += fmt.Sprintf(" %v ", contents[len(contents)-1])
 			}
-			
+
 			// and end the current line
 			output += "\\\\ \n"
 
@@ -646,9 +646,9 @@ func (table Tbl) ToLaTeX() (output string) {
 			// strings
 			for _, rule := range line.rules {
 
-				output += fmt.Sprintf ("%v ", rule.specification)
+				output += fmt.Sprintf("%v ", rule.specification)
 			}
-			
+
 			// if this is not a line of text, then it is expected to
 			// be either a horizontal rule or a cline
 			// output += "\\hline\n"

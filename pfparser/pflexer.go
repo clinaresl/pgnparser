@@ -1,11 +1,11 @@
-/* 
+/*
   pflexer.go
   Description: returns different tokens of a propositional formulae to
   be parsed
-  ----------------------------------------------------------------------------- 
+  -----------------------------------------------------------------------------
 
   Started on  <Sat May 23 13:10:40 2015 Carlos Linares Lopez>
-  Last update <domingo, 07 junio 2015 16:18:23 Carlos Linares Lopez (clinares)>
+  Last update <martes, 29 marzo 2016 21:07:22 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -20,11 +20,11 @@
 package pfparser
 
 import (
-	"errors"		// for signaling errors
-	"fmt"			// Sprintf
-	"log"			// logging services
-	"regexp"                // pgn files are parsed with a regexp
-	"strconv"		// Atoi
+	"errors"  // for signaling errors
+	"fmt"     // Sprintf
+	"log"     // logging services
+	"regexp"  // pgn files are parsed with a regexp
+	"strconv" // Atoi
 )
 
 // global variables
@@ -34,29 +34,28 @@ import (
 // appear in a propositional formula
 
 // -- EOF: end of formula
-var reEOF = regexp.MustCompile (`^\s*$`)
+var reEOF = regexp.MustCompile(`^\s*$`)
 
 // -- opening parenthesis
-var reOpenParen = regexp.MustCompile (`^\s*\(`)
+var reOpenParen = regexp.MustCompile(`^\s*\(`)
 
 // -- closing parenthesis
-var reCloseParen = regexp.MustCompile (`^\s*\)`)
+var reCloseParen = regexp.MustCompile(`^\s*\)`)
 
 // -- integers
-var reInteger = regexp.MustCompile (`^\s*(?P<value>[0-9]+)`)
+var reInteger = regexp.MustCompile(`^\s*(?P<value>[0-9]+)`)
 
 // -- strings
-var reString = regexp.MustCompile (`^\s*(?P<value>'[^']+')`)
+var reString = regexp.MustCompile(`^\s*(?P<value>'[^']+')`)
 
 // -- variables
-var reVariable = regexp.MustCompile (`^\s*%(?P<varname>[a-zA-Z0-9_]+)`)
+var reVariable = regexp.MustCompile(`^\s*%(?P<varname>[a-zA-Z0-9_]+)`)
 
 // -- relational operators
-var reRelationalOperator = regexp.MustCompile (`^\s+(?P<operator>(<=|<|=|!=|>=|>|in|not_in))\s+`)
+var reRelationalOperator = regexp.MustCompile(`^\s+(?P<operator>(<=|<|=|!=|>=|>|in|not_in))\s+`)
 
 // -- logical operators
-var reLogicalOperator = regexp.MustCompile (`^\s*(?P<operator>(and|or|AND|OR))`)
-
+var reLogicalOperator = regexp.MustCompile(`^\s*(?P<operator>(and|or|AND|OR))`)
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -69,10 +68,9 @@ type tokenType int
 // its value is computed (otherwise, it shall be nil). Hence, values should
 // satisfy the relational interface
 type tokenItem struct {
-	tokenType tokenType
+	tokenType  tokenType
 	tokenValue RelationalEvaluator
 }
-
 
 // consts
 // ----------------------------------------------------------------------------
@@ -82,12 +80,12 @@ type tokenItem struct {
 // of formula) is used as a token also to signal termination and parenthesis can
 // be used to nest formulas
 const (
-	constInteger tokenType = 1 << iota	// integer constants
-	constString				// string constants
-	variable				// variables
-	and					// -- logical operators
+	constInteger tokenType = 1 << iota // integer constants
+	constString                        // string constants
+	variable                           // variables
+	and                                // -- logical operators
 	or
-	leq					// -- relational operators
+	leq // -- relational operators
 	lt
 	eq
 	neq
@@ -95,8 +93,8 @@ const (
 	geq
 	in
 	notin
-	eof					// end of formula
-	openParen				// parenthesis
+	eof       // end of formula
+	openParen // parenthesis
 	closeParen
 )
 
@@ -107,21 +105,21 @@ const (
 // if any is successfully recognized, otherwise return nil and a syntax
 // error. Additionally, if consume is true, the function modifies the string to
 // point to the chunk to process in the next invocation
-func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
+func nextToken(pformula *string, consume bool) (token tokenItem, err error) {
 
 	// just apply regular expressions successively until one matches
 
 	// -- EOF - End of Formula
 	// --------------------------------------------------------------------
-	if reEOF.MatchString (*pformula) {
+	if reEOF.MatchString(*pformula) {
 
 		if consume {
 			*pformula = ""
 		}
-		
+
 		return tokenItem{eof, nil}, nil
-		
-	} else if reOpenParen.MatchString (*pformula) {
+
+	} else if reOpenParen.MatchString(*pformula) {
 
 		// -- Opening parenthesis
 		// ------------------------------------------------------------
@@ -129,13 +127,13 @@ func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 
 			// process the string to locate the position of the
 			// parenthesis and move forward
-			tag := reOpenParen.FindStringSubmatchIndex (*pformula)
+			tag := reOpenParen.FindStringSubmatchIndex(*pformula)
 			*pformula = (*pformula)[tag[1]:]
 		}
-		
+
 		return tokenItem{openParen, nil}, nil
-		
-	} else if reCloseParen.MatchString (*pformula) {
+
+	} else if reCloseParen.MatchString(*pformula) {
 
 		// -- Closing parenthesis
 		// ------------------------------------------------------------
@@ -143,80 +141,81 @@ func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 
 			// process the string to locate the position of the
 			// parenthesis and move forward
-			tag := reCloseParen.FindStringSubmatchIndex (*pformula)
+			tag := reCloseParen.FindStringSubmatchIndex(*pformula)
 			*pformula = (*pformula)[tag[1]:]
 		}
-		
+
 		return tokenItem{closeParen, nil}, nil
-		
-	} else if reInteger.MatchString (*pformula) {
+
+	} else if reInteger.MatchString(*pformula) {
 
 		// -- Integer constants
 		// ------------------------------------------------------------
-		
+
 		// process the string and extract the relevant group
-		tag := reInteger.FindStringSubmatchIndex (*pformula)
+		tag := reInteger.FindStringSubmatchIndex(*pformula)
 
 		// convert this group to an integer value
-		value, err := strconv.Atoi ((*pformula)[tag[2]:tag[3]]); if err != nil {
-			return tokenItem{eof, nil}, errors.New ("It was not possible to process an integer")
+		value, err := strconv.Atoi((*pformula)[tag[2]:tag[3]])
+		if err != nil {
+			return tokenItem{eof, nil}, errors.New("It was not possible to process an integer")
 		}
-		
+
 		// move forward in the propositional formula if required
 		if consume {
 			*pformula = (*pformula)[tag[3]:]
 		}
 
 		// and return a valid token
-		return tokenItem{constInteger, ConstInteger (value)}, nil
-				
-	} else if reString.MatchString (*pformula) {
+		return tokenItem{constInteger, ConstInteger(value)}, nil
+
+	} else if reString.MatchString(*pformula) {
 
 		// -- String constants
 		// ------------------------------------------------------------
-		
+
 		// process the string and extract the relevant group
-		tag := reString.FindStringSubmatchIndex (*pformula)
+		tag := reString.FindStringSubmatchIndex(*pformula)
 
 		// convert this group to a string value - note that
 		// single quotes are automatically removed
-		value := (*pformula)[1+tag[2]:tag[3]-1]
-		
+		value := (*pformula)[1+tag[2] : tag[3]-1]
+
 		// move forward in the propositional formula if required
 		if consume {
 			*pformula = (*pformula)[tag[3]:]
 		}
 
 		// and return a valid token
-		return tokenItem{constString, ConstString (value)}, nil
+		return tokenItem{constString, ConstString(value)}, nil
 
-	} else if reVariable.MatchString (*pformula) {
+	} else if reVariable.MatchString(*pformula) {
 
 		// -- Variables
 		// ------------------------------------------------------------
-		
+
 		// process the string and extract the relevant group
-		tag := reVariable.FindStringSubmatchIndex (*pformula)
+		tag := reVariable.FindStringSubmatchIndex(*pformula)
 
 		// convert this group to a variable which just stores the name
 		// of the variable
 		value := (*pformula)[tag[2]:tag[3]]
-		
+
 		// move forward in the propositional formula if required
 		if consume {
 			*pformula = (*pformula)[tag[3]:]
 		}
 
 		// and return a valid token
-		return tokenItem{variable, Variable (value)}, nil
-		
-	} else if reRelationalOperator.MatchString (*pformula) {
+		return tokenItem{variable, Variable(value)}, nil
+
+	} else if reRelationalOperator.MatchString(*pformula) {
 
 		// -- Relational operators
 		// ------------------------------------------------------------
-		
+
 		// process the string and extract the relevant group
-		tag := reRelationalOperator.FindStringSubmatchIndex (*pformula)
+		tag := reRelationalOperator.FindStringSubmatchIndex(*pformula)
 
 		// derive the type of the relational operator
 		var relOp tokenType
@@ -239,7 +238,7 @@ func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 		case "not_in":
 			relOp = notin
 		default:
-			log.Fatalf ("Unknown relational operator '%s'", (*pformula)[tag[2]:tag[3]])
+			log.Fatalf("Unknown relational operator '%s'", (*pformula)[tag[2]:tag[3]])
 		}
 
 		// move forward in the propositional formula if required
@@ -248,15 +247,15 @@ func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 		}
 
 		// and return a valid token
-		return tokenItem {relOp, nil}, nil
+		return tokenItem{relOp, nil}, nil
 
-	} else if reLogicalOperator.MatchString (*pformula) {
+	} else if reLogicalOperator.MatchString(*pformula) {
 
 		// -- Logical operators
 		// ------------------------------------------------------------
-		
+
 		// process the string and extract the relevant group
-		tag := reLogicalOperator.FindStringSubmatchIndex (*pformula)
+		tag := reLogicalOperator.FindStringSubmatchIndex(*pformula)
 
 		// derive the type of logical operator
 		var logop tokenType
@@ -267,7 +266,7 @@ func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 		case "or":
 			logop = or
 		default:
-			log.Fatalf ("Unknown logical operator '%s'", (*pformula)[tag[2]:tag[3]])
+			log.Fatalf("Unknown logical operator '%s'", (*pformula)[tag[2]:tag[3]])
 		}
 
 		// move forward in the propositional formula
@@ -276,17 +275,15 @@ func nextToken (pformula *string, consume bool) (token tokenItem, err error) {
 		}
 
 		// and return a valid token
-		return tokenItem {logop, nil}, nil
+		return tokenItem{logop, nil}, nil
 	}
 
 	// at this point, a syntax error happened, so that an
 	// arbitrary token is returned in conjunction with an error
 	// that points to the position in the string where the error
 	// was found
-	return tokenItem{and, nil}, errors.New (fmt.Sprintf("Syntax error in '%v'", *pformula))
+	return tokenItem{and, nil}, errors.New(fmt.Sprintf("Syntax error in '%v'", *pformula))
 }
-
-
 
 /* Local Variables: */
 /* mode:go */

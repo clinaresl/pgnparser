@@ -1,10 +1,10 @@
-/* 
+/*
   pgnparser.go
   Description: PGN parser
-  ----------------------------------------------------------------------------- 
+  -----------------------------------------------------------------------------
 
   Started on  <Sun May  3 23:44:57 2015 Carlos Linares Lopez>
-  Last update <domingo, 13 marzo 2016 01:21:14 Carlos Linares Lopez (clinares)>
+  Last update <martes, 29 marzo 2016 21:06:50 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -21,10 +21,10 @@ package main
 // imports
 // ----------------------------------------------------------------------------
 import (
-	"flag"				// arg parsing
-	"fmt"				// printing msgs
-	"log"				// logging services
-	"os"				// operating system services
+	"flag" // arg parsing
+	"fmt"  // printing msgs
+	"log"  // logging services
+	"os"   // operating system services
 
 	// import a package to manage paths
 	"bitbucket.org/clinares/pgnparser/fstools"
@@ -35,69 +35,69 @@ import (
 
 // global variables
 // ----------------------------------------------------------------------------
-var VERSION string = "0.1.0"		// current version
-var EXIT_SUCCESS int = 0		// exit with success
-var EXIT_FAILURE int = 1		// exit with failure
+var VERSION string = "0.1.0" // current version
+var EXIT_SUCCESS int = 0     // exit with success
+var EXIT_FAILURE int = 1     // exit with failure
 
 // Options
-var pgnfile string       		// base directory
-var tableTemplate string		// file with the table template
-var latexTemplate string		// file with the latex template
-var query string			// select query to filter games
-var sort string                         // sorting descriptor
-var histogram string			// histogram descriptor
+var pgnfile string       // base directory
+var tableTemplate string // file with the table template
+var latexTemplate string // file with the latex template
+var query string         // select query to filter games
+var sort string          // sorting descriptor
+var histogram string     // histogram descriptor
 
-var helpExpressions bool		// is help on expressions requested?
-var helpSort bool                       // is help on sorting requested?
-var helpHistogram bool			// is help about histograms requested?
-var verbose bool			// has verbose output been requested?
-var version bool			// has version info been requested?
+var helpExpressions bool // is help on expressions requested?
+var helpSort bool        // is help on sorting requested?
+var helpHistogram bool   // is help about histograms requested?
+var verbose bool         // has verbose output been requested?
+var version bool         // has version info been requested?
 
 // functions
 // ----------------------------------------------------------------------------
 
 // initializes the command-line parser
-func init () {
+func init() {
 
 	// Flag to store the pgn file to parse
-	flag.StringVar (&pgnfile, "file", "", "pgn file to parse. While this utility is expected to be generic, it specifically adheres to the format of ficsgames.org")
+	flag.StringVar(&pgnfile, "file", "", "pgn file to parse. While this utility is expected to be generic, it specifically adheres to the format of ficsgames.org")
 
 	// Flag to store the template to use to generate the ascii table
-	flag.StringVar (&tableTemplate, "table", "templates/table/simple.tpl", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
+	flag.StringVar(&tableTemplate, "table", "templates/table/simple.tpl", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
 
 	// Flag to store the file with the LaTeX template
-	flag.StringVar (&latexTemplate, "latex", "", "file with a LaTeX template to use. If given, a file with the same name used in 'file' and extension '.tex' is automatically generated in the same directory where the pgn file resides. For more information on how to create and use LaTeX templates see the documentation")
+	flag.StringVar(&latexTemplate, "latex", "", "file with a LaTeX template to use. If given, a file with the same name used in 'file' and extension '.tex' is automatically generated in the same directory where the pgn file resides. For more information on how to create and use LaTeX templates see the documentation")
 
 	// Flag to receive a select query
-	flag.StringVar (&query, "select", "", "if an expression is provided here, only games meeting it are accepted. For more information on expressions acknowledged by this directive use '--help-expressions'")
-	flag.BoolVar (&helpExpressions, "help-expressions", false, "if given, additional information on expressions acknowledged by this application is provided")
-	
+	flag.StringVar(&query, "select", "", "if an expression is provided here, only games meeting it are accepted. For more information on expressions acknowledged by this directive use '--help-expressions'")
+	flag.BoolVar(&helpExpressions, "help-expressions", false, "if given, additional information on expressions acknowledged by this application is provided")
+
 	// Flag to receive a sorting descriptor
-	flag.StringVar (&sort, "sort", "", "if a string is given here, games are sorted according to the sorting descriptor provided. For more information on sorting descriptors use '--help-sort'")
-	flag.BoolVar (&helpSort, "help-sort", false, "if given, additional information on sorting descriptors is provided")
-	
+	flag.StringVar(&sort, "sort", "", "if a string is given here, games are sorted according to the sorting descriptor provided. For more information on sorting descriptors use '--help-sort'")
+	flag.BoolVar(&helpSort, "help-sort", false, "if given, additional information on sorting descriptors is provided")
+
 	// Flag to receive a histogram descriptor
-	flag.StringVar (&histogram, "histogram", "", "if a string is given here, a histogram with the information requested is generated. For more information on how to specify histograms use '--help-histogram'")
-	flag.BoolVar (&helpHistogram, "help-histogram", false, "if given, additional information on how histograms are specified is provided")
-	
+	flag.StringVar(&histogram, "histogram", "", "if a string is given here, a histogram with the information requested is generated. For more information on how to specify histograms use '--help-histogram'")
+	flag.BoolVar(&helpHistogram, "help-histogram", false, "if given, additional information on how histograms are specified is provided")
+
 	// other optional parameters are verbose and version
-	flag.BoolVar (&verbose, "verbose", false, "provides verbose output")
-	flag.BoolVar (&version, "version", false, "shows version info and exists")
+	flag.BoolVar(&verbose, "verbose", false, "provides verbose output")
+	flag.BoolVar(&version, "version", false, "shows version info and exists")
 }
 
 // shows version info and exists with the specified signal
-func showVersion (signal int) {
+func showVersion(signal int) {
 
-	fmt.Printf ("\n %v", os.Args [0])
-	fmt.Printf ("\n Version: %v\n\n", VERSION)
-	os.Exit (signal)
+	fmt.Printf("\n %v", os.Args[0])
+	fmt.Printf("\n Version: %v\n\n", VERSION)
+	os.Exit(signal)
 }
 
 // shows informmation on expressions as they are recognized by the directive
 // --select
-func showExpressions (signal int) {
+func showExpressions(signal int) {
 
-	fmt.Println (` 
+	fmt.Println(` 
  Expressions are a powerful mechanism to filter games in a PGN file. They consist of
  logical expressions made of relational groups. 
 
@@ -166,14 +166,14 @@ func showExpressions (signal int) {
  returns 140 games.
 
 `)
-	os.Exit (signal)
+	os.Exit(signal)
 }
 
 // shows informmation on sorting descriptors acknowledged by the directive
 // --sort
-func showSortingDescriptors (signal int) {
+func showSortingDescriptors(signal int) {
 
-	fmt.Println (` 
+	fmt.Println(` 
  Games can be sorted according to different criteria either in ascending or
  descending order. The keys to use are given as a string which consists of a
  sequence of variables (and hence, they should be preceded with the character
@@ -199,14 +199,14 @@ func showSortingDescriptors (signal int) {
 
  It is possible to use an arbitrary number of keys for sorting games.
 `)
-	os.Exit (signal)
+	os.Exit(signal)
 }
 
 // shows informmation on expressions as they are recognized by the directive
 // --select
-func showHistogram (signal int) {
+func showHistogram(signal int) {
 
-	fmt.Println (` 
+	fmt.Println(` 
  Histograms are used to produce information about the frequencies of a variable
  or a combination of two variables. This is, histograms are limited to one or
  two variables.
@@ -251,78 +251,79 @@ func showHistogram (signal int) {
 
 
 `)
-	os.Exit (signal)
+	os.Exit(signal)
 }
 
 // parse the flags and verifies that proper values were given. If not, a fatal
 // error is logged
-func verify () {
+func verify() {
 
 	// first, parse the flags ---in case help was given, it is automatically
 	// handled by the flags package
-	flag.Parse ()
+	flag.Parse()
 
 	// if version information was requested show it now and exit
 	if version {
-		showVersion (EXIT_SUCCESS)
+		showVersion(EXIT_SUCCESS)
 	}
 
 	// in case further assistance on a particular subject is requested, then
 	// show it here and exit
 	if helpExpressions {
-		showExpressions (EXIT_SUCCESS)
+		showExpressions(EXIT_SUCCESS)
 	}
 	if helpSort {
-		showSortingDescriptors (EXIT_SUCCESS)
+		showSortingDescriptors(EXIT_SUCCESS)
 	}
 	if helpHistogram {
-		showHistogram (EXIT_SUCCESS)
+		showHistogram(EXIT_SUCCESS)
 	}
 
 	// verify that the pgn file given exists and is accessible
-	pgnisregular, _ := fstools.IsRegular (pgnfile); if !pgnisregular {
-		log.Fatalf ("the pgn file '%s' does not exist or is not accessible",
+	pgnisregular, _ := fstools.IsRegular(pgnfile)
+	if !pgnisregular {
+		log.Fatalf("the pgn file '%s' does not exist or is not accessible",
 			pgnfile)
 	}
 
 	// very that the tableTemplate file exists and is accessible
-	tableTemplateisregular, _ := fstools.IsRegular (tableTemplate); if !tableTemplateisregular {
-		log.Fatalf ("the table template file '%s' does not exist or is not accessible",
+	tableTemplateisregular, _ := fstools.IsRegular(tableTemplate)
+	if !tableTemplateisregular {
+		log.Fatalf("the table template file '%s' does not exist or is not accessible",
 			tableTemplate)
 	}
 
 }
 
 // Main body
-func main () {
+func main() {
 
 	// verify the values parsed
-	verify ()
+	verify()
 
 	// process the contents of the given file
-	games := pgntools.GetGamesFromFile (pgnfile, query, sort, verbose)
+	games := pgntools.GetGamesFromFile(pgnfile, query, sort, verbose)
 
 	// show a table with information of the games been processed. For this,
 	// a template is used: tableTemplate contains the location of a default
 	// template to use; others can be defined with --table
-	games.GamesToWriterFromTemplate (os.Stdout, tableTemplate)
+	games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
 
 	// In case at least one histogram was given, then process it over the
 	// whole collection of pgn games
 	if histogram != "" {
-		hist := games.ComputeHistogram (histogram)
-		fmt.Printf ("%v\n", &hist)
+		hist := games.ComputeHistogram(histogram)
+		fmt.Printf("%v\n", &hist)
 	}
-	
+
 	// in case a LaTeX template has been given, then generate a LaTeX file
 	// with the same name than the pgn file (and in the same location) with
 	// extension '.tex' from the contents given in the specified template
 	if latexTemplate != "" {
 
-		games.GamesToFileFromTemplate (pgnfile + ".tex", latexTemplate)
+		games.GamesToFileFromTemplate(pgnfile+".tex", latexTemplate)
 	}
 }
-
 
 /* Local Variables: */
 /* mode:go */

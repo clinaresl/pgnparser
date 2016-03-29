@@ -1,11 +1,11 @@
-/* 
+/*
   pgncollection.go
   Description: Simple tools for handling collections of games in PGN
                format
-  ----------------------------------------------------------------------------- 
+  -----------------------------------------------------------------------------
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <martes, 22 marzo 2016 19:54:17 Carlos Linares Lopez (clinares)>
+  Last update <martes, 29 marzo 2016 21:07:39 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -20,13 +20,13 @@
 package pgntools
 
 import (
-	"io"			// io streams
-	"log"			// logging services
-	"os"			// access to file mgmt functions
-	"regexp"                // pgn files are parsed with a regexp
-	"strconv"		// to convert integers into strings
+	"io"      // io streams
+	"log"     // logging services
+	"os"      // access to file mgmt functions
+	"regexp"  // pgn files are parsed with a regexp
+	"strconv" // to convert integers into strings
 
-	"text/template"		// go facility for processing templates
+	"text/template" // go facility for processing templates
 
 	// import the parser of propositional formulae
 	"bitbucket.org/clinares/pgnparser/pfparser"
@@ -45,17 +45,17 @@ import (
 // > meaning increasing and decreasing order respectively; the variable to use
 // is preceded by '%' (there is no need actually to use that prefix and this is
 // done only for the sake of consistency across different commands of pgnparser)
-var reSortingCriteria = regexp.MustCompile (`^\s*(<|>)\s*%([A-Za-z]+)\s*`)
+var reSortingCriteria = regexp.MustCompile(`^\s*(<|>)\s*%([A-Za-z]+)\s*`)
 
 // the following regexps are used to process histogram command lines
 
 // A histogram command line might consist of a title and a variable name
-var reHistogramCmdVar = regexp.MustCompile (`^\s*([A-Za-z0-9]+)\s*:\s*%([A-Za-z]+)\s*`)
+var reHistogramCmdVar = regexp.MustCompile(`^\s*([A-Za-z0-9]+)\s*:\s*%([A-Za-z]+)\s*`)
 
 // Also, a histogram command line might consist of the definition of a case
 // which consists of a number of different regular expressions
-var reHistogramCmdCase = regexp.MustCompile (`^\s*(?P<title>[A-Za-z0-9]+)\s*:\s*\[(?P<cases>[^\]]+)\]`)
-var reHistogramCmdSubcase = regexp.MustCompile (`^\s*(?P<subtitle>[A-Za-z0-9]+)\s*:\s*{(?P<expression>[^}]+)}\s*`)
+var reHistogramCmdCase = regexp.MustCompile(`^\s*(?P<title>[A-Za-z0-9]+)\s*:\s*\[(?P<cases>[^\]]+)\]`)
+var reHistogramCmdSubcase = regexp.MustCompile(`^\s*(?P<subtitle>[A-Za-z0-9]+)\s*:\s*{(?P<expression>[^}]+)}\s*`)
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -69,7 +69,7 @@ type sortingDirection int
 // pgn games
 type pgnSorting struct {
 	direction sortingDirection
-	variable string
+	variable  string
 }
 
 // A PgnCollection consists of an arbitrary number of PgnGames along with a
@@ -81,10 +81,9 @@ type pgnSorting struct {
 // slice of pairs that contain for each variable whether PGN games should be
 // sorted in increasing or decreasing order
 type PgnCollection struct {
-
-	slice []PgnGame
+	slice          []PgnGame
 	sortDescriptor []pgnSorting
-	nbGames int;
+	nbGames        int
 }
 
 // A histogram is indexed by keys. Keys are either variables (represented as a
@@ -94,21 +93,21 @@ type PgnCollection struct {
 // A variable just consists of an association of a title and the name of a
 // variable
 type pgnKeyVar struct {
-	title string
+	title    string
 	variable string
 }
 
 // A case consists of a slice of structs similar to variables but, instead of
 // variables, they store propositional expressions
 type pgnKeyCase struct {
-	title string
+	title      string
 	expression string
 }
 
 // A full specification of cases consists just of a slice of cases. The whole
 // collection of cases can be also qualified with a title
 type pgnKeyCases struct {
-	title string
+	title       string
 	expressions []pgnKeyCase
 }
 
@@ -118,10 +117,10 @@ type pgnKeyCases struct {
 // be indeed sorted according to their type; second, values should be supported
 // by the current implementation of histograms
 type pgnHistogramRegister interface {
-	GetTitle () string;
-	GetSubtitle (game *PgnGame) dataInterface;
-	GetKey (game *PgnGame) string;
-	GetValue (game *PgnGame) dataHistValue;
+	GetTitle() string
+	GetSubtitle(game *PgnGame) dataInterface
+	GetKey(game *PgnGame) string
+	GetValue(game *PgnGame) dataHistValue
 }
 
 // consts
@@ -129,8 +128,8 @@ type pgnHistogramRegister interface {
 
 // PGN games can be sorted either in ascending or descending order
 const (
-	increasing sortingDirection = 1 << iota		// increasing order
-	decreasing					// decreasing order
+	increasing sortingDirection = 1 << iota // increasing order
+	decreasing                              // decreasing order
 )
 
 // Methods
@@ -142,17 +141,17 @@ const (
 
 // Return all games as instances of PgnGame that are stored in this particular
 // collection
-func (games *PgnCollection) GetGames () []PgnGame {
+func (games *PgnCollection) GetGames() []PgnGame {
 	return games.slice
 }
 
 // Return the index-th game stored in this particular collection
-func (games *PgnCollection) GetGame (index int) PgnGame {
-	return games.slice [index]
+func (games *PgnCollection) GetGame(index int) PgnGame {
+	return games.slice[index]
 }
 
 // Return the number of items in the collection
-func (games PgnCollection) Len () int {
+func (games PgnCollection) Len() int {
 	return games.nbGames
 }
 
@@ -161,7 +160,7 @@ func (games PgnCollection) Len () int {
 // The following methods ease the task of sorting games in a collection
 
 // Swap two games within the same collection
-func (games PgnCollection) Swap (i, j int) {
+func (games PgnCollection) Swap(i, j int) {
 	games.slice[i], games.slice[j] = games.slice[j], games.slice[i]
 }
 
@@ -170,14 +169,14 @@ func (games PgnCollection) Swap (i, j int) {
 // %variable and there can be an arbitrary number of them. The first item is
 // used to decide whether to sort games in ascending or descending order; the
 // second one is used to decide what variable to use as a key.
-func (games *PgnCollection) GetSortDescriptor (sortString string) []pgnSorting {
+func (games *PgnCollection) GetSortDescriptor(sortString string) []pgnSorting {
 
 	// extract all sorting criteria given in the string
-	for ;reSortingCriteria.MatchString (sortString); {
+	for reSortingCriteria.MatchString(sortString) {
 
 		// extract the two groups in the sorting criteria: the direction
 		// and the key
-		tag := reSortingCriteria.FindStringSubmatchIndex (sortString)
+		tag := reSortingCriteria.FindStringSubmatchIndex(sortString)
 		direction, key := sortString[tag[2]:tag[3]], sortString[tag[4]:tag[5]]
 
 		// and move forward in the string
@@ -186,19 +185,19 @@ func (games *PgnCollection) GetSortDescriptor (sortString string) []pgnSorting {
 		// store the direction and key in this collection
 		var newSorting pgnSorting
 		if direction == "<" {
-			newSorting = pgnSorting {increasing, key}
+			newSorting = pgnSorting{increasing, key}
 
 		} else if direction == ">" {
-			newSorting = pgnSorting {decreasing, key}
+			newSorting = pgnSorting{decreasing, key}
 		} else {
-			log.Fatalf (" An unknown sorting direction has been found: '%v'", direction)
+			log.Fatalf(" An unknown sorting direction has been found: '%v'", direction)
 		}
-		games.sortDescriptor = append (games.sortDescriptor, newSorting)
+		games.sortDescriptor = append(games.sortDescriptor, newSorting)
 	}
 
 	// make sure here that the full sort descriptor was successfully processed
-	if len (sortString) > 0 {
-		log.Fatalf (" There was an error in the sort string at point '%v'", sortString)
+	if len(sortString) > 0 {
+		log.Fatalf(" There was an error in the sort string at point '%v'", sortString)
 	}
 
 	// and return the descriptor
@@ -207,7 +206,7 @@ func (games *PgnCollection) GetSortDescriptor (sortString string) []pgnSorting {
 
 // Return true if the i-th game should be before the j-th game and false
 // otherwise
-func (games PgnCollection) Less (i, j int) bool {
+func (games PgnCollection) Less(i, j int) bool {
 
 	// go over all items of the sort descriptor stored in this collection
 	// until either the slice is over or a decision has been made whether
@@ -215,32 +214,34 @@ func (games PgnCollection) Less (i, j int) bool {
 	for _, descriptor := range games.sortDescriptor {
 
 		// first of all, check this variable exists in both games
-		icontent, ok := games.slice[i].tags[descriptor.variable]; if !ok {
-			log.Fatalf ("'%v' is not a variable and can not be used for sorting games",
+		icontent, ok := games.slice[i].tags[descriptor.variable]
+		if !ok {
+			log.Fatalf("'%v' is not a variable and can not be used for sorting games",
 				descriptor.variable)
 		}
-		jcontent, ok := games.slice[j].tags[descriptor.variable]; if !ok {
-			log.Fatalf ("'%v' is not a variable and can not be used for sorting games",
+		jcontent, ok := games.slice[j].tags[descriptor.variable]
+		if !ok {
+			log.Fatalf("'%v' is not a variable and can not be used for sorting games",
 				descriptor.variable)
 		}
-		
+
 		// check the direction and then the variable to use
 		if descriptor.direction == increasing {
-			if icontent.Less (jcontent) {
+			if icontent.Less(jcontent) {
 				return true
 			}
-			if icontent.Greater (jcontent) {
+			if icontent.Greater(jcontent) {
 				return false
 			}
 		} else if descriptor.direction == decreasing {
-			if icontent.Greater (jcontent) {
+			if icontent.Greater(jcontent) {
 				return true
 			}
-			if icontent.Less (jcontent) {
+			if icontent.Less(jcontent) {
 				return false
 			}
 		} else {
-			log.Fatalf (" Unknown sorting direction '%v'", descriptor.direction)
+			log.Fatalf(" Unknown sorting direction '%v'", descriptor.direction)
 		}
 	}
 
@@ -254,26 +255,27 @@ func (games PgnCollection) Less (i, j int) bool {
 // generating histograms
 
 // Just return the value of the title of this key variable
-func (key pgnKeyVar) GetTitle () string {
+func (key pgnKeyVar) GetTitle() string {
 	return key.title
 }
 
 // Just return the title of this case specification
-func (key pgnKeyCases) GetTitle () string {
+func (key pgnKeyCases) GetTitle() string {
 	return key.title
 }
 
 // Just return the subtitle to use with this variable. In the case of key
 // variables, the subtitle is just the value for a specific game of the given
 // variable
-// 
+//
 // Importantly, this method returns instances of a generic type so that
 // subtitles can be more naturally sorted
-func (key pgnKeyVar) GetSubtitle (game *PgnGame) dataInterface {
+func (key pgnKeyVar) GetSubtitle(game *PgnGame) dataInterface {
 
 	// Key variables are expected to be found in the tags of a chess game
-	value, ok := game.GetTagValue (key.variable); if ok != nil {
-		log.Fatalf (" It was not possible to access the subtitle of key '%v'\n", key.variable)
+	value, ok := game.GetTagValue(key.variable)
+	if ok != nil {
+		log.Fatalf(" It was not possible to access the subtitle of key '%v'\n", key.variable)
 	}
 
 	// in case the value was successfully accessed, just return it
@@ -286,35 +288,37 @@ func (key pgnKeyVar) GetSubtitle (game *PgnGame) dataInterface {
 // evaluates to true, with all the other evaluating to false. Thus, this service
 // simply returns the title of the expression that is verified for this specific
 // game
-// 
+//
 // This method always return a string which is the title of the only case that
 // is verified by this specific game
-func (key pgnKeyCases) GetSubtitle (game *PgnGame) dataInterface {
+func (key pgnKeyCases) GetSubtitle(game *PgnGame) dataInterface {
 
 	var ititle string
-	
+
 	// first, start by creating a symbol table with all the information
 	// appearing in the headers of this game
-	symtable := make (map[string]pfparser.RelationalInterface)
+	symtable := make(map[string]pfparser.RelationalInterface)
 	for key, content := range game.tags {
 
 		// first, verify whether this is an integer
-		value, ok := content.(constInteger); if ok {
+		value, ok := content.(constInteger)
+		if ok {
 
-			symtable [key] = pfparser.ConstInteger (value)
+			symtable[key] = pfparser.ConstInteger(value)
 		} else {
 
 			// if not, check if it is a string
-			value, ok := content.(constString); if ok {
-				symtable [key] = pfparser.ConstString (value)
+			value, ok := content.(constString)
+			if ok {
+				symtable[key] = pfparser.ConstString(value)
 			} else {
-				log.Fatal (" Unknown type")
+				log.Fatal(" Unknown type")
 			}
 		}
 	}
 
 	// for all cases in this specification
-	for _, icase := range (key.expressions) {
+	for _, icase := range key.expressions {
 
 		// verify whether this expression is verified
 		var err error
@@ -322,37 +326,40 @@ func (key pgnKeyCases) GetSubtitle (game *PgnGame) dataInterface {
 
 		// parse and evaluate this particular case
 		iexpression := icase.expression
-		logEvaluator, err = pfparser.Parse (&iexpression, 0); if err != nil {
-			log.Fatal (err);
+		logEvaluator, err = pfparser.Parse(&iexpression, 0)
+		if err != nil {
+			log.Fatal(err)
 		}
-		
-		if (logEvaluator.Evaluate (symtable) == pfparser.TypeBool (true)) {
+
+		if logEvaluator.Evaluate(symtable) == pfparser.TypeBool(true) {
 			ititle = icase.title
 		}
 	}
 
-	return constString (ititle)
+	return constString(ititle)
 }
 
 // Just return the key to use for storing this entry in a histogram. For key
 // variables, keys are exactly the same than subtitles with a slight
 // difference. They are always stored as strings.
-func (keyin pgnKeyVar) GetKey (game *PgnGame) (keyout string) {
+func (keyin pgnKeyVar) GetKey(game *PgnGame) (keyout string) {
 
 	// just compute the subtitle corresponding to this key variable and
 	// return it as a string
-	subtitle := keyin.GetSubtitle (game)
+	subtitle := keyin.GetSubtitle(game)
 
 	// go through various type assertions to convert the subtitle to the
 	// right type and, from it, to a string
-	value, ok := subtitle.(constInteger); if ok {
-		keyout = strconv.Itoa (int (value))
+	value, ok := subtitle.(constInteger)
+	if ok {
+		keyout = strconv.Itoa(int(value))
 	} else {
 
-		value, ok := subtitle.(constString); if ok {
-			keyout = string (value)
+		value, ok := subtitle.(constString)
+		if ok {
+			keyout = string(value)
 		} else {
-			log.Fatalf (" Unknown type of '%v'\n", keyin.variable)
+			log.Fatalf(" Unknown type of '%v'\n", keyin.variable)
 		}
 	}
 
@@ -362,60 +369,61 @@ func (keyin pgnKeyVar) GetKey (game *PgnGame) (keyout string) {
 
 // Return the key to use for storing this entry in a histogram. For key cases,
 // keys are exactly the same than subtitles.
-func (keyin pgnKeyCases) GetKey (game *PgnGame) (keyout string) {
+func (keyin pgnKeyCases) GetKey(game *PgnGame) (keyout string) {
 
 	// just compute the subtitle corresponding to this key case and return
 	// it as a string
-	subtitle := keyin.GetSubtitle (game)
-	value, ok := subtitle.(constString); if !ok {
-		log.Fatalf (" A subtitle of a type different than string was returned!")
+	subtitle := keyin.GetSubtitle(game)
+	value, ok := subtitle.(constString)
+	if !ok {
+		log.Fatalf(" A subtitle of a type different than string was returned!")
 	}
-	return string (value)
+	return string(value)
 }
 
 // The value of a key variable is always equal to one. This results from the
 // fact that histograms store the association (key, value) so that a value=1
 // means that one occurrence of a specific key has been observed
-func (key pgnKeyVar) GetValue (game *PgnGame) dataHistValue {
+func (key pgnKeyVar) GetValue(game *PgnGame) dataHistValue {
 	return 1
 }
 
 // The value of a key case is always equal to one. This results from the fact
 // that histograms store the association (key, value) so that a value=1 means
 // that one occurrence of a specific key has been observed
-func (key pgnKeyCases) GetValue (game *PgnGame) dataHistValue {
+func (key pgnKeyCases) GetValue(game *PgnGame) dataHistValue {
 	return 1
 }
 
 // This function processes the histogram command line provided by the user and
 // returns a slice of pgn histogram registers that can then be used to generate
 // the histogram of any collection of chess games.
-func parseHistCommandLine (histCommandLine string) (histDirective []pgnHistogramRegister) {
+func parseHistCommandLine(histCommandLine string) (histDirective []pgnHistogramRegister) {
 
 	// extract all histogram directives given in the histogram command line
-	for ;reHistogramCmdVar.MatchString (histCommandLine) ||
-		reHistogramCmdCase.MatchString (histCommandLine); {
+	for reHistogramCmdVar.MatchString(histCommandLine) ||
+		reHistogramCmdCase.MatchString(histCommandLine) {
 
 		// in case the following directive is recognized as a variable
-		if reHistogramCmdVar.MatchString (histCommandLine) {
-		
+		if reHistogramCmdVar.MatchString(histCommandLine) {
+
 			// extract the two groups in a variable: the title and
 			// the variable name
-			tag := reHistogramCmdVar.FindStringSubmatchIndex (histCommandLine)
+			tag := reHistogramCmdVar.FindStringSubmatchIndex(histCommandLine)
 			title := histCommandLine[tag[2]:tag[3]]
 			variable := histCommandLine[tag[4]:tag[5]]
 
 			// as this has been recognized to be a key variable, a new
 			// instance of key variables is created and its fields are
 			// filled in
-			newRegister := pgnKeyVar {title, variable}
-			histDirective = append (histDirective, newRegister)
-		
+			newRegister := pgnKeyVar{title, variable}
+			histDirective = append(histDirective, newRegister)
+
 			// and move forward in the string
 			histCommandLine = histCommandLine[tag[1]:]
-		} else if reHistogramCmdCase.MatchString (histCommandLine) {
+		} else if reHistogramCmdCase.MatchString(histCommandLine) {
 
-			tag := reHistogramCmdCase.FindStringSubmatchIndex (histCommandLine)
+			tag := reHistogramCmdCase.FindStringSubmatchIndex(histCommandLine)
 
 			// extract the title and the definition with all cases
 			title := histCommandLine[tag[2]:tag[3]]
@@ -423,31 +431,31 @@ func parseHistCommandLine (histCommandLine string) (histDirective []pgnHistogram
 
 			// create an empty slice of cases
 			var expressions []pgnKeyCase
-			
-			// process each case separately
-			for ; reHistogramCmdSubcase.MatchString (cases); {
 
-				subtag := reHistogramCmdSubcase.FindStringSubmatchIndex (cases)
+			// process each case separately
+			for reHistogramCmdSubcase.MatchString(cases) {
+
+				subtag := reHistogramCmdSubcase.FindStringSubmatchIndex(cases)
 
 				// create a case and add it to the slice of
 				// cases specifying this title and this case
-				expressions = append (expressions,
-					pgnKeyCase {cases[subtag[2]:subtag[3]],
-						cases [subtag[4]:subtag[5]]})
-				
+				expressions = append(expressions,
+					pgnKeyCase{cases[subtag[2]:subtag[3]],
+						cases[subtag[4]:subtag[5]]})
+
 				// and move forward in the string
-				cases = cases [subtag[1]:]
+				cases = cases[subtag[1]:]
 			}
 
 			// create a new instance of cases to store this
 			// specification
-			histDirective = append (histDirective,
-				pgnKeyCases {title, expressions})
+			histDirective = append(histDirective,
+				pgnKeyCases{title, expressions})
 
 			// and move forward in the original string
-			histCommandLine = histCommandLine [tag[1]:]
+			histCommandLine = histCommandLine[tag[1]:]
 		} else {
-			log.Fatalf (" Syntax error in the histogram directive: '%v'\n",
+			log.Fatalf(" Syntax error in the histogram directive: '%v'\n",
 				histCommandLine)
 		}
 	}
@@ -459,32 +467,32 @@ func parseHistCommandLine (histCommandLine string) (histDirective []pgnHistogram
 // Compute a histogram with the information given in the specified histogram
 // command line using the games stored in the receiver. It returns an instance
 // of a histogram
-func (games *PgnCollection) ComputeHistogram (histCommandLine string) Histogram {
+func (games *PgnCollection) ComputeHistogram(histCommandLine string) Histogram {
 
 	// create a new histogram
-	hist := NewHistogram ()
+	hist := NewHistogram()
 
 	// process the histogram command line to get the registers with the
 	// information of every directive provided by the user
-	histRegisters := parseHistCommandLine (histCommandLine)
-	
+	histRegisters := parseHistCommandLine(histCommandLine)
+
 	// process all games in the current collection
-	for _, game := range (games.slice) {
+	for _, game := range games.slice {
 
 		// create a key to be used to access the histogram. Make it
 		// initially empty
 		var key []string
-		
+
 		// and now, for every register
-		for _, register := range (histRegisters) {
+		for _, register := range histRegisters {
 
 			// retrieve the value of the variable in this register
-			key = append (key, register.GetKey (&game))
+			key = append(key, register.GetKey(&game))
 		}
 
 		// and now, annotate that one sample was observed for this
 		// particular key
-		hist.Increment (key, 1)
+		hist.Increment(key, 1)
 	}
 
 	return hist
@@ -498,40 +506,41 @@ func (games *PgnCollection) ComputeHistogram (histCommandLine string) Histogram 
 
 // this is an auxiliary function used in text/templates to generate slices of
 // strings to be given as argument to other methods
-func (games *PgnCollection) GetSlice (fields... string) []string {
+func (games *PgnCollection) GetSlice(fields ...string) []string {
 	return fields
 }
 
 // returns a table according to the specification given in first place. Columns
 // are populated with the tags given in fields. It is intended to be used in
 // ascii table templates
-func (games *PgnCollection) GetTable (specline string, fields []string) tbl.Tbl {
+func (games *PgnCollection) GetTable(specline string, fields []string) tbl.Tbl {
 
 	// Create a table according to the given specification
-	table, err := tbl.NewTable (specline); if err != nil {
-		log.Fatal (" Fatal error while constructing the table")
+	table, err := tbl.NewTable(specline)
+	if err != nil {
+		log.Fatal(" Fatal error while constructing the table")
 	}
 
 	// Add the header
-	table.AddRow (fields)
-	table.TopRule ()
+	table.AddRow(fields)
+	table.TopRule()
 
 	// Now, add a row per game
 	for idx, game := range games.slice {
-		
+
 		// show a separator every ten lines to make the table easier to
 		// read
-		if idx>0 && idx%10==0 {
-			table.MidRule ()
+		if idx > 0 && idx%10 == 0 {
+			table.MidRule()
 		}
 
 		// and show here the information from the specified fields for
 		// this game
-		table.AddRow (game.getFields (fields))
+		table.AddRow(game.getFields(fields))
 	}
 
 	// End the table and return the table as a string
-	table.BottomRule ()
+	table.BottomRule()
 	return table
 }
 
@@ -539,16 +548,18 @@ func (games *PgnCollection) GetTable (specline string, fields []string) tbl.Tbl 
 // template file with information of all games in this collection. The template
 // acknowledges all tags of a pgngame plus others. For a full description, see
 // the manual.
-func (games *PgnCollection) GamesToWriterFromTemplate (dst io.Writer, templateFile string) {
+func (games *PgnCollection) GamesToWriterFromTemplate(dst io.Writer, templateFile string) {
 
 	// access a template and parse its contents
-	template, err := template.ParseFiles (templateFile); if err != nil {
-		log.Fatal (err)
+	template, err := template.ParseFiles(templateFile)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// and now execute the template
-	err = template.Execute (dst, games); if err != nil {
-		log.Fatal (err)
+	err = template.Execute(dst, games)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -556,32 +567,34 @@ func (games *PgnCollection) GamesToWriterFromTemplate (dst io.Writer, templateFi
 // template file with information of all games in this collection. The template
 // acknowledges all tags of a pgngame plus others. For a full description, see
 // the manual.
-func (games *PgnCollection) GamesToFileFromTemplate (dst, templateFile string) {
+func (games *PgnCollection) GamesToFileFromTemplate(dst, templateFile string) {
 
 	// access a template and parse its contents
-	template, err := template.ParseFiles (templateFile); if err != nil {
-		log.Fatal (err)
+	template, err := template.ParseFiles(templateFile)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// check if the file exists
 	if _, err = os.Stat(dst); err == nil {
-		log.Fatalf ("The file '%v' already exists", dst)
+		log.Fatalf("The file '%v' already exists", dst)
 	}
 
 	// now, open the file in read/write mode
-	file, err := os.Create(dst); if err != nil {
-		log.Fatalf ("It was not possible to create the file '%v'", dst)
+	file, err := os.Create(dst)
+	if err != nil {
+		log.Fatalf("It was not possible to create the file '%v'", dst)
 	}
 
 	// make sure the file is closed before leaving
-	defer file.Close ()
+	defer file.Close()
 
 	// and now execute the template
-	err = template.Execute (file, games); if err != nil {
-		log.Fatal (err)
+	err = template.Execute(file, games)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
-
 
 /* Local Variables: */
 /* mode:go */
