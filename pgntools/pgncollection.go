@@ -5,7 +5,7 @@
   -----------------------------------------------------------------------------
 
   Started on  <Sat May  9 16:50:49 2015 Carlos Linares Lopez>
-  Last update <martes, 29 marzo 2016 21:07:39 Carlos Linares Lopez (clinares)>
+  Last update <sábado, 07 mayo 2016 17:26:19 Carlos Linares Lopez (clinares)>
   -----------------------------------------------------------------------------
 
   $Id::                                                                      $
@@ -503,6 +503,26 @@ func (games *PgnCollection) ComputeHistogram(histCommandLine string) Histogram {
 // All the following methods are used to handle templates both for generating
 // ascii and LaTeX output
 // ----------------------------------------------------------------------------
+
+// this function is equivalent to the homonym function defined for PgnGame. It
+// returns the empty string if the given name is not defined as a tag in the
+// first game of this collection and the value of the tag (casted to a string)
+// otherwise. This function assumes that all games within the same collection
+// share the same tags.
+func (games *PgnCollection) GetTagValue(name string) string {
+
+	// first, attempt at reading the specified tag from the first game of
+	// the collection
+	val, err := games.slice[0].GetTagValue(name)
+
+	// if such tag does not exist, then return the empty string
+	if err != nil {
+		return ""
+	}
+
+	// otherwise, return its value as a string
+	return string(val.(constString))
+}
 
 // this is an auxiliary function used in text/templates to generate slices of
 // strings to be given as argument to other methods

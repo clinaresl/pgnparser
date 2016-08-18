@@ -4,12 +4,18 @@
 	administrative) information in addition to the name of both
 	players, their elo score and the final result.
 
-	In other words, it provides ONLY basic information about each
-	game
-
+	Games from lichess do not record the current time when the
+	game was played, whereas fics does. Hence, whether the tag
+	"Time" is defined or not is taken into account to set up the
+	table to show accordingly
+	
 */}}
 
+{{if ne (.GetTagValue "Time") ""}} 
 {{.GetTable "|cc|lr|lr|c|c|c|c|" (.GetSlice "Date" "Time" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
+{{else}}
+{{.GetTable "|c|lr|lr|c|c|c|c|" (.GetSlice "Date" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
+{{end}}
 
 # Games found: {{.Len}}
 {{""}}
