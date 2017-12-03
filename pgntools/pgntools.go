@@ -27,10 +27,10 @@ import (
 	"strconv" // to convert from strings to other types
 
 	// import a user package to manage paths
-	"bitbucket.org/clinares/pgnparser/fstools"
+	"bitbucket.org/pgnparser/fstools"
 
 	// import the parser of propositional formulae
-	"bitbucket.org/clinares/pgnparser/pfparser"
+	"bitbucket.org/pgnparser/pfparser"
 )
 
 // global variables

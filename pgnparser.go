@@ -27,10 +27,10 @@ import (
 	"os"   // operating system services
 
 	// import a package to manage paths
-	"bitbucket.org/clinares/pgnparser/fstools"
+	"bitbucket.org/pgnparser/fstools"
 
 	// also use several tools for handling games in pgn format
-	"bitbucket.org/clinares/pgnparser/pgntools"
+	"bitbucket.org/pgnparser/pgntools"
 )
 
 // global variables
