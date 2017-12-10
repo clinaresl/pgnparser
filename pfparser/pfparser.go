@@ -159,7 +159,7 @@ func (constant ConstInteger) Less(right RelationalInterface) TypeBool {
 	// verify that both types are compatible
 	value, ok = right.(ConstInteger)
 	if !ok {
-		log.Fatal("Type mismatch")
+		log.Fatal("Type mismatch in pfparser.go::Less (ConstInteger)")
 	}
 
 	return int32(constant) < int32(value)
@@ -175,7 +175,7 @@ func (constant ConstInteger) Equal(right RelationalInterface) TypeBool {
 	// verify that both types are compatible
 	value, ok = right.(ConstInteger)
 	if !ok {
-		log.Fatal("Type mismatch")
+		log.Fatal("Type mismatch in pfparser.go::Equal (ConstInteger)")
 	}
 
 	return int32(constant) == int32(value)
@@ -199,7 +199,7 @@ func (constant ConstString) Less(right RelationalInterface) TypeBool {
 	// verify that both types are compatible
 	value, ok = right.(ConstString)
 	if !ok {
-		log.Fatal("Type mismatch")
+		log.Fatal("Type mismatch in pfparser.go::Less (ConstString)")
 	}
 
 	return string(constant) < string(value)
@@ -215,7 +215,7 @@ func (constant ConstString) Equal(right RelationalInterface) TypeBool {
 	// verify that both types are compatible
 	value, ok = right.(ConstString)
 	if !ok {
-		log.Fatal("Type mismatch")
+		log.Fatal("Type mismatch in pfparser.go::Equal (ConstString)")
 	}
 
 	return string(constant) == string(value)
@@ -231,7 +231,7 @@ func (constant ConstString) In(right RelationalInterface) TypeBool {
 	// verify that both types are compatible
 	value, ok = right.(ConstString)
 	if !ok {
-		log.Fatal("Type mismatch")
+		log.Fatal("Type mismatch in pfparser.go::In (ConstString)")
 	}
 
 	return TypeBool(strings.Contains(string(value), string(constant)))
@@ -247,7 +247,7 @@ func (operand TypeBool) And(right LogicalInterface) TypeBool {
 	// verify that both types are compatible
 	value, ok = right.(TypeBool)
 	if !ok {
-		log.Fatal("Type mismatch")
+		log.Fatal("Type mismatch in pfparser.go::And (TypeBool)")
 	}
 
 	return TypeBool(bool(operand) && bool(value))
@@ -263,7 +263,7 @@ func (operand TypeBool) Or(right LogicalInterface) TypeBool {
 	// verify that both types are compatible
 	value, ok = right.(TypeBool)
 	if !ok {
-		log.Fatal("Type mismatch")
+		log.Fatal("Type mismatch in pfparser.go::Or (TypeBool)")
 	}
 
 	return TypeBool(bool(operand) || bool(value))

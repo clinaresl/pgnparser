@@ -41,6 +41,7 @@ var EXIT_FAILURE int = 1     // exit with failure
 
 // Options
 var pgnfile string       // base directory
+var showboard int = 0    // number of moves between boards
 var tableTemplate string // file with the table template
 var latexTemplate string // file with the latex template
 var query string         // select query to filter games
@@ -61,6 +62,9 @@ func init() {
 
 	// Flag to store the pgn file to parse
 	flag.StringVar(&pgnfile, "file", "", "pgn file to parse. While this utility is expected to be generic, it specifically adheres to the format of ficsgames.org")
+
+	// Flag to store the number of moves between boards
+	flag.IntVar(&showboard, "show-board", 0, "if given, the board is shown for each game between this number of consecutive plies. The board is not shown by default")
 
 	// Flag to store the template to use to generate the ascii table
 	flag.StringVar(&tableTemplate, "table", "templates/table/simple.tpl", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
@@ -302,7 +306,7 @@ func main() {
 	verify()
 
 	// process the contents of the given file
-	games := pgntools.GetGamesFromFile(pgnfile, query, sort, verbose)
+	games := pgntools.GetGamesFromFile(pgnfile, showboard, query, sort, verbose)
 
 	// show a table with information of the games been processed. For this,
 	// a template is used: tableTemplate contains the location of a default

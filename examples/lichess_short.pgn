@@ -1,0 +1,108 @@
+[Event "Rated game"]
+[Site "http://lichess.org/I9Smp1Zz"]
+[Date "2016.05.06"]
+[White "clinares"]
+[Black "ChecksMix"]
+[Result "1/2-1/2"]
+[WhiteElo "2005"]
+[BlackElo "2070"]
+[PlyCount "142"]
+[Variant "Standard"]
+[TimeControl "180+0"]
+[ECO "B23"]
+[Opening "Sicilian Defense: Closed #2"]
+[Termination "Normal"]
+
+1. e4 c5 2. Nc3 e6 3. g3 Qc7 4. Bg2 a6 5. d3 b5 6. Nge2 Bb7 7. O-O Nf6 8. h3 Nc6 9. f4 O-O-O 10. g4 d6 11. Ng3 g6 12. f5 gxf5 13. exf5 Be7 14. g5 Nd7 15. f6 Bf8 16. Bf4 Nde5 17. Qe2 Ng6 18. Bd2 Nd4 19. Qd1 Bxg2 20. Kxg2 Qc6+ 21. Kh2 Nh4 22. Nce4 d5 23. Qg4 Nhf3+ 24. Rxf3 Nxf3+ 25. Qxf3 dxe4 26. Nxe4 Bd6+ 27. Kg2 Be5 28. c3 h6 29. Rd1 hxg5 30. Nxg5 Qxf3+ 31. Nxf3 Bxf6 32. Bf4 Rdg8+ 33. Kh2 Rg7 34. Rf1 Rgh7 35. Ng1 e5 36. Bg3 Rh6 37. Kg2 Kd7 38. Rf3 Ke6 39. Re3 Bg7 40. Bf4 f6 41. Bxh6 Bxh6 42. Ne2 Bxe3 43. Ng3 Bc1 44. b3 f5 45. c4 b4 46. Ne2 Bb2 47. Kh2 Rg8 48. Ng3 Rg5 49. Nh5 Rxh5 50. Kg3 Kf6 51. h4 Kg6 52. Kf3 Rxh4 53. Ke2 Rd4 54. Ke3 Bc3 55. Ke2 f4 56. Kf3 Rxd3+ 57. Kg4 Kf6 58. Kh4 Rd2 59. Kh5 Rxa2 60. Kh6 Rb2 61. Kh7 Rxb3 62. Kg8 Bd4 63. Kf8 Rc3 64. Ke8 Rxc4 65. Kd7 b3 66. Kc6 b2 67. Kb6 Rb4+ 68. Kc6 b1=Q 69. Kd6 Rb6+ 70. Kd5 Qb3+ 71. Ke4 f3 1/2-1/2
+
+
+[Event "Rated game"]
+[Site "http://lichess.org/stMfyGGv"]
+[Date "2016.05.06"]
+[White "nionios"]
+[Black "clinares"]
+[Result "0-1"]
+[WhiteElo "1928"]
+[BlackElo "1996"]
+[PlyCount "88"]
+[Variant "Standard"]
+[TimeControl "180+0"]
+[ECO "C45"]
+[Opening "Scotch Game: Malaniuk Variation"]
+[Termination "Time forfeit"]
+
+1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Bb4+ 5. c3 Bc5 6. Be3 Bb6 7. Na3 Nge7 8. Nc4 O-O 9. Nxb6 axb6 10. Bd3 d6 11. O-O Ne5 12. Bc2 Nc4 13. Bc1 c5 14. Nb5 d5 15. b3 Ne5 16. exd5 Nxd5 17. c4 Nb4 18. Be4 Rxa2 19. Rxa2 Nxa2 20. Bb2 Nb4 21. Bxe5 Qe7 22. f4 f6 23. Bd5+ Kh8 24. Bd6 Qe3+ 25. Kh1 Nd3 26. Qf3 Qxf3 27. Rxf3 Re8 28. h3 Ne1 29. Rf2 Bf5 30. Bxb7 Bc2 31. Bc6 Re6 32. Bd7 Re4 33. Bc6 Re6 34. Bd7 Re3 35. Bc6 Rxb3 36. Re2 h6 37. Rxe1 Bd3 38. Re8+ Kh7 39. Nc7 Rb1+ 40. Kh2 Rb2 41. Ne6 Re2 42. f5 h5 43. Nxg7 Kxg7 44. Rxe2 Kh6 0-1
+
+
+[Event "Rated game"]
+[Site "http://lichess.org/6LAIFOp6"]
+[Date "2016.05.06"]
+[White "yerken"]
+[Black "clinares"]
+[Result "0-1"]
+[WhiteElo "1842"]
+[BlackElo "1989"]
+[PlyCount "38"]
+[Variant "Standard"]
+[TimeControl "180+0"]
+[ECO "A00"]
+[Opening "Hungarian Opening"]
+[Termination "Normal"]
+
+1. g3 e5 2. Bg2 d5 3. d3 c6 4. Nc3 f5 5. e4 fxe4 6. dxe4 d4 7. Nce2 Nf6 8. c3 c5 9. b4 b6 10. a4 Be7 11. a5 d3 12. axb6 dxe2 13. Qxd8+ Bxd8 14. bxa7 Nc6 15. Nf3 cxb4 16. cxb4 Bb6 17. b5 Nd4 18. Nxd4 Bxd4 19. Ra6 Bxa6 0-1
+
+
+[Event "Rated game"]
+[Site "http://lichess.org/1Lckgyma"]
+[Date "2016.05.06"]
+[White "clinares"]
+[Black "yerken"]
+[Result "1-0"]
+[WhiteElo "1982"]
+[BlackElo "1849"]
+[PlyCount "75"]
+[Variant "Standard"]
+[TimeControl "180+0"]
+[ECO "B06"]
+[Opening "Modern Defense: Three Pawns Attack"]
+[Termination "Normal"]
+
+1. e4 g6 2. d4 Bg7 3. f4 d6 4. c3 Nc6 5. Nf3 Bg4 6. Be2 Bxf3 7. Bxf3 e5 8. fxe5 dxe5 9. d5 Nce7 10. O-O Nf6 11. Bg5 h6 12. Bxf6 Bxf6 13. Bg4 Bg7 14. Nd2 O-O 15. Rc1 c6 16. c4 cxd5 17. cxd5 Qb6+ 18. Kh1 Rad8 19. Qc2 Nc6 20. dxc6 bxc6 21. Nb3 Qe3 22. Rf3 Qg5 23. Bh3 f5 24. exf5 gxf5 25. Rxf5 Rxf5 26. Bxf5 Rf8 27. g4 h5 28. Bh7+ Kh8 29. Qg6 Qxg6 30. Bxg6 hxg4 31. Rg1 e4 32. Bxe4 Bxb2 33. Rxg4 c5 34. Nxc5 Bd4 35. Ne6 Rf1+ 36. Kg2 Rg1+ 37. Kh3 Rxg4 38. Kxg4 1-0
+
+
+[Event "Rated game"]
+[Site "http://lichess.org/7Bs9dDzg"]
+[Date "2016.05.06"]
+[White "clinares"]
+[Black "specthcon"]
+[Result "1-0"]
+[WhiteElo "1973"]
+[BlackElo "1919"]
+[PlyCount "39"]
+[Variant "Standard"]
+[TimeControl "180+0"]
+[ECO "C25"]
+[Opening "Vienna Game: Omaha Gambit"]
+[Termination "Normal"]
+
+1. e4 d6 2. Nc3 e5 3. f4 Nc6 4. Nf3 Bg4 5. Bb5 Qd7 6. O-O h5 7. d4 a6 8. Bxc6 bxc6 9. d5 cxd5 10. Nxd5 Nf6 11. c4 Nxe4 12. Qc2 Nc5 13. fxe5 Rb8 14. Be3 Bf5 15. Qf2 Nd3 16. Qg3 h4 17. Qg5 Be7 18. Qxg7 Rh7 19. Qg8+ Bf8 20. Nf6+ 1-0
+
+
+[Event "Rated game"]
+[Site "http://lichess.org/eXNEU7ym"]
+[Date "2016.05.06"]
+[White "specthcon"]
+[Black "clinares"]
+[Result "0-1"]
+[WhiteElo "1928"]
+[BlackElo "1963"]
+[PlyCount "58"]
+[Variant "Standard"]
+[TimeControl "180+0"]
+[ECO "C46"]
+[Opening "Three Knights Opening"]
+[Termination "Normal"]
+
+1. e4 e5 2. Nf3 Nc6 3. Nc3 d6 4. d3 Bg4 5. Bg5 Bxf3 6. Bxd8 Bxd1 7. Nxd1 Rxd8 8. Nc3 Nf6 9. O-O-O g6 10. h3 Bg7 11. Be2 O-O 12. g4 Nd4 13. Rd2 Nxe2+ 14. Rxe2 c6 15. f3 d5 16. exd5 Nxd5 17. Ne4 Nf4 18. Reh2 Bh6 19. Kb1 Nxd3 20. cxd3 Rxd3 21. g5 Bg7 22. Nf6+ Bxf6 23. gxf6 Rxf3 24. h4 Rxf6 25. h5 g5 26. h6 Rg6 27. Rh5 f5 28. Rg1 g4 29. Re1 g3 0-1
+
+

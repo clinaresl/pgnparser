@@ -84,7 +84,7 @@ func (constant constInteger) Less(right dataInterface) bool {
 	// verify both types are compatible
 	value, ok = right.(constInteger)
 	if !ok {
-		log.Fatal(" Type mismatch")
+		log.Fatal(" Type mismatch in pgngame.go::Less (constInteger)")
 	}
 
 	return int32(constant) < int32(value)
@@ -100,7 +100,7 @@ func (constant constInteger) Equal(right dataInterface) bool {
 	// verify both types are compatible
 	value, ok = right.(constInteger)
 	if !ok {
-		log.Fatal(" Type mismatch")
+		log.Fatal(" Type mismatch in pgngame.go::Equal (constInteger)")
 	}
 
 	return int32(constant) == int32(value)
@@ -116,7 +116,7 @@ func (constant constInteger) Greater(right dataInterface) bool {
 	// verify both types are compatible
 	value, ok = right.(constInteger)
 	if !ok {
-		log.Fatal(" Type mismatch")
+		log.Fatal(" Type mismatch in pgngame.go::Greater (constInteger)")
 	}
 
 	return int32(constant) > int32(value)
@@ -132,7 +132,7 @@ func (constant constString) Less(right dataInterface) bool {
 	// verify both types are compatible
 	value, ok = right.(constString)
 	if !ok {
-		log.Fatal(" Type mismatch")
+		log.Fatal(" Type mismatch in pgngame.go::Less (constString)")
 	}
 
 	return string(constant) < string(value)
@@ -148,7 +148,7 @@ func (constant constString) Equal(right dataInterface) bool {
 	// verify both types are compatible
 	value, ok = right.(constString)
 	if !ok {
-		log.Fatal(" Type mismatch")
+		log.Fatal(" Type mismatch in pgngame.go::Equal (constString)")
 	}
 
 	return string(constant) == string(value)
@@ -164,7 +164,7 @@ func (constant constString) Greater(right dataInterface) bool {
 	// verify both types are compatible
 	value, ok = right.(constString)
 	if !ok {
-		log.Fatal(" Type mismatch")
+		log.Fatal(" Type mismatch in pgngame.go::Greater (constString)")
 	}
 
 	return string(constant) > string(value)
@@ -172,7 +172,17 @@ func (constant constString) Greater(right dataInterface) bool {
 
 // Produces a string with the actual content of this move
 func (move PgnMove) String() string {
-	return fmt.Sprintf("%v ", move.moveValue)
+	var output string
+
+	// first, show the ply
+	if move.color == 1 {
+		output += fmt.Sprintf("%v.", move.number)
+	} else {
+		output += fmt.Sprintf("%v. ... ", move.number)
+	}
+
+	output += fmt.Sprintf("%v ", move.moveValue)
+	return output
 }
 
 // Produces a string with information of this outcome as a pair of
@@ -195,6 +205,32 @@ func (game *PgnGame) GetMoves() []PgnMove {
 // Return an instance of PgnOutcome with the result of this game
 func (game *PgnGame) GetOutcome() PgnOutcome {
 	return game.outcome
+}
+
+// Parse all moves of this game. Show the board between showboard consecutive
+// plies
+func (game *PgnGame) ParseMoves(plies int) {
+
+	nrplies := 0
+
+	board := InitPgnBoard()
+
+	for _, move := range game.moves {
+		board.UpdateBoard(move, plies > 0)
+
+		// show the board on the console?
+		nrplies += 1 // incremente the number of plies processed
+		if plies > 0 && nrplies%plies == 0 {
+			fmt.Printf("%v\n\n", board)
+		}
+	}
+
+	// finally, if plies is positive, show the end position unless it was
+	// incidentally shown within the previous loops
+	if plies > 0 && nrplies%plies != 0 {
+
+		fmt.Printf("%v\n\n", board)
+	}
 }
 
 // Templates
@@ -334,7 +370,7 @@ func (game *PgnGame) getAndCheckTag(tagname string) dataInterface {
 
 	// in an error was found, then issue a fatal error
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("'%v' not found!", tagname))
+		log.Fatalf(fmt.Sprintf("'%v' not found in game\n '%v'!", tagname, game))
 	}
 
 	// otherwise, return the value of this tagname

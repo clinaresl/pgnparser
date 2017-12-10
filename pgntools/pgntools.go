@@ -309,10 +309,11 @@ func getGameFromString(pgn string, verbose bool) PgnGame {
 // Return the contents of all chess games that satisfiy the given query from the
 // specified string which shall be formattted in PGN format. Games are sorted
 // according to the criteria given in sort if any is given; if not, they are
-// listed in the same order they were found in the file.
+// listed in the same order they were found in the file. For each game, the
+// board is shown every showboard plies
 //
 // In case verbose is given, it shows additional information
-func GetGamesFromString(pgn string, query string, sortString string, verbose bool) (games PgnCollection) {
+func GetGamesFromString(pgn string, showboard int, query string, sortString string, verbose bool) (games PgnCollection) {
 
 	var err error
 	var logEvaluator pfparser.LogicalEvaluator
@@ -372,6 +373,9 @@ func GetGamesFromString(pgn string, query string, sortString string, verbose boo
 			(query != "" &&
 				logEvaluator.Evaluate(symtable) == pfparser.TypeBool(true)) {
 
+			// parse all moves of this game
+			game.ParseMoves(showboard)
+
 			games.slice = append(games.slice, game)
 			games.nbGames += 1
 		}
@@ -399,17 +403,18 @@ func GetGamesFromString(pgn string, query string, sortString string, verbose boo
 // Return the contents of all chess games that satisfiy the given query from the
 // specified file which shall be formattted in PGN format. Games are sorted
 // according to the criteria given in sort if any is given; if not, they are
-// listed in the same order they were found in the file.
+// listed in the same order they were found in the file. For each game, the
+// board is shown every showboard plies
 //
 // In case verbose is given, it shows additional information
-func GetGamesFromFile(pgnfile string, query string, sortString string, verbose bool) (games PgnCollection) {
+func GetGamesFromFile(pgnfile string, showboard int, query string, sortString string, verbose bool) (games PgnCollection) {
 
 	// Open and read the given file and retrieve its contents
 	contents := fstools.Read(pgnfile, -1)
 	strContents := string(contents[:len(contents)])
 
 	// and now, just return the results of parsing these contents
-	return GetGamesFromString(strContents, query, sortString, verbose)
+	return GetGamesFromString(strContents, showboard, query, sortString, verbose)
 }
 
 /* Local Variables: */
