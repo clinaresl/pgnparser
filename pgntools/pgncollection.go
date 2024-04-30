@@ -29,10 +29,10 @@ import (
 	"text/template" // go facility for processing templates
 
 	// import the parser of propositional formulae
-	"bitbucket.org/pgnparser/pfparser"
+	"github.com/clinaresl/pgnparser/pfparser"
 
 	// import a package to automatically create tables
-	"bitbucket.org/pgnparser/tbl"
+	"github.com/clinaresl/pgnparser/tbl"
 )
 
 // global variables
