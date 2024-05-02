@@ -42,14 +42,14 @@ var literal map[int]string
 // which preserve their color) can access a specific location of the board. For
 // example:
 //
-//    threats ["e4"][WPAWN] = [19][20, 12][21]
+//	threats ["e4"][WPAWN] = [19][20, 12][21]
 //
 // which means that a white pawn can access location "e4" from squares 12 (e2),
 // 19 (d3, by capturing a piece in e4), 20 (e3) and 21 (f3, again by capturing).
 //
 // Note that all the locations from which e4 can be accessed are stored in
 // separate lists. Each list represents a specific direction.
-var threats map[string]map[int][][]int
+var threats map[string]map[content][][]int
 
 // the following regexp captures all the information given from the textual
 // description of a move in different groups as follows:
@@ -62,33 +62,41 @@ var threats map[string]map[int][][]int
 // Group #6: Castling (either 'O-O' or 'O-O-O')
 var reTextualMove = regexp.MustCompile(`([PNBRQK]?)([a-h]?[1-8]?)(x?)([a-h][1-8]|[NBRQK])(\=[PNBRQK])?|(O(?:-?O){1,2})[\+#]?(\s*[\!\?]+)?`)
 
-// constants
+// enum
 // ----------------------------------------------------------------------------
+
+// The content of a cell is represented by an instance of content defined as an
+// enumerated integer
+type content int
+
+// The different values of content are shown next. These symbols are
+// intentionally exported so that other people can handle chess boards using the
+// services provided by this package
 const (
-	BKING   int = -6
-	BQUEEN      = -5
-	BROOK       = -4
-	BBISHOP     = -3
-	BKNIGHT     = -2
-	BPAWN       = -1
-	BLANK       = 0 // empty square
-	WPAWN       = 1
-	WKNIGHT     = 2
-	WBISHOP     = 3
-	WROOK       = 4
-	WQUEEN      = 5
-	WKING       = 6
+	BKING content = -6 + iota
+	BQUEEN
+	BROOK
+	BBISHOP
+	BKNIGHT
+	BPAWN // -1: represent also black pieces
+	BLANK //  0: empty
+	WPAWN //  1: represent also white pieces
+	WKNIGHT
+	WBISHOP
+	WROOK
+	WQUEEN
+	WKING
 )
 
 // typedefs
 // ----------------------------------------------------------------------------
 
 // A PgnBoard consists simply of an array of 64 integers. In addition, the
-// location of both kings has to be updated. This information is used to decide
-// whether a piece is pinned or no
+// location of both kings has to be updated. This information is used to
+// determine whether a piece is pinned or not
 type PgnBoard struct {
-	squares      [64]int // contents of each square
-	wking, bking int     // location of the white and black king
+	squares      [64]content // contents of each square
+	wking, bking int         // location of the white and black king
 }
 
 // Functions
@@ -104,18 +112,18 @@ func contains(s []int, e int) bool {
 	return false
 }
 
-// return -1 one if the given piece is black and +1 otherwise
-func getColor(piece int) int {
+// return -1 if the given piece is black and +1 otherwise
+func getColor(piece content) int {
 
 	if piece < 0 { // if this piece is black
 		return -1 // return the sign of black pieces
 	}
-	return 1 // otherwise, return the sign of white pieces
+	return +1 // otherwise, return the sign of white pieces
 }
 
 // return the const representing a specific piece (ignoring color) given as a
 // string
-func getPieceIndex(piece string) int {
+func getPieceIndex(piece string) content {
 	if len(piece) == 0 { // pawns have no character! ;)
 		return WPAWN
 	}
@@ -136,8 +144,51 @@ func getPieceIndex(piece string) int {
 	return 0
 }
 
-// return a string representing a specific piece given as a const index
-func getPieceString(piece int) string {
+// Given a content and a color (either negative, for black pieces; or positive,
+// for white pieces) return the right content
+func getPieceValue(piece content, color int) content {
+	if color < 0 {
+		switch piece {
+		case WPAWN, BPAWN: // pawn
+			return BPAWN
+		case WKNIGHT, BKNIGHT: // knight
+			return BKNIGHT
+		case WBISHOP, BBISHOP: // bishop
+			return BBISHOP
+		case WROOK, BROOK: // rook
+			return BROOK
+		case WQUEEN, BQUEEN: // queen
+			return BQUEEN
+		case WKING, BKING: // king
+			return BKING
+		default:
+			log.Fatal("Unknown piece in getPieceValue")
+		}
+	} else {
+		switch piece {
+		case WPAWN, BPAWN: // pawn
+			return WPAWN
+		case WKNIGHT, BKNIGHT: // knight
+			return WKNIGHT
+		case WBISHOP, BBISHOP: // bishop
+			return WBISHOP
+		case WROOK, BROOK: // rook
+			return WROOK
+		case WQUEEN, BQUEEN: // queen
+			return WQUEEN
+		case WKING, BKING: // king
+			return WKING
+		default:
+			log.Fatal("Unknown piece in getPieceValue")
+		}
+	}
+
+	// avoid the error message by returning anything ... I know, I know ...
+	return BLANK
+}
+
+// Given a content, return a string representing it
+func getPieceString(piece content) string {
 	switch piece {
 	case BLANK:
 		return " "
@@ -182,7 +233,7 @@ func init() {
 
 			// and store the transformation from literal coordinates
 			// to integers
-			coords[string('a'+column)+string('0'+1+row)] = row*8 + column
+			coords[string('a'+byte(column))+string('0'+byte(1+row))] = row*8 + column
 		}
 	}
 
@@ -190,18 +241,18 @@ func init() {
 	// coordinates to literal coordinates
 	literal = make(map[int]string)
 	for index := 0; index < 64; index++ {
-		literal[index] = string('a'+index%8) + string('0'+1+index/8)
+		literal[index] = string('a'+byte(index%8)) + string('0'+byte(1+index/8))
 	}
 
 	// now, compute all threats
-	threats = make(map[string]map[int][][]int)
+	threats = make(map[string]map[content][][]int)
 
 	// for all squares of the board represented as a pair (row,
 	// column)
 	for row := 0; row < 8; row++ {
 		for column := 0; column < 8; column++ {
 
-			threat := make(map[int][][]int) // create an empty map
+			threat := make(map[content][][]int) // create an empty map
 
 			// and all pieces where color is ignored but for the
 			// pawns (because they are the only chess pieces which
@@ -212,17 +263,17 @@ func init() {
 				}
 				threat[piece] = getThreat(row*8+column, piece)
 			}
-			threats[string('a'+column)+string('0'+1+row)] = threat
+			threats[string('a'+byte(column))+string('0'+byte(1+row))] = threat
 		}
 	}
 }
 
-// the following function computes all the different starting locations of a
-// given piece from which it is possible to access the given target in a blank
-// chess board. These locations are stored in separate lists, each one
-// representing a specific direction. Locations within the same list are sorted
-// in ascending order of distance.
-func getThreat(target int, piece int) (locations [][]int) {
+// Compute all the different starting locations of a given piece from which it
+// is possible to access the given target in a blank chess board. These
+// locations are stored in separate lists, each one representing a specific
+// direction. Locations within the same list are sorted in ascending order of
+// distance.
+func getThreat(target int, piece content) (locations [][]int) {
 
 	// All this is rather involved, therefore each piece is handled in a
 	// different function just for the sake of readability
@@ -540,15 +591,17 @@ func getKingThreats(target int) [][]int {
 
 // returns the two qualifiers (row and column) for the given square identified
 // as an index
-func getQualifier(square int) (row, column string) {
-	row, column = string(square/8+'1'), string(square%8+'a')
-	return
+func getQualifier(square int) (string, string) {
+	return string('1' + byte(square/8)), string('a' + byte(square%8))
 }
 
-// Returns Caissa, the initial position of every chess game
-func InitPgnBoard() (board PgnBoard) {
-	board = PgnBoard{
-		[64]int{WROOK, WKNIGHT, WBISHOP, WQUEEN, WKING, WBISHOP, WKNIGHT, WROOK,
+// Methods
+// ----------------------------------------------------------------------------
+
+// Create a new board initialized with Caissa
+func NewPgnBoard() PgnBoard {
+	return PgnBoard{
+		[64]content{WROOK, WKNIGHT, WBISHOP, WQUEEN, WKING, WBISHOP, WKNIGHT, WROOK,
 			WPAWN, WPAWN, WPAWN, WPAWN, WPAWN, WPAWN, WPAWN, WPAWN,
 			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
 			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
@@ -558,20 +611,16 @@ func InitPgnBoard() (board PgnBoard) {
 			BROOK, BKNIGHT, BBISHOP, BQUEEN, BKING, BBISHOP, BKNIGHT, BROOK},
 		4,  // initial location of the white king
 		60} // initial location of the black king
-	return
 }
-
-// Methods
-// ----------------------------------------------------------------------------
 
 // return the square from which a pawn has been moved to reach the given
 // location
 //
-// In case this is a capture, the qualifier shall be used to decide the right
+// In case this is a capture, the qualifier shall be used to determine the right
 // column to look at.
 //
 // It returns a positive value in case of success and a negative value otherwise
-func (board *PgnBoard) getOriginPawn(piece int, target string, qualifier string, capture bool) int {
+func (board *PgnBoard) getOriginPawn(piece content, target string, qualifier string, capture bool) int {
 
 	// ordinary threats are stored always in the first list; whereas
 	// captures are stored in the second and third list
@@ -625,7 +674,7 @@ func (board *PgnBoard) getOriginPawn(piece int, target string, qualifier string,
 // return the square from which a knight has been moved to reach the given
 // location
 //
-// In case this is a capture, the qualifier shall be used to decide the right
+// In case this is a capture, the qualifier shall be used to determine the right
 // column to look at.
 //
 // Note that knights can be pinned! In particular, if two knights can reach the
@@ -634,7 +683,7 @@ func (board *PgnBoard) getOriginPawn(piece int, target string, qualifier string,
 // is pinned
 //
 // It returns a positive value in case of success and a negative value otherwise
-func (board *PgnBoard) getOriginKnight(piece int, target string, qualifier string, capture bool) int {
+func (board *PgnBoard) getOriginKnight(piece content, target string, qualifier string, capture bool) int {
 
 	// just traverse the only list of threats for the target location
 	for _, loc := range threats[target][piece][0] {
@@ -668,7 +717,7 @@ func (board *PgnBoard) getOriginKnight(piece int, target string, qualifier strin
 // return the square from which a piece, other than a pawn or a knight has been
 // moved to reach the given location, i.e., bishops, rooks, queens and kings
 //
-// In case this is a capture, the qualifier shall be used to decide the right
+// In case this is a capture, the qualifier shall be used to determine the right
 // column to look at.
 //
 // Note that bishops, rooks and queens can be pinned! In particular, if two
@@ -677,7 +726,7 @@ func (board *PgnBoard) getOriginKnight(piece int, target string, qualifier strin
 // solved by checking which one is pinned
 //
 // It returns a positive value in case of success and a negative value otherwise
-func (board *PgnBoard) getOriginGeneric(piece int, target string, qualifier string, capture bool) int {
+func (board *PgnBoard) getOriginGeneric(piece content, target string, qualifier string, capture bool) int {
 
 	// traverse all the different lists of this piece to reach this target
 	for _, direction := range threats[target][piece] {
@@ -727,7 +776,7 @@ func (board *PgnBoard) getOriginGeneric(piece int, target string, qualifier stri
 // necessary to make additional verifications for pawns)
 //
 // It returns a positive value in case of success and a negative value otherwise
-func (board *PgnBoard) getOrigin(piece int, target string, qualifier string, capture bool) (origin int) {
+func (board *PgnBoard) getOrigin(piece content, target string, qualifier string, capture bool) (origin int) {
 
 	// this method just traverses all threats to the target location for the
 	// given piece, returning the square where the specified piece has been
@@ -768,19 +817,18 @@ func (board *PgnBoard) getOrigin(piece int, target string, qualifier string, cap
 
 // determine whether a piece in the given location which moves to the given
 // destination is pinned or not by an attacker. A piece is pinned if after
-// removing it, the specified attacker checks the opposite king. To decide
+// removing it, the specified attacker checks the opposite king. To determine
 // whether the given piece is pinned or not, all threats starting from the king
 // location are verified.
 //
 // Since queens create the same threats than rooks and bishops, this procedure
 // makes the verification for the specified piece and, in addition, a queen.
-func (board *PgnBoard) isPinnedGeneric(location int, dest int, attacker int,
+func (board *PgnBoard) isPinnedGeneric(location int, dest int, attacker content,
 	threats [][]int) bool {
 
 	for _, threat := range threats { // for all threats
 
-		found := false // have we found the given location in this
-		// direction?
+		found := false // have we found the given location in this direction?
 
 		// and all locations in this specific direction
 		for _, square := range threat {
@@ -791,14 +839,13 @@ func (board *PgnBoard) isPinnedGeneric(location int, dest int, attacker int,
 				continue
 			}
 
-			// if we already went over the pinned location and we
-			// found now either the specified attacker or a queen of
-			// the same color, then the piece was pinned unless the
-			// piece in the given location is precisely moving along
-			// the same threat
+			// if we already went over the pinned location and we found now
+			// either the specified attacker or a queen of the same color, then
+			// the piece was pinned unless the piece in the given location is
+			// precisely moving along the same threat
 			if found && !contains(threat, dest) &&
 				(board.squares[square] == attacker ||
-					board.squares[square] == WQUEEN*getColor(attacker)) {
+					board.squares[square] == getPieceValue(WQUEEN, getColor(attacker))) {
 				return true
 			}
 
@@ -822,13 +869,14 @@ func (board *PgnBoard) isPinned(location int, dest int) bool {
 
 	// get the location of the king that might be threaten. Obviously, it
 	// should have the same color than the piece in the given location
-	//
+	var king int
+
 	// in addition, get the correct colors for the two plausible attackers:
 	// bishops and rooks. Note that queens create the same threats than the
 	// sum of this, so that it is only needed to make the verification for
 	// the first two pieces, provided that the generic procedure just check
 	// the contents of different squares also for the queen.
-	var king, bishop, rook int
+	var bishop, rook content
 	if getColor(board.squares[location]) < 0 {
 		king = board.bking
 		bishop = WBISHOP
@@ -922,10 +970,10 @@ func (board *PgnBoard) UpdateBoard(move PgnMove, showmoves bool) {
 
 			// get the square from which the move was originated
 			origin := board.getOrigin(
-				getPieceIndex(matches[1])*move.color, // piece
-				matches[4],                           // target square
-				matches[2],                           // qualifier
-				matches[3] == "x")                    // capture flag
+				getPieceValue(getPieceIndex(matches[1]), move.color), // piece
+				matches[4],        // target square
+				matches[2],        // qualifier
+				matches[3] == "x") // capture flag
 			if origin < 0 {
 				log.Fatalf("It was not possible to reproduce the move '%v'\n", move)
 			} else {
@@ -938,7 +986,7 @@ func (board *PgnBoard) UpdateBoard(move PgnMove, showmoves bool) {
 				if len(matches[5]) > 0 {
 
 					// --Promotion
-					board.squares[coords[matches[4]]] = getPieceIndex(string(matches[5][1])) * move.color
+					board.squares[coords[matches[4]]] = getPieceValue(getPieceIndex(string(matches[5][1])), move.color)
 				} else {
 
 					// --en passant capture
@@ -955,7 +1003,7 @@ func (board *PgnBoard) UpdateBoard(move PgnMove, showmoves bool) {
 					}
 
 					// copy this piece to the target square
-					board.squares[coords[matches[4]]] = getPieceIndex(matches[1]) * move.color
+					board.squares[coords[matches[4]]] = getPieceValue(getPieceIndex(matches[1]), move.color)
 
 					// finally, update the location of the
 					// king if necessary

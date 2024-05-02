@@ -36,7 +36,7 @@ import (
 // global variables
 // ----------------------------------------------------------------------------
 
-// ungrouped regexps -- they are used just to recongize different chunks of a
+// ungrouped regexps -- they are used just to recognize different chunks of a
 // string
 // ----------------------------------------------------------------------------
 // the following regexp matches a string with an arbitrary number of

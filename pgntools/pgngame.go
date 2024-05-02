@@ -212,8 +212,7 @@ func (game *PgnGame) GetOutcome() PgnOutcome {
 func (game *PgnGame) ParseMoves(plies int) {
 
 	nrplies := 0
-
-	board := InitPgnBoard()
+	board := NewPgnBoard()
 
 	for _, move := range game.moves {
 		board.UpdateBoard(move, plies > 0)
@@ -228,7 +227,6 @@ func (game *PgnGame) ParseMoves(plies int) {
 	// finally, if plies is positive, show the end position unless it was
 	// incidentally shown within the previous loops
 	if plies > 0 && nrplies%plies != 0 {
-
 		fmt.Printf("%v\n\n", board)
 	}
 }
@@ -380,9 +378,9 @@ func (game *PgnGame) getAndCheckTag(tagname string) dataInterface {
 // A field is either a tag of the receiver game or a value computed from the
 // tags. Fields which are computed from tags are:
 //
-//    Moves: number of moves (two plies each)
-//    Result: consists of a utf-8 string which contains the final result of the
-//    game
+//	Moves: number of moves (two plies each)
+//	Result: consists of a utf-8 string which contains the final result of the
+//	game
 //
 // This method is used to compute arbitrary fields to be shown in ascii tables
 func (game *PgnGame) getField(field string) string {
