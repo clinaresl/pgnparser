@@ -30,9 +30,8 @@ import (
 
 	// import the parser of propositional formulae
 	"github.com/clinaresl/pgnparser/pfparser"
-
-	// import a package to automatically create tables
-	"github.com/clinaresl/pgnparser/tbl"
+	// import my favourite package to automatically create tables
+	"github.com/clinaresl/table"
 )
 
 // global variables
@@ -526,24 +525,25 @@ func (games *PgnCollection) GetTagValue(name string) string {
 
 // this is an auxiliary function used in text/templates to generate slices of
 // strings to be given as argument to other methods
-func (games *PgnCollection) GetSlice(fields ...string) []string {
+func (games *PgnCollection) GetSlice(fields ...any) []any {
 	return fields
 }
 
 // returns a table according to the specification given in first place. Columns
 // are populated with the tags given in fields. It is intended to be used in
 // ascii table templates
-func (games *PgnCollection) GetTable(specline string, fields []string) tbl.Tbl {
+func (games *PgnCollection) GetTable(specline string, fields []any) table.Table {
 
 	// Create a table according to the given specification
-	table, err := tbl.NewTable(specline)
+	table, err := table.NewTable(specline)
 	if err != nil {
 		log.Fatal(" Fatal error while constructing the table")
 	}
 
 	// Add the header
-	table.AddRow(fields)
-	table.TopRule()
+	table.AddThickRule()
+	table.AddRow(fields...)
+	table.AddDoubleRule()
 
 	// Now, add a row per game
 	for idx, game := range games.slice {
@@ -551,17 +551,17 @@ func (games *PgnCollection) GetTable(specline string, fields []string) tbl.Tbl {
 		// show a separator every ten lines to make the table easier to
 		// read
 		if idx > 0 && idx%10 == 0 {
-			table.MidRule()
+			table.AddSingleRule()
 		}
 
 		// and show here the information from the specified fields for
 		// this game
-		table.AddRow(game.getFields(fields))
+		table.AddRow(game.getFields(fields)...)
 	}
 
 	// End the table and return the table as a string
-	table.BottomRule()
-	return table
+	table.AddThickRule()
+	return *table
 }
 
 // Writes into the specified writer the result of instantiating the given

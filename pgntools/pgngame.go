@@ -430,15 +430,23 @@ func (game *PgnGame) getField(field string) string {
 }
 
 // Return a slice of strings with the values of all given fields. This method is
-// used to compute the fields of a game to be shown on an ascii table
-func (game *PgnGame) getFields(fields []string) (result []string) {
+// used to compute the fields of a game to be shown on an ascii table.
+//
+// Note that the returned slice contain instances of any. This is necessary
+// because []string is not a subtype of []any, i.e., slices are type-invariant
+// in Go (and other langs).
+func (game *PgnGame) getFields(fields []any) (result []any) {
 
 	// iterate over all fields
 	for _, field := range fields {
 
 		// compute the value of the next field and add it to the slice
 		// to return
-		result = append(result, game.getField(field))
+		field_str, ok := field.(string)
+		if !ok {
+			log.Fatalf(fmt.Sprintf(" It was not possible to convert the field '%v' into a string", field))
+		}
+		result = append(result, game.getField(field_str))
 	}
 
 	// return the slice of strings computed so far

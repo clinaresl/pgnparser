@@ -12,9 +12,9 @@
 */}}
 
 {{if ne (.GetTagValue "Time") ""}} 
-{{.GetTable "|cc|lr|lr|c|c|c|c|" (.GetSlice "Date" "Time" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
+{{.GetTable "|c c|l r|l r|c|c|c|c|" (.GetSlice "Date" "Time" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
 {{else}}
-{{.GetTable "|c|lr|lr|c|c|c|c|" (.GetSlice "Date" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
+{{.GetTable "|c|l r|l r|c|c|c|c|" (.GetSlice "Date" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
 {{end}}
 
 # Games found: {{.Len}}
