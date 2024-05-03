@@ -405,11 +405,6 @@ func (f PgnFile) Games() (*PgnCollection, error) {
 				return nil, err
 			}
 
-			// parse all moves and ensure the transcription is correct so that
-			// the execution is not played ---and this is achieved by providing
-			// a huge number of plies to ParseMoves
-			game.ParseMoves(-1)
-
 			// add this game to the collection of games to return
 			games = append(games, *game)
 

@@ -21,7 +21,8 @@ package pgntools
 import (
 	"errors" // for signaling errors
 	"fmt"    // printing msgs
-	"log"    // logging services
+	"io"
+	"log" // logging services
 	// to conver int to string
 )
 
@@ -227,27 +228,35 @@ func (game *PgnGame) GetOutcome() PgnOutcome {
 	return game.outcome
 }
 
-// Parse all moves of this game. Show the board between showboard consecutive
-// plies in case a positive value is given to plies
-func (game *PgnGame) ParseMoves(plies int) {
+// Play this game. Show the board between showboard consecutive plies in case a
+// positive value is given on the specified writer. In case an error is found, a
+// message is shown and execution is halted
+func (game *PgnGame) Play(plies int, writer io.Writer) {
 
 	nrplies := 0
 	board := NewPgnBoard()
 
 	for _, move := range game.moves {
-		board.UpdateBoard(move, plies > 0)
+		if err := board.UpdateBoard(move); err != nil {
+			log.Fatalln(err)
+		}
 
-		// show the board on the console?
+		// show the move
+		if plies > 0 {
+			io.WriteString(writer, fmt.Sprintf("%v\n", move))
+		}
+
+		// show the board on the output?
 		nrplies += 1 // incremente the number of plies processed
 		if plies > 0 && nrplies%plies == 0 {
-			fmt.Printf("%v\n\n", board)
+			io.WriteString(writer, fmt.Sprintf("%v\n\n", board))
 		}
 	}
 
 	// finally, if plies is positive, show the end position unless it was
 	// incidentally shown within the previous loops
 	if plies > 0 && nrplies%plies != 0 {
-		fmt.Printf("%v\n\n", board)
+		io.WriteString(writer, fmt.Sprintf("%v\n\n", board))
 	}
 }
 

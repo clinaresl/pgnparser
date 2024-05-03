@@ -937,24 +937,15 @@ func (board *PgnBoard) updateLongCastling(color int) {
 }
 
 // The following method updates the contents of the current board after making
-// the given move as retrieved directly from a pgn game. If showmoves is true,
-// then each move is shown on the standard output
-func (board *PgnBoard) UpdateBoard(move PgnMove, showmoves bool) {
-
-	if showmoves {
-		fmt.Printf(" %v\n", move)
-	}
+// the given move. In case it is not possible to execute the given move, then an
+// error is returned
+func (board *PgnBoard) UpdateBoard(move PgnMove) (err error) {
 
 	if reTextualMove.MatchString(move.moveValue) {
 
-		// get the different parts of this move necessary to reproduce
-		// it on the board
+		// get the different parts of this move necessary to reproduce it on the
+		// board
 		matches := reTextualMove.FindStringSubmatch(move.moveValue)
-
-		// fmt.Println()
-		// for idx, value := range matches {
-		// 	fmt.Printf("\t\tmatches [%v]: %v\n", idx, value)
-		// }
 
 		if matches[6] == "O-O" {
 
@@ -975,14 +966,14 @@ func (board *PgnBoard) UpdateBoard(move PgnMove, showmoves bool) {
 				matches[2],        // qualifier
 				matches[3] == "x") // capture flag
 			if origin < 0 {
-				log.Fatalf("It was not possible to reproduce the move '%v'\n", move)
+				return fmt.Errorf("It was not possible to reproduce the move '%v'\n", move)
 			} else {
 
 				// First, remove the piece from its origin
 				board.squares[origin] = BLANK
 
-				// now, place the same piece in the target
-				// unless this move resulted in a promotion
+				// now, place the same piece in the target unless this move
+				// resulted in a promotion
 				if len(matches[5]) > 0 {
 
 					// --Promotion
@@ -1005,8 +996,7 @@ func (board *PgnBoard) UpdateBoard(move PgnMove, showmoves bool) {
 					// copy this piece to the target square
 					board.squares[coords[matches[4]]] = getPieceValue(getPieceIndex(matches[1]), move.color)
 
-					// finally, update the location of the
-					// king if necessary
+					// finally, update the location of the king if necessary
 					if matches[1] == "K" {
 
 						if move.color < 0 {
@@ -1019,10 +1009,11 @@ func (board *PgnBoard) UpdateBoard(move PgnMove, showmoves bool) {
 			}
 		}
 	} else {
-		log.Fatalf("\t '%v' not parsed!\n", move.moveValue)
+		return fmt.Errorf(" '%v' not parsed!\n", move.moveValue)
 	}
 
-	return
+	// Otherwise the move was properly executed without error
+	return nil
 }
 
 // show a graphical view of this chess board

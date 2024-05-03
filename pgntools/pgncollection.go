@@ -20,6 +20,7 @@
 package pgntools
 
 import (
+	"fmt"
 	"io"  // io streams
 	"log" // logging services
 
@@ -131,6 +132,30 @@ func (games *PgnCollection) GetGame(index int) PgnGame {
 // Return the number of items in the collection
 func (games PgnCollection) Len() int {
 	return games.nbGames
+}
+
+// Methods
+// ----------------------------------------------------------------------------
+
+// Play this collection of games on the given writer showing the board every
+// number of given plies
+func (c PgnCollection) Play(plies int, writer io.Writer) {
+
+	// Just play each game
+	for _, igame := range c.slice {
+
+		// First, show the tags of this game only in case a strictly positive
+		// value is given
+		if plies > 0 {
+			for name, value := range igame.GetTags() {
+				io.WriteString(writer, fmt.Sprintf(" %v: %v\n", name, value))
+			}
+			io.WriteString(writer, "\n")
+		}
+
+		// Show the game
+		igame.Play(plies, writer)
+	}
 }
 
 // -- Sorting
