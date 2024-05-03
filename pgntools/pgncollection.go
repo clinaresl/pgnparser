@@ -141,21 +141,49 @@ func (games PgnCollection) Len() int {
 // number of given plies
 func (c PgnCollection) Play(plies int, writer io.Writer) {
 
-	// Just play each game
 	for _, igame := range c.slice {
 
-		// First, show the tags of this game only in case a strictly positive
-		// value is given
-		if plies > 0 {
-			for name, value := range igame.GetTags() {
-				io.WriteString(writer, fmt.Sprintf(" %v: %v\n", name, value))
+		for name, value := range igame.GetTags() {
+			fmt.Printf(" %v: %v\n", name, value)
+		}
+		fmt.Println()
+
+		board := NewPgnBoard()
+		imoves := igame.GetMoves()
+
+		idx := 0
+		for idx < len(imoves)/plies {
+			fmt.Println(igame.prettyMoves((idx * plies), (idx+1)*plies))
+
+			for jdx := idx * plies; jdx < (idx+1)*plies; jdx += 1 {
+				board.UpdateBoard(imoves[jdx])
 			}
-			io.WriteString(writer, "\n")
+			fmt.Println(board)
+			fmt.Println()
+
+			idx += 1
 		}
 
-		// Show the game
-		igame.Play(plies, writer)
+		if idx*plies < len(imoves) {
+			fmt.Println(igame.prettyMoves(idx*plies, len(imoves)))
+		}
 	}
+
+	// // Just play each game
+	// for _, igame := range c.slice {
+
+	// 	// First, show the tags of this game only in case a strictly positive
+	// 	// value is given
+	// 	if plies > 0 {
+	// 		for name, value := range igame.GetTags() {
+	// 			io.WriteString(writer, fmt.Sprintf(" %v: %v\n", name, value))
+	// 		}
+	// 		io.WriteString(writer, "\n")
+	// 	}
+
+	// 	// Show the game
+	// 	igame.Play(plies, writer)
+	// }
 }
 
 // -- Sorting

@@ -20,7 +20,9 @@
 // chess games in PGN format
 package pgntools
 
-import "regexp"
+import (
+	"regexp"
+)
 
 // global variables
 // ----------------------------------------------------------------------------
@@ -91,6 +93,75 @@ var reHistogramCmdVar = regexp.MustCompile(`^\s*([A-Za-z0-9]+)\s*:\s*%([A-Za-z]+
 // which consists of a number of different regular expressions
 var reHistogramCmdCase = regexp.MustCompile(`^\s*(?P<title>[A-Za-z0-9]+)\s*:\s*\[(?P<cases>[^\]]+)\]`)
 var reHistogramCmdSubcase = regexp.MustCompile(`^\s*(?P<subtitle>[A-Za-z0-9]+)\s*:\s*{(?P<expression>[^}]+)}\s*`)
+
+// functions
+// ----------------------------------------------------------------------------
+
+// Initializes various structures necessary for the proper execution of this
+// package: 1. the map of coordinates to specific cells in the chess board; 2.
+// the utf-8 representation of each content
+func init() {
+
+	// Coordinates
+
+	// first, initialize the transformation from literal coordinates to
+	// indexes used to access a PgnBoard
+	coords = make(map[string]int)
+	for row := 0; row < 8; row++ {
+		for column := 0; column < 8; column++ {
+
+			// and store the transformation from literal coordinates
+			// to integers
+			coords[string('a'+byte(column))+string('0'+byte(1+row))] = row*8 + column
+		}
+	}
+
+	// second, makes the opposite and compute the translation from integer
+	// coordinates to literal coordinates
+	literal = make(map[int]string)
+	for index := 0; index < 64; index++ {
+		literal[index] = string('a'+byte(index%8)) + string('0'+byte(1+index/8))
+	}
+
+	// now, compute all threats
+	threats = make(map[string]map[content][][]int)
+
+	// for all squares of the board represented as a pair (row,
+	// column)
+	for row := 0; row < 8; row++ {
+		for column := 0; column < 8; column++ {
+
+			threat := make(map[content][][]int) // create an empty map
+
+			// and all pieces where color is ignored but for the
+			// pawns (because they are the only chess pieces which
+			// have direction) are computed
+			for piece := BKING; piece <= WKING; piece++ {
+				if piece == BLANK {
+					continue
+				}
+				threat[piece] = getThreat(row*8+column, piece)
+			}
+			threats[string('a'+byte(column))+string('0'+byte(1+row))] = threat
+		}
+	}
+
+	// utf-8 representation of contents
+	utf8 = make(map[content]rune)
+	utf8[BKING] = '♚'
+	utf8[BQUEEN] = '♛'
+	utf8[BROOK] = '♜'
+	utf8[BBISHOP] = '♝'
+	utf8[BKNIGHT] = '♞'
+	utf8[BPAWN] = '♟'
+	utf8[BLANK] = ' '
+	utf8[WKING] = '♔'
+	utf8[WQUEEN] = '♕'
+	utf8[WROOK] = '♖'
+	utf8[WBISHOP] = '♗'
+	utf8[WKNIGHT] = '♘'
+	utf8[WPAWN] = '♙'
+}
 
 /* Local Variables: */
 /* mode:go */

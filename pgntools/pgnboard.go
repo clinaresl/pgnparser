@@ -24,6 +24,34 @@ import (
 	"log"
 	"math"
 	"regexp"
+
+	"github.com/clinaresl/table"
+)
+
+// constants
+// ----------------------------------------------------------------------------
+
+// The content of a cell is represented by an instance of content defined as an
+// enumerated integer
+type content int
+
+// The different values of content are shown next. These symbols are
+// intentionally exported so that other people can handle chess boards using the
+// services provided by this package
+const (
+	BKING content = -6 + iota
+	BQUEEN
+	BROOK
+	BBISHOP
+	BKNIGHT
+	BPAWN // -1: represent also black pieces
+	BLANK //  0: empty
+	WPAWN //  1: represent also white pieces
+	WKNIGHT
+	WBISHOP
+	WROOK
+	WQUEEN
+	WKING
 )
 
 // globals
@@ -62,31 +90,8 @@ var threats map[string]map[content][][]int
 // Group #6: Castling (either 'O-O' or 'O-O-O')
 var reTextualMove = regexp.MustCompile(`([PNBRQK]?)([a-h]?[1-8]?)(x?)([a-h][1-8]|[NBRQK])(\=[PNBRQK])?|(O(?:-?O){1,2})[\+#]?(\s*[\!\?]+)?`)
 
-// enum
-// ----------------------------------------------------------------------------
-
-// The content of a cell is represented by an instance of content defined as an
-// enumerated integer
-type content int
-
-// The different values of content are shown next. These symbols are
-// intentionally exported so that other people can handle chess boards using the
-// services provided by this package
-const (
-	BKING content = -6 + iota
-	BQUEEN
-	BROOK
-	BBISHOP
-	BKNIGHT
-	BPAWN // -1: represent also black pieces
-	BLANK //  0: empty
-	WPAWN //  1: represent also white pieces
-	WKNIGHT
-	WBISHOP
-	WROOK
-	WQUEEN
-	WKING
-)
+// The following map relates each content with its utf-8 representation
+var utf8 map[content]rune
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -185,87 +190,6 @@ func getPieceValue(piece content, color int) content {
 
 	// avoid the error message by returning anything ... I know, I know ...
 	return BLANK
-}
-
-// Given a content, return a string representing it
-func getPieceString(piece content) string {
-	switch piece {
-	case BLANK:
-		return " "
-	case WPAWN:
-		return "\u2659" // ♙
-	case BPAWN:
-		return "\u265f" // ♟
-	case WKNIGHT:
-		return "\u2658" // ♘
-	case BKNIGHT:
-		return "\u265e" // ♞
-	case WBISHOP:
-		return "\u2657" // ♗
-	case BBISHOP:
-		return "\u265d" // ♝
-	case WROOK:
-		return "\u2656" // ♖
-	case BROOK:
-		return "\u265c" // ♜
-	case WQUEEN:
-		return "\u2655" // ♕
-	case BQUEEN:
-		return "\u265b" // ♛
-	case WKING:
-		return "\u2654" // ♔
-	case BKING:
-		return "\u265a" // ♚
-	default:
-		log.Fatal("Unknown piece in getPieceString")
-	}
-	return ""
-}
-
-// Initializes the map of coordinates to specific cells in the chess board
-func init() {
-
-	// first, initialize the transformation from literal coordinates to
-	// indexes used to access a PgnBoard
-	coords = make(map[string]int)
-	for row := 0; row < 8; row++ {
-		for column := 0; column < 8; column++ {
-
-			// and store the transformation from literal coordinates
-			// to integers
-			coords[string('a'+byte(column))+string('0'+byte(1+row))] = row*8 + column
-		}
-	}
-
-	// second, makes the opposite and compute the translation from integer
-	// coordinates to literal coordinates
-	literal = make(map[int]string)
-	for index := 0; index < 64; index++ {
-		literal[index] = string('a'+byte(index%8)) + string('0'+byte(1+index/8))
-	}
-
-	// now, compute all threats
-	threats = make(map[string]map[content][][]int)
-
-	// for all squares of the board represented as a pair (row,
-	// column)
-	for row := 0; row < 8; row++ {
-		for column := 0; column < 8; column++ {
-
-			threat := make(map[content][][]int) // create an empty map
-
-			// and all pieces where color is ignored but for the
-			// pawns (because they are the only chess pieces which
-			// have direction) are computed
-			for piece := BKING; piece <= WKING; piece++ {
-				if piece == BLANK {
-					continue
-				}
-				threat[piece] = getThreat(row*8+column, piece)
-			}
-			threats[string('a'+byte(column))+string('0'+byte(1+row))] = threat
-		}
-	}
 }
 
 // Compute all the different starting locations of a given piece from which it
@@ -1019,19 +943,30 @@ func (board *PgnBoard) UpdateBoard(move PgnMove) (err error) {
 // show a graphical view of this chess board
 func (board PgnBoard) String() (output string) {
 
-	output = "  +-+-+-+-+-+-+-+-+\n"
+	// Use the table package to generate chess boards with utf-8 characters
+	tab, _ := table.NewTable("||cccccccc||")
+
+	// Show the border of the chess board with a double line
+	tab.AddDoubleRule()
+
+	// Add the contents of each row
 	for row := 7; row >= 0; row-- {
-		output += fmt.Sprintf("%v |", 1+row)
+
+		// Initialize a line to show the contents of the 8 squares in this row
+		line := make([]any, 8)
 		for column := 0; column < 8; column++ {
-			output += fmt.Sprintf("%v|", getPieceString(board.squares[row*8+column]))
+			line[column] = string(utf8[board.squares[row*8+column]])
 		}
-		output += "\n"
+
+		// Add this line
+		tab.AddRow(line...)
 	}
-	output += "  +-+-+-+-+-+-+-+-+\n  "
-	for column := 0; column < 8; column++ {
-		output += fmt.Sprintf(" %v", string('a'+column))
-	}
-	return output
+
+	// Show the bottom border of the chess board with a double line
+	tab.AddDoubleRule()
+
+	// and return the string of this table
+	return fmt.Sprintf("%v", tab)
 }
 
 /* Local Variables: */

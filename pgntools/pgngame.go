@@ -41,10 +41,10 @@ type dataInterface interface {
 type constInteger int32
 type constString string
 
-// A PGN move consist of a single ply. For each move the move number, color and
-// actual move value (in algebraic form) is stored. Additionally, in case that
-// the elapsed move time was present in the PGN file, it is also stored
-// here.
+// A PGN move consist of a single ply. For each move the move number, color
+// (with -1 representing black and +1 representing white) and actual move value
+// (in algebraic form) is stored. Additionally, in case that the elapsed move
+// time was present in the PGN file, it is also stored here.
 //
 // Finally, any combination of moves after the move are combined into the
 // same field (comments). In case various comments were given they are then
@@ -172,13 +172,33 @@ func (constant constString) Greater(right dataInterface) bool {
 	return string(constant) > string(value)
 }
 
+// Return the number of the given PgnMove
+func (move PgnMove) Number() int {
+	return move.number
+}
+
+// Return the color of the given PgnMove
+func (move PgnMove) Color() int {
+	return move.color
+}
+
+// Return the actual move of the given PgnMove
+func (move PgnMove) Move() string {
+	return move.moveValue
+}
+
+// Return comments of the given PgnMove
+func (move PgnMove) Comments() string {
+	return move.comments
+}
+
 // Produces a string with the actual content of this move
 func (move PgnMove) String() string {
 	var output string
 
 	// first, show the ply
 	if move.color == 1 {
-		output += fmt.Sprintf("%v.", move.number)
+		output += fmt.Sprintf("%v. ", move.number)
 	} else {
 		output += fmt.Sprintf("%v. ... ", move.number)
 	}
@@ -221,6 +241,49 @@ func (game *PgnGame) GetTags() (tags map[string]string) {
 // Return a list of the moves of this game as a slice of PgnMove
 func (game *PgnGame) GetMoves() []PgnMove {
 	return game.moves
+}
+
+// return a string showing all moves in the specified interval in vertical mode,
+// i.e. from move number from until move number to not included.
+func (game *PgnGame) prettyMoves(from, to int) (output string) {
+
+	// in case no moves were given just return the empty string
+	if from == to {
+		return
+	}
+
+	// get the slice of moves to show
+	moves := game.moves[from:to]
+
+	// add the first move. This is important because in case it is black to move,
+	// an ellipsis should be shown first and, in case it is white's turn
+	// everything will get rendered as desired
+	output = fmt.Sprintf(" %v", moves[0])
+
+	// process the rest of moves taking care to add a trailing newline after each
+	// black's move
+	idx := 1
+	for idx < len(moves) {
+
+		// first, in case the previous move was black's turn
+		if moves[idx-1].Color() == -1 {
+
+			// then add a trailing newline
+			output += "\n"
+
+			// and also show the number of the next move
+			output += fmt.Sprintf(" %v. ", moves[idx].Number())
+		}
+
+		// Add the next move and proceed
+		output += fmt.Sprintf("%v ", moves[idx].Move())
+
+		// and proceed to the next move
+		idx += 1
+	}
+
+	// and return the string computed so far
+	return
 }
 
 // Return an instance of PgnOutcome with the result of this game
