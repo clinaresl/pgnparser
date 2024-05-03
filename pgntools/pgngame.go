@@ -202,8 +202,19 @@ func (outcome PgnOutcome) String() string {
 
 // Return the tags of this game as a map from tag names to tag values. Although
 // tag values are given between double quotes, these are not shown.
-func (game *PgnGame) GetTags() map[string]dataInterface {
-	return game.tags
+func (game *PgnGame) GetTags() (tags map[string]string) {
+
+	// initialize the output
+	tags = make(map[string]string)
+
+	// process all tags in this game
+	for key, value := range game.tags {
+
+		// Cast all values into strings
+		tags[key] = fmt.Sprintf("%v", value)
+	}
+
+	return
 }
 
 // Return a list of the moves of this game as a slice of PgnMove
@@ -360,14 +371,14 @@ func (game *PgnGame) GetLaTeXMovesWithComments() (output string) {
 // game, an error is return along with any data.
 //
 // It is intended to be used in LaTeX templates
-func (game *PgnGame) GetTagValue(name string) (value dataInterface, err error) {
+func (game *PgnGame) GetTagValue(name string) (value string, err error) {
 
 	if value, ok := game.tags[name]; ok {
-		return value, nil
+		return fmt.Sprintf("%v", value), nil
 	}
 
 	// when getting here, the required tag has not been found
-	return constString(""), errors.New(fmt.Sprintf("tag '%s' not found!", name))
+	return "", errors.New(fmt.Sprintf("tag '%s' not found!", name))
 }
 
 // A field is either a tag of the receiver game, or a value that can be

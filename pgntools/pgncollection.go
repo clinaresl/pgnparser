@@ -500,8 +500,8 @@ func (games *PgnCollection) GetTagValue(name string) string {
 		return ""
 	}
 
-	// otherwise, return its value as a string
-	return string(val.(constString))
+	// otherwise, return its value
+	return val
 }
 
 // This is an auxiliary function used in text/templates to generate slices of
