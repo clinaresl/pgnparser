@@ -27,7 +27,6 @@ import (
 	"os"   // operating system services
 
 	// import a package to manage paths
-	"github.com/clinaresl/pgnparser/fstools"
 
 	// also use several tools for handling games in pgn format
 	"github.com/clinaresl/pgnparser/pgntools"
@@ -40,7 +39,7 @@ var EXIT_SUCCESS int = 0     // exit with success
 var EXIT_FAILURE int = 1     // exit with failure
 
 // Options
-var pgnfile string       // base directory
+var filename string      // base directory
 var showboard int = 0    // number of moves between boards
 var tableTemplate string // file with the table template
 var latexTemplate string // file with the latex template
@@ -61,7 +60,7 @@ var version bool         // has version info been requested?
 func init() {
 
 	// Flag to store the pgn file to parse
-	flag.StringVar(&pgnfile, "file", "", "pgn file to parse. While this utility is expected to be generic, it specifically adheres to the format of ficsgames.org")
+	flag.StringVar(&filename, "file", "", "pgn file to parse. While this utility is expected to be generic, it specifically adheres to the format of ficsgames.org")
 
 	// Flag to store the number of moves between boards
 	flag.IntVar(&showboard, "show-board", 0, "if given, the board is shown for each game between this number of consecutive plies. The board is not shown by default")
@@ -282,21 +281,6 @@ func verify() {
 	if helpHistogram {
 		showHistogram(EXIT_SUCCESS)
 	}
-
-	// verify that the pgn file given exists and is accessible
-	pgnisregular, _ := fstools.IsRegular(pgnfile)
-	if !pgnisregular {
-		log.Fatalf("the pgn file '%s' does not exist or is not accessible",
-			pgnfile)
-	}
-
-	// very that the tableTemplate file exists and is accessible
-	tableTemplateisregular, _ := fstools.IsRegular(tableTemplate)
-	if !tableTemplateisregular {
-		log.Fatalf("the table template file '%s' does not exist or is not accessible",
-			tableTemplate)
-	}
-
 }
 
 // Main body
@@ -305,28 +289,41 @@ func main() {
 	// verify the values parsed
 	verify()
 
-	// process the contents of the given file
-	games := pgntools.GetGamesFromFile(pgnfile, showboard, query, sort, verbose)
-
-	// show a table with information of the games been processed. For this,
-	// a template is used: tableTemplate contains the location of a default
-	// template to use; others can be defined with --table
-	games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
-
-	// In case at least one histogram was given, then process it over the
-	// whole collection of pgn games
-	if histogram != "" {
-		hist := games.ComputeHistogram(histogram)
-		fmt.Printf("%v\n", &hist)
+	// Create a new PgnFile
+	pgnfile, err := pgntools.NewPgnFile(filename)
+	if err != nil {
+		log.Fatalf(" Error: %v\n", err)
 	}
 
-	// in case a LaTeX template has been given, then generate a LaTeX file
-	// with the same name than the pgn file (and in the same location) with
-	// extension '.tex' from the contents given in the specified template
-	if latexTemplate != "" {
+	// Show information of the PgnFile provided by the user
+	fmt.Println()
+	fmt.Println(pgnfile)
+	fmt.Println()
 
-		games.GamesToFileFromTemplate(pgnfile+".tex", latexTemplate)
-	}
+	pgnfile.Games()
+
+	// // process the contents of the given file
+	// games := pgntools.GetGamesFromFile(pgnfile, showboard, query, sort, verbose)
+
+	// // show a table with information of the games been processed. For this,
+	// // a template is used: tableTemplate contains the location of a default
+	// // template to use; others can be defined with --table
+	// games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
+
+	// // In case at least one histogram was given, then process it over the
+	// // whole collection of pgn games
+	// if histogram != "" {
+	// 	hist := games.ComputeHistogram(histogram)
+	// 	fmt.Printf("%v\n", &hist)
+	// }
+
+	// // in case a LaTeX template has been given, then generate a LaTeX file
+	// // with the same name than the pgn file (and in the same location) with
+	// // extension '.tex' from the contents given in the specified template
+	// if latexTemplate != "" {
+
+	// 	games.GamesToFileFromTemplate(pgnfile+".tex", latexTemplate)
+	// }
 }
 
 /* Local Variables: */

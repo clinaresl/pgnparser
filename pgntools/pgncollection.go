@@ -537,7 +537,7 @@ func (games *PgnCollection) GetTable(specline string, fields []any) table.Table 
 	// Create a table according to the given specification
 	table, err := table.NewTable(specline)
 	if err != nil {
-		log.Fatal(" Fatal error while constructing the table")
+		log.Fatal(" Fatal error while constructing the table in PgnCollection.GetTable")
 	}
 
 	// Add the header
