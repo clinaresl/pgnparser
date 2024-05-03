@@ -25,6 +25,7 @@ import (
 	"fmt"  // printing msgs
 	"log"  // logging services
 	"os"   // operating system services
+	"time"
 
 	// import a package to manage paths
 
@@ -290,6 +291,7 @@ func main() {
 	verify()
 
 	// Create a new PgnFile
+	start := time.Now()
 	pgnfile, err := pgntools.NewPgnFile(filename)
 	if err != nil {
 		log.Fatalf(" Error: %v\n", err)
@@ -298,14 +300,17 @@ func main() {
 	// Show information of the PgnFile provided by the user
 	fmt.Println()
 	fmt.Println(pgnfile)
+	fmt.Printf(" [%v]\n", time.Since(start))
 	fmt.Println()
 
 	// Obtain all games in this file as a collection of PgnGames
+	start = time.Now()
 	if games, err := pgnfile.Games(); err != nil {
 		log.Fatalln(err)
 	} else {
 		fmt.Printf(" %v games found\n", games.Len())
 	}
+	fmt.Printf(" [%v]\n", time.Since(start))
 
 	// // process the contents of the given file
 	// games := pgntools.GetGamesFromFile(pgnfile, showboard, query, sort, verbose)
