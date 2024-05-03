@@ -305,20 +305,18 @@ func main() {
 
 	// Obtain all games in this file as a collection of PgnGames
 	start = time.Now()
-	if games, err := pgnfile.Games(); err != nil {
+	games, err := pgnfile.Games()
+	if err != nil {
 		log.Fatalln(err)
 	} else {
 		fmt.Printf(" %v games found\n", games.Len())
 	}
-	fmt.Printf(" [%v]\n", time.Since(start))
+	fmt.Printf(" [%v]", time.Since(start))
 
-	// // process the contents of the given file
-	// games := pgntools.GetGamesFromFile(pgnfile, showboard, query, sort, verbose)
-
-	// // show a table with information of the games been processed. For this,
-	// // a template is used: tableTemplate contains the location of a default
-	// // template to use; others can be defined with --table
-	// games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
+	// show a table with information of the games been processed. For this,
+	// a template is used: tableTemplate contains the location of a default
+	// template to use; others can be defined with --table
+	games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
 
 	// // In case at least one histogram was given, then process it over the
 	// // whole collection of pgn games

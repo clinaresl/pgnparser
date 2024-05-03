@@ -73,6 +73,25 @@ var reGroupEMT = regexp.MustCompile(`^{\[%emt (?P<emt>\d+\.\d*)\]}`)
 // Groups are used in the following regexp to extract the score of every player
 var reGroupOutcome = regexp.MustCompile(`(?P<score1>1/2|0|1)\-(?P<score2>1/2|0|1)`)
 
+// the following regexp is used to match the different sorting criteria
+
+// sorting criteria consists of a sorting direction and a particular variable
+// used as a key for sorting games. The direction is specified with either < or
+// > meaning increasing and decreasing order respectively; the variable to use
+// is preceded by '%' (there is no need actually to use that prefix and this is
+// done only for the sake of consistency across different commands of pgnparser)
+var reSortingCriteria = regexp.MustCompile(`^\s*(<|>)\s*%([A-Za-z]+)\s*`)
+
+// the following regexps are used to process histogram command lines
+
+// A histogram command line might consist of a title and a variable name
+var reHistogramCmdVar = regexp.MustCompile(`^\s*([A-Za-z0-9]+)\s*:\s*%([A-Za-z]+)\s*`)
+
+// Also, a histogram command line might consist of the definition of a case
+// which consists of a number of different regular expressions
+var reHistogramCmdCase = regexp.MustCompile(`^\s*(?P<title>[A-Za-z0-9]+)\s*:\s*\[(?P<cases>[^\]]+)\]`)
+var reHistogramCmdSubcase = regexp.MustCompile(`^\s*(?P<subtitle>[A-Za-z0-9]+)\s*:\s*{(?P<expression>[^}]+)}\s*`)
+
 /* Local Variables: */
 /* mode:go */
 /* fill-column:80 */

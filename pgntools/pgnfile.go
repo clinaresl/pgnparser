@@ -423,9 +423,8 @@ func (f PgnFile) Games() (*PgnCollection, error) {
 
 	// Once done return an instance of PgCollection with all these games
 	return &PgnCollection{
-		slice:          games,
-		sortDescriptor: nil,
-		nbGames:        len(games),
+		slice:   games,
+		nbGames: len(games),
 	}, nil
 }
 

@@ -19,10 +19,10 @@
 package pgntools
 
 import (
-	"errors"  // for signaling errors
-	"fmt"     // printing msgs
-	"log"     // logging services
-	"strconv" // to conver int to string
+	"errors" // for signaling errors
+	"fmt"    // printing msgs
+	"log"    // logging services
+	// to conver int to string
 )
 
 // typedefs
@@ -356,8 +356,10 @@ func (game *PgnGame) GetLaTeXMovesWithComments() (output string) {
 	return
 }
 
-// Return the value of a specific tag and nil if it exists or any value and err
-// in case it does not exist. It is intended to be used in LaTeX templates
+// Return the value of a specific tag. In case the tag is not found in this
+// game, an error is return along with any data.
+//
+// It is intended to be used in LaTeX templates
 func (game *PgnGame) GetTagValue(name string) (value dataInterface, err error) {
 
 	if value, ok := game.tags[name]; ok {
@@ -368,74 +370,47 @@ func (game *PgnGame) GetTagValue(name string) (value dataInterface, err error) {
 	return constString(""), errors.New(fmt.Sprintf("tag '%s' not found!", name))
 }
 
-// getAndCheckTag is a helper function whose purpose is just to retrieve the
-// value of a given tag. In case an error happened (most likely because it does
-// not exist) then a fatal error is issued and execution is stopped
-func (game *PgnGame) getAndCheckTag(tagname string) dataInterface {
-
-	value, err := game.GetTagValue(tagname)
-
-	// in an error was found, then issue a fatal error
-	if err != nil {
-		log.Fatalf(fmt.Sprintf("'%v' not found in game\n '%v'!", tagname, game))
-	}
-
-	// otherwise, return the value of this tagname
-	return value
-}
-
-// A field is either a tag of the receiver game or a value computed from the
-// tags. Fields which are computed from tags are:
+// A field is either a tag of the receiver game, or a value that can be
+// extracted from it (such as "Moves" or "Result")
 //
-//	Moves: number of moves (two plies each)
-//	Result: consists of a utf-8 string which contains the final result of the
-//	game
-//
-// This method is used to compute arbitrary fields to be shown in ascii tables
-func (game *PgnGame) getField(field string) string {
+// This function is to be used in LaTeX templates
+func (game *PgnGame) GetField(field string) string {
 
 	// -- Moves
 	if field == "Moves" {
 
-		// get the ply count of this game
-		plyCount := game.getAndCheckTag("PlyCount")
-
-		// now, compute the number of moves from the number of plies. If
-		// the number of plies is even, then the number of moves is half
-		// the number of plies, otherwise, add 1
-		moves, ok := plyCount.(constInteger)
-		if !ok {
-			log.Fatalf(fmt.Sprintf(" It was not possible to convert the PlyCount ('%v') into an integer", plyCount))
-		}
-		if 2*(moves/2) < moves {
-			moves = moves/2 + 1
-		} else {
-			moves /= 2
-		}
-
-		// and return the number of moves
-		return strconv.Itoa(int(moves))
+		// In case the number of moves were requested, then return the number of
+		// moves stored in this game. Some PGN files might contain a tag named
+		// "PlyCount", for example, but it is unnecessary to rely on its
+		// existence.
+		return fmt.Sprintf("%d", len(game.moves))
 	}
 
 	// -- Moves
 	if field == "Result" {
 
-		var scoreWhite, scoreBlack string
 		if game.outcome.scoreWhite == 0.5 {
-			scoreWhite, scoreBlack = "½", "½"
+			return "½ - ½"
 		} else if game.outcome.scoreWhite == 1 {
-			scoreWhite, scoreBlack = "1", "0"
+			return "1-0"
+		} else if game.outcome.scoreBlack == 1 {
+			return "0-1"
+		} else if game.outcome.scoreWhite == -1 {
+			return "*"
 		} else {
-			scoreWhite, scoreBlack = "0", "1"
+			log.Fatalln(" Unknown result found!")
 		}
-		return scoreWhite + "-" + scoreBlack
 	}
 
 	// -- tags
 
 	// after trying special fields, then tags defined in this game are
 	// tried. In case they do not exist, an error is automatically raisedx
-	return fmt.Sprintf("%v", game.getAndCheckTag(field))
+	value, err := game.GetTagValue(field)
+	if err != nil {
+		log.Fatalln(" Uknown field '%v'", field)
+	}
+	return fmt.Sprintf("%v", value)
 }
 
 // Return a slice of strings with the values of all given fields. This method is
@@ -455,7 +430,7 @@ func (game *PgnGame) getFields(fields []any) (result []any) {
 		if !ok {
 			log.Fatalf(fmt.Sprintf(" It was not possible to convert the field '%v' into a string", field))
 		}
-		result = append(result, game.getField(field_str))
+		result = append(result, game.GetField(field_str))
 	}
 
 	// return the slice of strings computed so far
