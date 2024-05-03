@@ -58,7 +58,8 @@ type PgnMove struct {
 
 // The outcome of a chess game consists of the score obtained by every player as
 // two float32 numbers such that their sum equals 1. Plausible outcomes are (0,
-// 1), (1, 0) and (0.5, 0.5)
+// 1), (1, 0) and (0.5, 0.5). In addition, the pair (-1, -1) is considered for
+// those games which are not properly ended
 type PgnOutcome struct {
 	scoreWhite, scoreBlack float32
 }
@@ -188,6 +189,14 @@ func (move PgnMove) String() string {
 // Produces a string with information of this outcome as a pair of
 // floating-point numbers
 func (outcome PgnOutcome) String() string {
+
+	// In case this game was not properly ended, show an asterisk
+	if outcome.scoreWhite == outcome.scoreBlack &&
+		outcome.scoreWhite == -1 {
+		return "*"
+	}
+
+	// Otherwise, show the result
 	return fmt.Sprintf("%v - %v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
@@ -208,7 +217,7 @@ func (game *PgnGame) GetOutcome() PgnOutcome {
 }
 
 // Parse all moves of this game. Show the board between showboard consecutive
-// plies
+// plies in case a positive value is given to plies
 func (game *PgnGame) ParseMoves(plies int) {
 
 	nrplies := 0

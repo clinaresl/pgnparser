@@ -75,7 +75,7 @@ type pgnSorting struct {
 // count of the number of games stored in it ---this is given to check for
 // consistency so that the difference between nbGames and len (slice) shall be
 // always null.
-
+//
 // In addition, a PGN collection contains a sort descriptor which consists of a
 // slice of pairs that contain for each variable whether PGN games should be
 // sorted in increasing or decreasing order

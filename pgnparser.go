@@ -300,7 +300,12 @@ func main() {
 	fmt.Println(pgnfile)
 	fmt.Println()
 
-	pgnfile.Games()
+	// Obtain all games in this file as a collection of PgnGames
+	if games, err := pgnfile.Games(); err != nil {
+		log.Fatalln(err)
+	} else {
+		fmt.Printf(" %v games found\n", games.Len())
+	}
 
 	// // process the contents of the given file
 	// games := pgntools.GetGamesFromFile(pgnfile, showboard, query, sort, verbose)

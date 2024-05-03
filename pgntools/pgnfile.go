@@ -10,20 +10,16 @@ package pgntools
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/clinaresl/table"
 )
-
-// constants
-// ----------------------------------------------------------------------------
-// MAXLEN is the size of the largest block read at once when reading the
-// contents of PgnFiles. By default, 1Kbyte
-var MAXLEN int32 = 1024
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -86,6 +82,243 @@ func fileExists(filename string) bool {
 	return true
 }
 
+// Return a slice with all tags in the given string. No error can be returned
+// because the string given to this function has already matched the regular
+// expression for tags
+func getTags(pgn string) (tags map[string]dataInterface) {
+
+	// create the map
+	tags = make(map[string]dataInterface)
+
+	// get information about all pgn tags in the given string
+	for _, tag := range reGroupTags.FindAllStringSubmatchIndex(pgn, -1) {
+
+		// process this tag in case it contains relevant info. Every
+		// matching should consist of a slice with 6 indices:
+		// <begin/end>-string, <begin/end>-tagname, <begin/end>-tagvalue
+		if len(tag) >= 6 {
+
+			// add this tag to the map to return. In case this
+			// string can be interpreted as an integer number
+			value, err := strconv.Atoi(pgn[tag[4]:tag[5]])
+			if err == nil {
+
+				// then store it as an integer constant
+				tags[pgn[tag[2]:tag[3]]] = constInteger(value)
+			} else {
+
+				// otherwise, store it as a string constant
+				tags[pgn[tag[2]:tag[3]]] = constString(pgn[tag[4]:tag[5]])
+			}
+		}
+	}
+
+	return
+}
+
+// Return a slice of PgnMove with the information in the string 'pgn' which
+// shall consist of a legal transcription of legal PGN moves that might be
+// annotated (an arbitrary number of times) or not. 'emt' annotations are also
+// acknowledged and their information is added to the slice of PgnMove.
+//
+// Even if the string given in pgn has already matched a regular expression
+// other errors might be found and thus an error is returned which can be empty
+// if all moves could be extracted. In case of an error, the slice in moves
+// returns all moves processed so far
+func getMoves(pgn string) (moves []PgnMove, err error) {
+
+	moveNumber := -1     // initialize the move counter to unknown
+	color := 0           // initialize the color to unknown
+	var moveValue string // move actually parsed in PGN format
+	var emt float64      // elapsed move time
+	var comments string  // comments of each move
+
+	// process plies in sequence until the whole string is exhausted
+	for len(pgn) > 0 {
+
+		// get the next move
+		tag := reGroupMoves.FindStringSubmatchIndex(pgn)
+
+		// reGroupMoves contains three groups and therefore legal matches
+		// contain 8 characters
+		if len(tag) >= 8 {
+
+			// if a move number and color (. or ...) specifier has been found,
+			// then process all groups in this matching
+			if tag[2] >= 0 && tag[4] >= 0 {
+
+				// update the move counter
+				moveNumber, err = strconv.Atoi(pgn[tag[2]:tag[3]])
+				if err != nil {
+					return moves, errors.New(" Error while extracting the move number")
+				}
+
+				// and the color, in case only one character ('.') is found,
+				// this is white's move, otherwise, it is black's move
+				if tag[5]-tag[4] == 1 {
+					color = 1
+				} else {
+					color = -1
+				}
+			} else {
+
+				// otherwise, assume that this is the opponent's move
+				color *= -1
+			}
+
+			// and in any case extract the move value
+			moveValue = pgn[tag[6]:tag[7]]
+		}
+
+		// and move forward
+		pgn = pgn[tag[1]:]
+
+		// are there any comments immediately after? The following loop aims at
+		// processing an arbitrary number of comments
+		emt = -1.0    // initialize the elapsed move time to unknown
+		comments = "" // initialize the comments to the empty string
+		for reGroupComment.MatchString(pgn) {
+
+			// Yeah, a comment has been found! extract it
+			tag = reGroupComment.FindStringSubmatchIndex(pgn)
+
+			// is this an emt field?
+			if reGroupEMT.MatchString(pgn) {
+				tagEMT := reGroupEMT.FindStringSubmatchIndex(pgn)
+				emt, err = strconv.ParseFloat(pgn[tagEMT[2]:tagEMT[3]], 32)
+				if err != nil {
+					return moves, errors.New(" Error while converting emt")
+				}
+			} else {
+				// if not, then just add these comments. In case some comments
+				// were already written, make sure to add this in a new line
+				if len(comments) > 0 {
+					comments += "\r\n"
+				}
+				comments += pgn[1+tag[2] : tag[3]-1]
+			}
+			pgn = pgn[tag[1]:]
+		}
+
+		// and add this move to the list of moves to return unless there are
+		// unknown fields
+		if moveNumber == -1 || color == 0 {
+			return moves, errors.New(" Either the move number or the color were incorrect")
+		}
+		moves = append(moves, PgnMove{moveNumber, color, moveValue, float32(emt), comments})
+	}
+
+	return
+}
+
+// Return an instance of PgnOutcome with the score of each player as specified
+// in the given string.
+//
+// Even if the string given in pgn has already matched a regular expression
+// other errors might be found and thus an error is returned which can be empty
+// if the outcome could be processed correctly
+func getOutcome(pgn string) (outcome *PgnOutcome, err error) {
+
+	// get information about the outcome as given in pgn
+	tag := reGroupOutcome.FindStringSubmatchIndex(pgn)
+
+	// process this tag in case it contains 6 indices: <begin/end>-string,
+	// <begin/end>-scorewhite, <begin/end>-scoreblack
+	if len(tag) >= 6 {
+
+		// if the first tag is three characters long, then this is a
+		// draw
+		if tag[3]-tag[2] == 3 {
+			outcome = &PgnOutcome{0.5, 0.5}
+		} else {
+
+			// otherwise, one side won the match
+			scoreWhite, err := strconv.Atoi(pgn[tag[2]:tag[3]])
+			if err != nil {
+				return nil, fmt.Errorf(" Illegal outcome found in string '%s'", pgn)
+			}
+			outcome = &PgnOutcome{float32(scoreWhite), 1.0 - float32(scoreWhite)}
+		}
+	} else {
+
+		// In case the grouped regex did not match the given string then the
+		// outcome is most likely equal to '*' because 'pgn' already matched the
+		// (ungrouped) regexp for the outcome and '*' is not considered in the
+		// grouped regexp
+		if pgn != "*" {
+			return nil, fmt.Errorf(" Unknown outcome found '%v'", pgn)
+		} else {
+
+			// In that case the outcome is registered as -1, -1
+			outcome = &PgnOutcome{-1, -1}
+		}
+	}
+	return
+}
+
+// Return the contents of a chess game from the full transcription of a chess
+// game given as a string in PGN format. In case it was not possible to process
+// the string, or the information in the game is incorrect (i.e., it could not
+// be executed on a chess board) an error is returned
+func getGameFromString(pgn string) (*PgnGame, error) {
+
+	// create variables to store different sections of a single PGN game
+	var strTags, strMoves, strOutcome string
+
+	// find the tags of the first game in pgn
+	endpoints := reTags.FindStringIndex(pgn)
+	if endpoints == nil {
+		return nil, fmt.Errorf(" No tags were found in the chunk: %v", pgn)
+	} else {
+
+		// copy the section of the tags and move forward in the pgn string
+		strTags = pgn[endpoints[0]:endpoints[1]]
+		pgn = pgn[endpoints[1]:]
+
+		// now, check that this is followed by a legal transcription of chess
+		// moves in PGN format
+		endpoints = reMoves.FindStringIndex(pgn)
+		if endpoints == nil {
+			return nil, fmt.Errorf(" No transcription of legal moves were found in the chunk: %v", pgn)
+		} else {
+
+			// copy the section with the chess moves and move forward in the pgn
+			// string
+			strMoves = pgn[endpoints[0]:endpoints[1]]
+			pgn = pgn[endpoints[1]:]
+
+			// now, check that the final result is properly written
+			endpoints = reOutcome.FindStringIndex(pgn)
+			if endpoints == nil {
+				return nil, fmt.Errorf(" No lega transcription of the final result was found in the chunk: %v", pgn)
+			} else {
+
+				// again, copy the section with the final
+				// outcome and move forward in the pgn file
+				strOutcome = pgn[endpoints[0]:endpoints[1]]
+				pgn = pgn[endpoints[1]:]
+			}
+		}
+	}
+
+	// now, just process the different chunks extracted previously and store
+	// them in the game to return. In case processing any of the different parts
+	// produces an error, return it immediately
+	moves, errMoves := getMoves(strMoves)
+	if errMoves != nil {
+		return nil, errMoves
+	}
+	outcome, errOutcome := getOutcome(strOutcome)
+	if errOutcome != nil {
+		return nil, errOutcome
+	}
+	return &PgnGame{
+		tags:    getTags(strTags),
+		moves:   moves,
+		outcome: *outcome,
+	}, nil
+}
+
 // methods
 // ----------------------------------------------------------------------------
 
@@ -114,7 +347,7 @@ func NewPgnFile(filepath string) (*PgnFile, error) {
 		return nil, fmt.Errorf(" It was not possible to 'stat' the file '%v'", fullname)
 	}
 
-	//
+	// and return an instance of PgnFile
 	return &PgnFile{
 		name:    fullname,
 		size:    fileinfo.Size(),
@@ -167,7 +400,10 @@ func (f PgnFile) Games() (*PgnCollection, error) {
 
 			// Parse this game and get an instance of PgnGame with the
 			// information in it
-			game := getGameFromString(text[tag[0]:tag[1]], true)
+			game, err := getGameFromString(text[tag[0]:tag[1]])
+			if err != nil {
+				return nil, err
+			}
 
 			// parse all moves and ensure the transcription is correct so that
 			// the execution is not played ---and this is achieved by providing
@@ -175,7 +411,7 @@ func (f PgnFile) Games() (*PgnCollection, error) {
 			game.ParseMoves(-1)
 
 			// add this game to the collection of games to return
-			games = append(games, game)
+			games = append(games, *game)
 
 			// reset the text containing the game just found
 			text = ""
