@@ -141,33 +141,98 @@ func (games PgnCollection) Len() int {
 // number of given plies
 func (c PgnCollection) Play(plies int, writer io.Writer) {
 
+	// use tables to show the execution of chess games
+	tab, _ := table.NewTable(" l c", "cc")
+	tab.AddThickRule()
+
+	// For each game
 	for _, igame := range c.slice {
 
+		// Create a nested table to show the tags of this game
+		tab_tags, _ := table.NewTable(" l : l")
 		for name, value := range igame.GetTags() {
-			fmt.Printf(" %v: %v\n", name, value)
+			tab_tags.AddRow(name, value)
 		}
-		fmt.Println()
 
+		// The tags are shown in a single column containing the table of tags
+		// centered
+		tab.AddRow(table.Multicolumn(2, "c", tab_tags))
+		tab.AddSingleRule()
+
+		// Create a new board and access the list of moves to show
 		board := NewPgnBoard()
 		imoves := igame.GetMoves()
 
+		// and now show the requested number of plies along with the resulting
+		// chess board
 		idx := 0
 		for idx < len(imoves)/plies {
-			fmt.Println(igame.prettyMoves((idx * plies), (idx+1)*plies))
 
+			// get the list of moves in vertical mode
+			vert_moves := igame.prettyMoves((idx * plies), (idx+1)*plies)
+
+			// and now compute the resulting board
 			for jdx := idx * plies; jdx < (idx+1)*plies; jdx += 1 {
 				board.UpdateBoard(imoves[jdx])
 			}
-			fmt.Println(board)
-			fmt.Println()
 
+			// and add a new row with these moves and the board
+			tab.AddRow(vert_moves, board)
+			tab.AddRow()
+
+			// and move forward
 			idx += 1
 		}
 
+		// in case there are still moves to show
 		if idx*plies < len(imoves) {
-			fmt.Println(igame.prettyMoves(idx*plies, len(imoves)))
+
+			// repeat the procedure, getting the list of moves to show and the
+			// final chess board
+			vert_moves := igame.prettyMoves(idx*plies, len(imoves))
+
+			for jdx := idx * plies; jdx < len(imoves); jdx += 1 {
+				board.UpdateBoard(imoves[jdx])
+			}
+
+			// and add the last row
+			tab.AddRow(vert_moves, board)
 		}
+
+		// and add a separator with the next game
+		tab.AddThickRule()
 	}
+
+	// and write the result of the execution in the given writer
+	io.WriteString(writer, fmt.Sprintf("%v\n", tab))
+
+	// for _, igame := range c.slice {
+
+	// 	for name, value := range igame.GetTags() {
+	// 		fmt.Printf(" %v: %v\n", name, value)
+	// 	}
+	// 	fmt.Println()
+
+	// 	board := NewPgnBoard()
+	// 	imoves := igame.GetMoves()
+
+	// 	idx := 0
+	// 	for idx < len(imoves)/plies {
+	// 		fmt.Println(igame.prettyMoves((idx * plies), (idx+1)*plies))
+
+	// 		for jdx := idx * plies; jdx < (idx+1)*plies; jdx += 1 {
+	// 			board.UpdateBoard(imoves[jdx])
+	// 		}
+	// 		fmt.Println(board)
+	// 		fmt.Println()
+
+	// 		idx += 1
+	// 	}
+
+	// 	if idx*plies < len(imoves) {
+	// 		fmt.Println(igame.prettyMoves(idx*plies, len(imoves)))
+	// 	}
+	// }
 
 	// // Just play each game
 	// for _, igame := range c.slice {
