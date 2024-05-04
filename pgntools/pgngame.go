@@ -184,6 +184,14 @@ func (game *PgnGame) Filter(expression string) (bool, error) {
 		env[variable] = value
 	}
 
+	// In addition, create the variable "Moves" representing the number of moves
+	// (not plies)
+	if len(game.moves)%2 == 0 {
+		env["Moves"] = len(game.moves) / 2
+	} else {
+		env["Moves"] = 1 + len(game.moves)/2
+	}
+
 	// Compile the given expression
 	program, err := expr.Compile(expression, expr.Env(env))
 	if err != nil {
