@@ -21,26 +21,13 @@ package pgntools
 import (
 	"errors" // for signaling errors
 	"fmt"    // printing msgs
-	"io"
-	"log" // logging services
+	"log"    // logging services
 
 	"github.com/expr-lang/expr"
 )
 
 // typedefs
 // ----------------------------------------------------------------------------
-
-// tags tables and symbol tables store any data that supports the following
-// boolean comparisons: <, = and >
-type dataInterface interface {
-	Less(right dataInterface) bool
-	Equal(right dataInterface) bool
-	Greater(right dataInterface) bool
-}
-
-// a number of types that qualify for the dataInterface are integers and strings
-type constInteger int32
-type constString string
 
 // A PGN move consist of a single ply. For each move the move number, color
 // (with -1 representing black and +1 representing white) and actual move value
@@ -69,109 +56,13 @@ type PgnOutcome struct {
 // A game consists just of a map that stores information of all PGN tags, the
 // sequence of moves and finally the outcome.
 type PgnGame struct {
-	tags    map[string]dataInterface
+	tags    map[string]any
 	moves   []PgnMove
 	outcome PgnOutcome
 }
 
 // Methods
 // ----------------------------------------------------------------------------
-
-// Return true if both the receiver and the argument are integers and the
-// receiver is less than the argument
-func (constant constInteger) Less(right dataInterface) bool {
-
-	var value constInteger
-	var ok bool
-
-	// verify both types are compatible
-	value, ok = right.(constInteger)
-	if !ok {
-		log.Fatal(" Type mismatch in pgngame.go::Less (constInteger)")
-	}
-
-	return int32(constant) < int32(value)
-}
-
-// Return true if both the receiver and the argument are integers holding the
-// same value
-func (constant constInteger) Equal(right dataInterface) bool {
-
-	var value constInteger
-	var ok bool
-
-	// verify both types are compatible
-	value, ok = right.(constInteger)
-	if !ok {
-		log.Fatal(" Type mismatch in pgngame.go::Equal (constInteger)")
-	}
-
-	return int32(constant) == int32(value)
-}
-
-// Return true if both the receiver and the argument are integers and the
-// receiver is greater than the argument
-func (constant constInteger) Greater(right dataInterface) bool {
-
-	var value constInteger
-	var ok bool
-
-	// verify both types are compatible
-	value, ok = right.(constInteger)
-	if !ok {
-		log.Fatal(" Type mismatch in pgngame.go::Greater (constInteger)")
-	}
-
-	return int32(constant) > int32(value)
-}
-
-// Return true if both the receiver and the argument are strings and the
-// receiver is less than the argument
-func (constant constString) Less(right dataInterface) bool {
-
-	var value constString
-	var ok bool
-
-	// verify both types are compatible
-	value, ok = right.(constString)
-	if !ok {
-		log.Fatal(" Type mismatch in pgngame.go::Less (constString)")
-	}
-
-	return string(constant) < string(value)
-}
-
-// Return true if both the receiver and the argument are integers holding the
-// same value
-func (constant constString) Equal(right dataInterface) bool {
-
-	var value constString
-	var ok bool
-
-	// verify both types are compatible
-	value, ok = right.(constString)
-	if !ok {
-		log.Fatal(" Type mismatch in pgngame.go::Equal (constString)")
-	}
-
-	return string(constant) == string(value)
-}
-
-// Return true if both the receiver and the argument are integers and the
-// receiver is greater than the argument
-func (constant constString) Greater(right dataInterface) bool {
-
-	var value constString
-	var ok bool
-
-	// verify both types are compatible
-	value, ok = right.(constString)
-	if !ok {
-		log.Fatal(" Type mismatch in pgngame.go::Greater (constString)")
-	}
-
-	return string(constant) > string(value)
-}
 
 // Return the number of the given PgnMove
 func (move PgnMove) Number() int {
@@ -222,26 +113,19 @@ func (outcome PgnOutcome) String() string {
 	return fmt.Sprintf("%v - %v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
-// Return the tags of this game as a map from tag names to tag values. Although
-// tag values are given between double quotes, these are not shown.
-func (game *PgnGame) GetTags() (tags map[string]string) {
-
-	// initialize the output
-	tags = make(map[string]string)
-
-	// process all tags in this game
-	for key, value := range game.tags {
-
-		// Cast all values into strings
-		tags[key] = fmt.Sprintf("%v", value)
-	}
-
-	return
+// Return the tags of this game
+func (game *PgnGame) Tags() (tags map[string]any) {
+	return game.tags
 }
 
 // Return a list of the moves of this game as a slice of PgnMove
-func (game *PgnGame) GetMoves() []PgnMove {
+func (game *PgnGame) Moves() []PgnMove {
 	return game.moves
+}
+
+// Return an instance of PgnOutcome with the result of this game
+func (game *PgnGame) Outcome() PgnOutcome {
+	return game.outcome
 }
 
 // return a string showing all moves in the specified interval in vertical mode,
@@ -287,49 +171,12 @@ func (game *PgnGame) prettyMoves(from, to int) (output string) {
 	return
 }
 
-// Return an instance of PgnOutcome with the result of this game
-func (game *PgnGame) GetOutcome() PgnOutcome {
-	return game.outcome
-}
-
-// Play this game. Show the board between showboard consecutive plies in case a
-// positive value is given on the specified writer. In case an error is found, a
-// message is shown and execution is halted
-func (game *PgnGame) Play(plies int, writer io.Writer) {
-
-	nrplies := 0
-	board := NewPgnBoard()
-
-	for _, move := range game.moves {
-		if err := board.UpdateBoard(move); err != nil {
-			log.Fatalln(err)
-		}
-
-		// show the move
-		if plies > 0 {
-			io.WriteString(writer, fmt.Sprintf("%v\n", move))
-		}
-
-		// show the board on the output?
-		nrplies += 1 // incremente the number of plies processed
-		if plies > 0 && nrplies%plies == 0 {
-			io.WriteString(writer, fmt.Sprintf("%v\n\n", board))
-		}
-	}
-
-	// finally, if plies is positive, show the end position unless it was
-	// incidentally shown within the previous loops
-	if plies > 0 && nrplies%plies != 0 {
-		io.WriteString(writer, fmt.Sprintf("%v\n\n", board))
-	}
-}
-
 // Return whether the given expression is true or not for this specific game
 func (game *PgnGame) Filter(expression string) (bool, error) {
 
 	// First of all, create an environment with all variables of this game
 	env := make(map[string]any)
-	for variable, value := range game.GetTags() {
+	for variable, value := range game.Tags() {
 		env[variable] = value
 	}
 

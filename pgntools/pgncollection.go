@@ -179,7 +179,7 @@ func (c PgnCollection) Play(plies int, writer io.Writer) {
 
 			// Create a nested table to show the tags of this game
 			tab_tags, _ := table.NewTable(" l : l")
-			for name, value := range igame.GetTags() {
+			for name, value := range igame.Tags() {
 				tab_tags.AddRow(name, value)
 			}
 
@@ -191,7 +191,7 @@ func (c PgnCollection) Play(plies int, writer io.Writer) {
 
 		// Create a new board and access the list of moves to show
 		board := NewPgnBoard()
-		imoves := igame.GetMoves()
+		imoves := igame.Moves()
 
 		// and now show the requested number of plies along with the resulting
 		// chess board

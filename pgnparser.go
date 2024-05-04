@@ -35,9 +35,12 @@ import (
 
 // global variables
 // ----------------------------------------------------------------------------
-var VERSION string = "0.1.0" // current version
-var EXIT_SUCCESS int = 0     // exit with success
-var EXIT_FAILURE int = 1     // exit with failure
+const VERSION string = "0.1.0" // current version
+const AUTHOR string = "Carlos Linares López"
+const EMAIL string = "carlos.linares@uc3m.es"
+
+var EXIT_SUCCESS int = 0 // exit with success
+var EXIT_FAILURE int = 1 // exit with failure
 
 // Options
 var filename string      // base directory
@@ -68,7 +71,7 @@ func init() {
 	flag.IntVar(&play, "play", 0, "if given, each game in the PGN file is played, and the chess board is shown between the number of consecutive plies given. The board is not shown by default")
 
 	// Flag to store the number of moves between boards
-	flag.BoolVar(&list, "list", false, "if given, a table with all games found in the PGN file is shown")
+	flag.BoolVar(&list, "list", false, "if given, a table with general information about all games found in the PGN file is shown")
 
 	// Flag to store the template to use to generate the ascii table
 	flag.StringVar(&tableTemplate, "table", "templates/table/simple.tpl", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
@@ -97,7 +100,9 @@ func init() {
 func showVersion(signal int) {
 
 	fmt.Printf("\n %v", os.Args[0])
-	fmt.Printf("\n Version: %v\n\n", VERSION)
+	fmt.Printf("\n Version: %v\n", VERSION)
+	fmt.Printf("\n %v", AUTHOR)
+	fmt.Printf("\n %v\n\n", EMAIL)
 	os.Exit(signal)
 }
 

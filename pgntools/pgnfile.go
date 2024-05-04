@@ -85,10 +85,10 @@ func fileExists(filename string) bool {
 // Return a slice with all tags in the given string. No error can be returned
 // because the string given to this function has already matched the regular
 // expression for tags
-func getTags(pgn string) (tags map[string]dataInterface) {
+func getTags(pgn string) (tags map[string]any) {
 
 	// create the map
-	tags = make(map[string]dataInterface)
+	tags = make(map[string]any)
 
 	// get information about all pgn tags in the given string
 	for _, tag := range reGroupTags.FindAllStringSubmatchIndex(pgn, -1) {
@@ -104,15 +104,14 @@ func getTags(pgn string) (tags map[string]dataInterface) {
 			if err == nil {
 
 				// then store it as an integer constant
-				tags[pgn[tag[2]:tag[3]]] = constInteger(value)
+				tags[pgn[tag[2]:tag[3]]] = value
 			} else {
 
 				// otherwise, store it as a string constant
-				tags[pgn[tag[2]:tag[3]]] = constString(pgn[tag[4]:tag[5]])
+				tags[pgn[tag[2]:tag[3]]] = pgn[tag[4]:tag[5]]
 			}
 		}
 	}
-
 	return
 }
 
