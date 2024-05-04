@@ -109,23 +109,12 @@ func (outcome PgnOutcome) String() string {
 		return "*"
 	}
 
-	// Otherwise, show the result
-	return fmt.Sprintf("%v - %v", outcome.scoreWhite, outcome.scoreBlack)
-}
-
-// Return the tags of this game
-func (game *PgnGame) Tags() (tags map[string]any) {
-	return game.tags
-}
-
-// Return a list of the moves of this game as a slice of PgnMove
-func (game *PgnGame) Moves() []PgnMove {
-	return game.moves
-}
-
-// Return an instance of PgnOutcome with the result of this game
-func (game *PgnGame) Outcome() PgnOutcome {
-	return game.outcome
+	// Otherwise, show the result avoiding the usage of floating point numbers
+	if outcome.scoreWhite == outcome.scoreBlack &&
+		outcome.scoreWhite == 0.5 {
+		return "1/2-1/2"
+	}
+	return fmt.Sprintf("%v-%v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
 // return a string showing all moves in the specified interval in vertical mode,
@@ -171,6 +160,21 @@ func (game *PgnGame) prettyMoves(from, to int) (output string) {
 	return
 }
 
+// Return the tags of this game
+func (game *PgnGame) Tags() (tags map[string]any) {
+	return game.tags
+}
+
+// Return a list of the moves of this game as a slice of PgnMove
+func (game *PgnGame) Moves() []PgnMove {
+	return game.moves
+}
+
+// Return an instance of PgnOutcome with the result of this game
+func (game *PgnGame) Outcome() PgnOutcome {
+	return game.outcome
+}
+
 // Return whether the given expression is true or not for this specific game
 func (game *PgnGame) Filter(expression string) (bool, error) {
 
@@ -200,6 +204,56 @@ func (game *PgnGame) Filter(expression string) (bool, error) {
 
 	// and return the result
 	return result, nil
+}
+
+// Return the contents of this game in PGN format
+func (game *PgnGame) GetPGN() (output string) {
+
+	// First, show all tags followed by a blank line
+	for variable, value := range game.tags {
+		output += fmt.Sprintf("[%v \"%v\"]\n", variable, value)
+	}
+	output += "\n"
+
+	// Next, write all moves of this game in a single line
+	idx := 0
+	for idx < len(game.moves) {
+
+		// Write the move number and the white's move
+		output += fmt.Sprintf("%v. %v ", game.moves[idx].number, game.moves[idx].moveValue)
+
+		// and in case this move has an emt/ comments add them
+		if game.moves[idx].emt > 0.0 {
+			output += fmt.Sprintf("{[%%emt %v]} ", game.moves[idx].emt)
+		}
+		if game.moves[idx].comments != "" {
+			output += fmt.Sprintf("{ %v } ", game.moves[idx].comments)
+		}
+		idx += 1
+
+		// in case there is a move for black, then add it immediately after
+		if idx < len(game.moves) {
+			output += fmt.Sprintf("%v ", game.moves[idx].moveValue)
+
+			// and in case this move has any emt/comments add them
+			if game.moves[idx].emt > 0.0 {
+				output += fmt.Sprintf("{[%%emt %v]} ", game.moves[idx].emt)
+			}
+			if game.moves[idx].comments != "" {
+				output += fmt.Sprintf("{ %v } ", game.moves[idx].comments)
+			}
+			idx += 1
+		}
+	}
+
+	// Next, show the result which is used as a token of end of game
+	output += fmt.Sprintf("%v", game.Outcome())
+
+	// and add a blank line
+	output += "\n\n"
+
+	// and return the game in PGN format
+	return
 }
 
 // Templates
@@ -352,7 +406,7 @@ func (game *PgnGame) GetField(field string) string {
 	if field == "Result" {
 
 		if game.outcome.scoreWhite == 0.5 {
-			return "½ - ½"
+			return "½-½"
 		} else if game.outcome.scoreWhite == 1 {
 			return "1-0"
 		} else if game.outcome.scoreBlack == 1 {
@@ -370,7 +424,7 @@ func (game *PgnGame) GetField(field string) string {
 	// tried. In case they do not exist, an error is automatically raisedx
 	value, err := game.GetTagValue(field)
 	if err != nil {
-		log.Fatalln(" Uknown field '%v'", field)
+		log.Fatalf(" Uknown field '%v'\n", field)
 	}
 	return fmt.Sprintf("%v", value)
 }

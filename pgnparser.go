@@ -46,6 +46,7 @@ var EXIT_FAILURE int = 1 // exit with failure
 var filename string      // base directory
 var play int = 0         // number of moves between boards
 var list bool            // whether games should be listed or not
+var output string        // name of the file that stores results
 var tableTemplate string // file with the table template
 var latexTemplate string // file with the latex template
 var filter string        // select query to filter games
@@ -72,6 +73,9 @@ func init() {
 
 	// Flag to store the number of moves between boards
 	flag.BoolVar(&list, "list", false, "if given, a table with general information about all games found in the PGN file is shown")
+
+	// Flag to store the output filename
+	flag.StringVar(&output, "output", "output.pgn", "name of the file where the result of any manipulations is stored. It is used only in case any of the directives --filter or --sort is given. By default, 'output.pgn'")
 
 	// Flag to store the template to use to generate the ascii table
 	flag.StringVar(&tableTemplate, "table", "templates/table/simple.tpl", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
@@ -346,17 +350,35 @@ func main() {
 			log.Fatalln(err)
 		} else {
 			fmt.Printf(" %v games filtered\n", filtered.Len())
+
+			// and make the filtered collection the current one
+			games = filtered
 		}
 		fmt.Printf(" [%v]\n", time.Since(start))
 	}
 	fmt.Println()
 
-	// // In case at least one histogram was given, then process it over the
-	// // whole collection of pgn games
-	// if histogram != "" {
-	// 	hist := games.ComputeHistogram(histogram)
-	// 	fmt.Printf("%v\n", &hist)
-	// }
+	// In case either sorting and/or filter has been requested, write the result
+	// in the output file
+	if sort != "" || filter != "" {
+
+		// Check first whether there are some games to write
+		if games.Len() == 0 {
+			fmt.Println(" No games to store!")
+		} else {
+
+			// In case there are effectively some games to store, do! Create the
+			// file in write mode and then write the contents of the entire
+			// collection
+			stream, err := os.Create(output)
+			defer stream.Close()
+			if err != nil {
+				log.Fatalln(err)
+			} else {
+				games.GetPGN(stream)
+			}
+		}
+	}
 
 	// // in case a LaTeX template has been given, then generate a LaTeX file
 	// // with the same name than the pgn file (and in the same location) with
