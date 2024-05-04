@@ -955,7 +955,22 @@ func (board PgnBoard) String() (output string) {
 		// Initialize a line to show the contents of the 8 squares in this row
 		line := make([]any, 8)
 		for column := 0; column < 8; column++ {
-			line[column] = string(utf8[board.squares[row*8+column]])
+
+			// when a square is empty show its color.
+			if board.squares[row*8+column] == BLANK {
+
+				// When the sum of the row and colum is an odd number, the square is
+				// black
+				if (row+column)%2 == 0 {
+					line[column] = string("\u2592")
+				} else {
+					line[column] = " "
+				}
+			} else {
+
+				// Otherwise, show the chess piece
+				line[column] = string(utf8[board.squares[row*8+column]])
+			}
 		}
 
 		// Add this line

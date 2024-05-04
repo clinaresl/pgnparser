@@ -42,6 +42,7 @@ var EXIT_FAILURE int = 1     // exit with failure
 // Options
 var filename string      // base directory
 var play int = 0         // number of moves between boards
+var list bool            // whether games should be listed or not
 var tableTemplate string // file with the table template
 var latexTemplate string // file with the latex template
 var query string         // select query to filter games
@@ -61,10 +62,13 @@ var version bool         // has version info been requested?
 func init() {
 
 	// Flag to store the pgn file to parse
-	flag.StringVar(&filename, "file", "", "pgn file to parse. While this utility is expected to be generic, it specifically adheres to the format of ficsgames.org")
+	flag.StringVar(&filename, "file", "", "pgn file to parse. While this utility is expected to be generic, it specifically adheres to the format of ficsgames.org as used in lichess.org")
 
 	// Flag to store the number of moves between boards
 	flag.IntVar(&play, "play", 0, "if given, each game in the PGN file is played, and the chess board is shown between the number of consecutive plies given. The board is not shown by default")
+
+	// Flag to store the number of moves between boards
+	flag.BoolVar(&list, "list", false, "if given, a table with all games found in the PGN file is shown")
 
 	// Flag to store the template to use to generate the ascii table
 	flag.StringVar(&tableTemplate, "table", "templates/table/simple.tpl", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
@@ -311,12 +315,15 @@ func main() {
 	} else {
 		fmt.Printf(" %v games found\n", games.Len())
 	}
-	fmt.Printf(" [%v]", time.Since(start))
+	fmt.Printf(" [%v]\n", time.Since(start))
+	fmt.Println()
 
 	// show a table with information of the games been processed. For this,
 	// a template is used: tableTemplate contains the location of a default
 	// template to use; others can be defined with --table
-	games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
+	if list {
+		games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
+	}
 
 	// Play all games unconditionally. This is necessary to verify that the
 	// transcription of all games is correct. In case a strictly positive value
@@ -325,6 +332,7 @@ func main() {
 	games.Play(play, os.Stdout)
 	fmt.Printf(" Games verified!\n")
 	fmt.Printf(" [%v]\n", time.Since(start))
+	fmt.Println()
 
 	// // In case at least one histogram was given, then process it over the
 	// // whole collection of pgn games
