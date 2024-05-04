@@ -137,6 +137,19 @@ func (games PgnCollection) Len() int {
 // Methods
 // ----------------------------------------------------------------------------
 
+// Return an empty collection of PGN games
+func NewPgnCollection() PgnCollection {
+	return PgnCollection{}
+}
+
+// Add the given PgnGame to this collection
+func (c *PgnCollection) Add(game PgnGame) {
+
+	// Add this game to the slice of games and increment the counter
+	c.slice = append(c.slice, game)
+	c.nbGames += 1
+}
+
 // Play this collection of games on the given writer showing the board
 // repeteadly after the given number of plies on the specified writer, in case
 // it is strictly positive.
@@ -227,6 +240,31 @@ func (c PgnCollection) Play(plies int, writer io.Writer) {
 	if showBoard {
 		io.WriteString(writer, fmt.Sprintf("%v\n", tab))
 	}
+}
+
+// Create a brand new PgnCollection with games found in this collection which
+// satisfy the given expression
+func (c PgnCollection) Filter(expression string) (*PgnCollection, error) {
+
+	// Create an empty collection of chess games
+	collection := NewPgnCollection()
+
+	// Process each game in this collection
+	for _, igame := range c.slice {
+
+		// In case this game satisfies the given query, then add it to the
+		// filtered collection
+		if result, err := igame.Filter(expression); err != nil {
+			return nil, err
+		} else {
+			if result {
+				collection.Add(igame)
+			}
+		}
+	}
+
+	// and return the collection processed so far without errors
+	return &collection, nil
 }
 
 // -- Sorting

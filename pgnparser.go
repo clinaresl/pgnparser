@@ -45,15 +45,15 @@ var play int = 0         // number of moves between boards
 var list bool            // whether games should be listed or not
 var tableTemplate string // file with the table template
 var latexTemplate string // file with the latex template
-var query string         // select query to filter games
+var filter string        // select query to filter games
 var sort string          // sorting descriptor
 var histogram string     // histogram descriptor
 
-var helpExpressions bool // is help on expressions requested?
-var helpSort bool        // is help on sorting requested?
-var helpHistogram bool   // is help about histograms requested?
-var verbose bool         // has verbose output been requested?
-var version bool         // has version info been requested?
+var helpFilter bool    // is help on filters requested?
+var helpSort bool      // is help on sorting requested?
+var helpHistogram bool // is help about histograms requested?
+var verbose bool       // has verbose output been requested?
+var version bool       // has version info been requested?
 
 // functions
 // ----------------------------------------------------------------------------
@@ -76,9 +76,9 @@ func init() {
 	// Flag to store the file with the LaTeX template
 	flag.StringVar(&latexTemplate, "latex", "", "file with a LaTeX template to use. If given, a file with the same name used in 'file' and extension '.tex' is automatically generated in the same directory where the pgn file resides. For more information on how to create and use LaTeX templates see the documentation")
 
-	// Flag to receive a select query
-	flag.StringVar(&query, "select", "", "if an expression is provided here, only games meeting it are accepted. For more information on expressions acknowledged by this directive use '--help-expressions'")
-	flag.BoolVar(&helpExpressions, "help-expressions", false, "if given, additional information on expressions acknowledged by this application is provided")
+	// Flag to receive a filter query
+	flag.StringVar(&filter, "filter", "", "if an expression is provided here, only games satisfying it are accepted. For more information on filters use '--help-filter'")
+	flag.BoolVar(&helpFilter, "help-filter", false, "if given, additional information on expressions acknowledged by this application is provided")
 
 	// Flag to receive a sorting descriptor
 	flag.StringVar(&sort, "sort", "", "if a string is given here, games are sorted according to the sorting descriptor provided. For more information on sorting descriptors use '--help-sort'")
@@ -103,7 +103,7 @@ func showVersion(signal int) {
 
 // shows informmation on expressions as they are recognized by the directive
 // --select
-func showExpressions(signal int) {
+func showFilters(signal int) {
 
 	fmt.Println(` 
  Expressions are a powerful mechanism to filter games in a PGN file. They consist of
@@ -136,7 +136,7 @@ func showExpressions(signal int) {
  Examples:
 
  The file 'examples/ficsgamesdb_search_1255777.pgn', contains 2564 different
- games played between January, 1, 2015 and June, 5, 2015. The following query:
+ games played between January, 1, 2015 and June, 5, 2015. The following filter:
 
     $ ./pgnparser --file examples/ficsgamesdb_search_1255777.pgn
                   --select "%Date <= '2015.01.31' and %Date >= '2015.01.01'"
@@ -277,8 +277,8 @@ func verify() {
 
 	// in case further assistance on a particular subject is requested, then
 	// show it here and exit
-	if helpExpressions {
-		showExpressions(EXIT_SUCCESS)
+	if helpFilter {
+		showFilters(EXIT_SUCCESS)
 	}
 	if helpSort {
 		showSortingDescriptors(EXIT_SUCCESS)
@@ -332,6 +332,18 @@ func main() {
 	games.Play(play, os.Stdout)
 	fmt.Printf(" Games verified!\n")
 	fmt.Printf(" [%v]\n", time.Since(start))
+	fmt.Println()
+
+	// In case it has been requested to filter games, do so
+	if filter != "" {
+		start = time.Now()
+		if filtered, err := games.Filter(filter); err != nil {
+			log.Fatalln(err)
+		} else {
+			fmt.Printf(" %v games filtered\n", filtered.Len())
+		}
+		fmt.Printf(" [%v]\n", time.Since(start))
+	}
 	fmt.Println()
 
 	// // In case at least one histogram was given, then process it over the

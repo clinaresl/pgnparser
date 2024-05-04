@@ -23,7 +23,8 @@ import (
 	"fmt"    // printing msgs
 	"io"
 	"log" // logging services
-	// to conver int to string
+
+	"github.com/expr-lang/expr"
 )
 
 // typedefs
@@ -321,6 +322,37 @@ func (game *PgnGame) Play(plies int, writer io.Writer) {
 	if plies > 0 && nrplies%plies != 0 {
 		io.WriteString(writer, fmt.Sprintf("%v\n\n", board))
 	}
+}
+
+// Return whether the given expression is true or not for this specific game
+func (game *PgnGame) Filter(expression string) (bool, error) {
+
+	// First of all, create an environment with all variables of this game
+	env := make(map[string]any)
+	for variable, value := range game.GetTags() {
+		env[variable] = value
+	}
+
+	// Compile the given expression
+	program, err := expr.Compile(expression, expr.Env(env))
+	if err != nil {
+		return false, err
+	}
+
+	// And run it
+	output, err := expr.Run(program, env)
+	if err != nil {
+		return false, err
+	}
+
+	// Verify the result can be expressed as a boolean value
+	result, ok := output.(bool)
+	if !ok {
+		return false, fmt.Errorf(" The expression '%v' does not produced a boolean value!", expression)
+	}
+
+	// and return the result
+	return result, nil
 }
 
 // Templates
