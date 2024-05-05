@@ -61,6 +61,26 @@ type PgnGame struct {
 	outcome PgnOutcome
 }
 
+// Functions
+// ----------------------------------------------------------------------------
+// Evaluate the given expression in the specified environment and return the
+// result
+func evaluateExpr(expression string, env map[string]any) (any, error) {
+
+	// compile and run the given expression
+	program, err := expr.Compile(expression, expr.Env(env))
+	if err != nil {
+		return nil, err
+	}
+	output, err := expr.Run(program, env)
+	if err != nil {
+		return nil, err
+	}
+
+	// and return the result without errors
+	return output, nil
+}
+
 // Methods
 // ----------------------------------------------------------------------------
 
@@ -160,6 +180,28 @@ func (game *PgnGame) prettyMoves(from, to int) (output string) {
 	return
 }
 
+// Return an environment for the evaluation of expressions
+func (game *PgnGame) getEnv() (env map[string]any) {
+
+	env = make(map[string]any)
+
+	// Add all variables found in the tags of this game
+	for variable, value := range game.Tags() {
+		env[variable] = value
+	}
+
+	// In addition, create the variable "Moves" representing the number of moves
+	// (not plies)
+	if len(game.moves)%2 == 0 {
+		env["Moves"] = len(game.moves) / 2
+	} else {
+		env["Moves"] = 1 + len(game.moves)/2
+	}
+
+	// and return the environment
+	return
+}
+
 // Return the tags of this game
 func (game *PgnGame) Tags() (tags map[string]any) {
 	return game.tags
@@ -178,28 +220,11 @@ func (game *PgnGame) Outcome() PgnOutcome {
 // Return whether the given expression is true or not for this specific game
 func (game *PgnGame) Filter(expression string) (bool, error) {
 
-	// First of all, create an environment with all variables of this game
-	env := make(map[string]any)
-	for variable, value := range game.Tags() {
-		env[variable] = value
-	}
+	// First of all, create an environment for the evaluation of the given expression
+	env := game.getEnv()
 
-	// In addition, create the variable "Moves" representing the number of moves
-	// (not plies)
-	if len(game.moves)%2 == 0 {
-		env["Moves"] = len(game.moves) / 2
-	} else {
-		env["Moves"] = 1 + len(game.moves)/2
-	}
-
-	// Compile the given expression
-	program, err := expr.Compile(expression, expr.Env(env))
-	if err != nil {
-		return false, err
-	}
-
-	// And run it
-	output, err := expr.Run(program, env)
+	// evaluate the given expression within the environment
+	output, err := evaluateExpr(expression, env)
 	if err != nil {
 		return false, err
 	}

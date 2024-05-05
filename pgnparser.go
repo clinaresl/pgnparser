@@ -44,14 +44,14 @@ var EXIT_FAILURE int = 1 // exit with failure
 
 // Options
 var filename string      // base directory
-var play int = 0         // number of moves between boards
 var list bool            // whether games should be listed or not
+var play int = 0         // number of moves between boards
+var filter string        // select query to filter games
 var output string        // name of the file that stores results
+var histogram string     // histogram descriptor
 var tableTemplate string // file with the table template
 var latexTemplate string // file with the latex template
-var filter string        // select query to filter games
 var sort string          // sorting descriptor
-var histogram string     // histogram descriptor
 
 var helpFilter bool    // is help on filters requested?
 var helpSort bool      // is help on sorting requested?
@@ -69,13 +69,21 @@ func init() {
 	flag.StringVar(&filename, "file", "", "pgn file to parse. While this utility is expected to be generic, it specifically adheres to the format of ficsgames.org as used in lichess.org")
 
 	// Flag to store the number of moves between boards
-	flag.IntVar(&play, "play", 0, "if given, each game in the PGN file is played, and the chess board is shown between the number of consecutive plies given. The board is not shown by default")
+	flag.BoolVar(&list, "list", false, "if given, a table with general information about all games found in the PGN file is shown")
 
 	// Flag to store the number of moves between boards
-	flag.BoolVar(&list, "list", false, "if given, a table with general information about all games found in the PGN file is shown")
+	flag.IntVar(&play, "play", 0, "if given, each game in the PGN file is played, and the chess board is shown between the number of consecutive plies given. The board is not shown by default")
+
+	// Flag to receive a filter query
+	flag.StringVar(&filter, "filter", "", "if an expression is provided here, only games satisfying it are accepted. For more information on filters use '--help-filter'")
+	flag.BoolVar(&helpFilter, "help-filter", false, "if given, additional information on expressions acknowledged by this application is provided")
 
 	// Flag to store the output filename
 	flag.StringVar(&output, "output", "output.pgn", "name of the file where the result of any manipulations is stored. It is used only in case any of the directives --filter or --sort is given. By default, 'output.pgn'")
+
+	// Flag to receive a histogram descriptor
+	flag.StringVar(&histogram, "histogram", "", "given a string, generate a histogram with the criteria specified in it. For more information on how to specify histograms use '--help-histogram'")
+	flag.BoolVar(&helpHistogram, "help-histogram", false, "if given, additional information on how histograms are specified is provided")
 
 	// Flag to store the template to use to generate the ascii table
 	flag.StringVar(&tableTemplate, "table", "templates/table/simple.tpl", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
@@ -83,17 +91,9 @@ func init() {
 	// Flag to store the file with the LaTeX template
 	flag.StringVar(&latexTemplate, "latex", "", "file with a LaTeX template to use. If given, a file with the same name used in 'file' and extension '.tex' is automatically generated in the same directory where the pgn file resides. For more information on how to create and use LaTeX templates see the documentation")
 
-	// Flag to receive a filter query
-	flag.StringVar(&filter, "filter", "", "if an expression is provided here, only games satisfying it are accepted. For more information on filters use '--help-filter'")
-	flag.BoolVar(&helpFilter, "help-filter", false, "if given, additional information on expressions acknowledged by this application is provided")
-
 	// Flag to receive a sorting descriptor
 	flag.StringVar(&sort, "sort", "", "if a string is given here, games are sorted according to the sorting descriptor provided. For more information on sorting descriptors use '--help-sort'")
 	flag.BoolVar(&helpSort, "help-sort", false, "if given, additional information on sorting descriptors is provided")
-
-	// Flag to receive a histogram descriptor
-	flag.StringVar(&histogram, "histogram", "", "if a string is given here, a histogram with the information requested is generated. For more information on how to specify histograms use '--help-histogram'")
-	flag.BoolVar(&helpHistogram, "help-histogram", false, "if given, additional information on how histograms are specified is provided")
 
 	// other optional parameters are verbose and version
 	flag.BoolVar(&verbose, "verbose", false, "provides verbose output")
@@ -303,6 +303,8 @@ func main() {
 	// verify the values parsed
 	verify()
 
+	// PgnFile
+	// ------------------------------------------------------------------------
 	// Create a new PgnFile
 	start := time.Now()
 	pgnfile, err := pgntools.NewPgnFile(filename)
@@ -327,6 +329,8 @@ func main() {
 	fmt.Printf(" [%v]\n", time.Since(start))
 	fmt.Println()
 
+	// List games
+	// ------------------------------------------------------------------------
 	// show a table with information of the games been processed. For this,
 	// a template is used: tableTemplate contains the location of a default
 	// template to use; others can be defined with --table
@@ -334,6 +338,8 @@ func main() {
 		games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
 	}
 
+	// Play/verify games
+	// ------------------------------------------------------------------------
 	// Play all games unconditionally. This is necessary to verify that the
 	// transcription of all games is correct. In case a strictly positive value
 	// is given then the board is shown on the standard output
@@ -343,6 +349,8 @@ func main() {
 	fmt.Printf(" [%v]\n", time.Since(start))
 	fmt.Println()
 
+	// Filter games
+	// ------------------------------------------------------------------------
 	// In case it has been requested to filter games, do so
 	if filter != "" {
 		start = time.Now()
@@ -357,6 +365,16 @@ func main() {
 		fmt.Printf(" [%v]\n", time.Since(start))
 	}
 	fmt.Println()
+
+	// Histogram
+	// ------------------------------------------------------------------------
+	if histogram != "" {
+		if histogram, err := games.GetHistogram(histogram); err != nil {
+			log.Fatalln(err)
+		} else {
+			log.Println(*histogram)
+		}
+	}
 
 	// In case either sorting and/or filter has been requested, write the result
 	// in the output file

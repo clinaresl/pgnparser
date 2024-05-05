@@ -282,6 +282,26 @@ func (c PgnCollection) GetPGN(writer io.Writer) error {
 	return nil
 }
 
+// Return a histogram defined with the given specification criteria computed
+// over all games in this collection. It returns any error found or nil in case
+// the histogram was successfully computed
+func (c PgnCollection) GetHistogram(spec string) (*PgnHistogram, error) {
+
+	// Create a new GetHistogram
+	histogram := NewPgnHistogram(spec)
+
+	// and update the histogram with the information of all games in this
+	// collection
+	for _, igame := range c.slice {
+		if err := histogram.Add(igame); err != nil {
+			return nil, err
+		}
+	}
+
+	// and return the histogram computed so far
+	return &histogram, nil
+}
+
 // Templates
 //
 // All the following methods are used to handle templates both for generating
