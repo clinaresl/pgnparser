@@ -183,6 +183,38 @@ func flatMap(mapa map[string]any) [][]any {
 	return result
 }
 
+// given two slices return the diff slice of them. The diff slice is defined as
+// the slice that results after removing the prefix of it which is equal to the
+// preceding slice, e.g., the diff slice of [A B C] and [A B D] is [” ” D]. Both
+// slices are assumed to have the same length
+func diffSlice(prec, next []any) []any {
+
+	var idx int
+	var val any
+	result := make([]any, 0)
+
+	for idx, val = range prec {
+
+		// If this location and the previous one are the same
+		if val == next[idx] {
+			result = append(result, "")
+		} else {
+
+			// Otherwise, the prefix is ended
+			break
+		}
+	}
+
+	// Next copy the rest of next into the result
+	for idx < len(next) {
+		result = append(result, next[idx])
+		idx += 1
+	}
+
+	// return the diff slice
+	return result
+}
+
 /* Local Variables: */
 /* mode:go */
 /* fill-column:80 */

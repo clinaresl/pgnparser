@@ -369,11 +369,13 @@ func main() {
 	// Histogram
 	// ------------------------------------------------------------------------
 	if histogram != "" {
+		start = time.Now()
 		if pgnhistogram, err := games.GetHistogram(histogram); err != nil {
 			log.Fatalln(err)
 		} else {
 			fmt.Println(*pgnhistogram)
 		}
+		fmt.Printf(" [%v]\n", time.Since(start))
 	}
 	fmt.Println()
 
