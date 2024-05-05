@@ -64,43 +64,6 @@ type PgnCollection struct {
 	nbGames int
 }
 
-// // A histogram is indexed by keys. Keys are either variables (represented as a
-// // string) or a slice of cases (each defined with a string as well). Both
-// // variables and cases can be qualified with a title
-
-// // A variable just consists of an association of a title and the name of a
-// // variable
-// type pgnKeyVar struct {
-// 	title    string
-// 	variable string
-// }
-
-// // A case consists of a slice of structs similar to variables but, instead of
-// // variables, they store propositional expressions
-// type pgnKeyCase struct {
-// 	title      string
-// 	expression string
-// }
-
-// // A full specification of cases consists just of a slice of cases. The whole
-// // collection of cases can be also qualified with a title
-// type pgnKeyCases struct {
-// 	title       string
-// 	expressions []pgnKeyCase
-// }
-
-// // So far, pgn histogram registers are any structs that support the following
-// // operations: get title, get subtitle, get key and get value. Note: first,
-// // while titles are always strings, subtitles can be of any type and they should
-// // be indeed sorted according to their type; second, values should be supported
-// // by the current implementation of histograms
-// type pgnHistogramRegister interface {
-// 	GetTitle() string
-// 	GetSubtitle(game *PgnGame) dataInterface
-// 	GetKey(game *PgnGame) string
-// 	GetValue(game *PgnGame) dataHistValue
-// }
-
 // consts
 // ----------------------------------------------------------------------------
 

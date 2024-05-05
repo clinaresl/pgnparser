@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"regexp"
 
 	"github.com/clinaresl/table"
 )
@@ -53,45 +52,6 @@ const (
 	WQUEEN
 	WKING
 )
-
-// globals
-// ----------------------------------------------------------------------------
-
-// the following map stores the translation of literal coordinates to integers
-// used to access a PgnBoard
-var coords map[string]int
-
-// the following map stores the translation of integer coordinates to literal
-// coordinates used to access a PgnBoard
-var literal map[int]string
-
-// the following structure contains information about the coordinates (in
-// literal form) from which each piece (represented as a white piece, but pawns
-// which preserve their color) can access a specific location of the board. For
-// example:
-//
-//	threats ["e4"][WPAWN] = [19][20, 12][21]
-//
-// which means that a white pawn can access location "e4" from squares 12 (e2),
-// 19 (d3, by capturing a piece in e4), 20 (e3) and 21 (f3, again by capturing).
-//
-// Note that all the locations from which e4 can be accessed are stored in
-// separate lists. Each list represents a specific direction.
-var threats map[string]map[content][][]int
-
-// the following regexp captures all the information given from the textual
-// description of a move in different groups as follows:
-//
-// Group #1: Piece
-// Group #2: Qualifier
-// Group #3: Capture ('x' only if this is a capture)
-// Group #4: Target square
-// Group #5: Promotion (in the form =<piece>)
-// Group #6: Castling (either 'O-O' or 'O-O-O')
-var reTextualMove = regexp.MustCompile(`([PNBRQK]?)([a-h]?[1-8]?)(x?)([a-h][1-8]|[NBRQK])(\=[PNBRQK])?|(O(?:-?O){1,2})[\+#]?(\s*[\!\?]+)?`)
-
-// The following map relates each content with its utf-8 representation
-var utf8 map[content]rune
 
 // typedefs
 // ----------------------------------------------------------------------------
