@@ -21,6 +21,7 @@
 package pgntools
 
 import (
+	"fmt"
 	"regexp"
 )
 
@@ -213,6 +214,27 @@ func diffSlice(prec, next []any) []any {
 
 	// return the diff slice
 	return result
+}
+
+// Given two slices of any return true if the first one is less than the second
+// and false otherwise. Both slices are assumed to have the same length. It
+// implements lexicographic order on strings
+func Less(sl1, sl2 []any) bool {
+
+	// Proceed comparing items until one is different than the other
+	for idx := 0; idx < len(sl1); idx++ {
+		val1, val2 := fmt.Sprintf("%v", sl1[idx]), fmt.Sprintf("%v", sl2[idx])
+		if val1 < val2 {
+			return true
+		}
+		if val1 > val2 {
+			return false
+		}
+	}
+
+	// At this point, both slices are equal and thus, the first is not less than
+	// the second
+	return false
 }
 
 /* Local Variables: */
