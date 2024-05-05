@@ -128,7 +128,7 @@ func diffSlice(prec, next []any) []any {
 // Given two slices of any return true if the first one is less than the second
 // and false otherwise. Both slices are assumed to have the same length. It
 // implements lexicographic order on strings
-func Less(sl1, sl2 []any) bool {
+func less(sl1, sl2 []any) bool {
 
 	// Proceed comparing items until one is different than the other
 	for idx := 0; idx < len(sl1); idx++ {
@@ -317,7 +317,7 @@ func (histogram PgnHistogram) String() string {
 	// Once the contents of the entire table have been computed, add the rows to
 	// the table after sorting it
 	sort.SliceStable(contents, func(i, j int) bool {
-		return Less(contents[i], contents[j])
+		return less(contents[i], contents[j])
 	})
 	for idx, iline := range contents {
 
