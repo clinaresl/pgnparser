@@ -28,15 +28,16 @@ import (
 // typedefs
 // ----------------------------------------------------------------------------
 
-// Given a sequence of criteria (either variables or boolean expressions), a
-// histogram is implemented as a decision tree where internal nodes store the
-// result of the criteria and lead to other histograms or decision trees until
-// the leaves are reached which simply store the number of occurrences of all
-// variables/boolean expressions from the root to it.
+// Given a sequence of criteria (either variables or boolean expressions), which
+// might be named, a histogram is implemented as a decision tree where internal
+// nodes store the result of the criteria and lead to other histograms or
+// decision trees until the leaves are reached which simply store the number of
+// occurrences of all variables/boolean expressions from the root to it.
 //
 // In addition, a histogram contains the total number of observations stored in
 // it so that percentages can be computed for every inner/leaf node
 type PgnHistogram struct {
+	names    []string
 	criteria []string
 	data     map[string]any
 	nbhits   uint64
@@ -60,6 +61,91 @@ func getResult(criteria string, game PgnGame) (string, error) {
 	return fmt.Sprintf("%v", output), nil
 }
 
+// return a slice of slices where each slice is a sequence of keys in the given
+// map.
+func flatMap(mapa map[string]any) [][]any {
+
+	// --initialization
+	result := make([][]any, 0)
+
+	// The function is implemented recusively
+	for k, v := range mapa {
+
+		// in case the value is a nested map then proceed recursively
+		if value, ok := v.(map[string]any); ok {
+			output := flatMap(value)
+
+			// and extend all slices in output with this key
+			for _, subslice := range output {
+
+				// prepend the values of the subslice with this keyword
+				result = append(result, append([]any{k}, subslice...))
+			}
+		} else {
+
+			// if the values at this level are not maps then just simply return
+			// this key
+			result = append(result, []any{k})
+		}
+	}
+
+	// and return the result computed so far
+	return result
+}
+
+// given two slices return the diff slice of them. The diff slice is defined as
+// the slice that results after removing the prefix of it which is equal to the
+// preceding slice, e.g., the diff slice of [A B C] and [A B D] is [” ” D]. Both
+// slices are assumed to have the same length
+func diffSlice(prec, next []any) []any {
+
+	var idx int
+	var val any
+	result := make([]any, 0)
+
+	for idx, val = range prec {
+
+		// If this location and the previous one are the same
+		if val == next[idx] {
+			result = append(result, "")
+		} else {
+
+			// Otherwise, the prefix is ended
+			break
+		}
+	}
+
+	// Next copy the rest of next into the result
+	for idx < len(next) {
+		result = append(result, next[idx])
+		idx += 1
+	}
+
+	// return the diff slice
+	return result
+}
+
+// Given two slices of any return true if the first one is less than the second
+// and false otherwise. Both slices are assumed to have the same length. It
+// implements lexicographic order on strings
+func Less(sl1, sl2 []any) bool {
+
+	// Proceed comparing items until one is different than the other
+	for idx := 0; idx < len(sl1); idx++ {
+		val1, val2 := fmt.Sprintf("%v", sl1[idx]), fmt.Sprintf("%v", sl2[idx])
+		if val1 < val2 {
+			return true
+		}
+		if val1 > val2 {
+			return false
+		}
+	}
+
+	// At this point, both slices are equal and thus, the first is not less than
+	// the second
+	return false
+}
+
 // Methods
 // ----------------------------------------------------------------------------
 
@@ -67,18 +153,47 @@ func getResult(criteria string, game PgnGame) (string, error) {
 // semicolon list of variables/boolean expressions in the form: "<var/expr>+".
 // At least one should be given, and an arbitrary number of them can be
 // specified.
-func NewPgnHistogram(spec string) PgnHistogram {
+func NewPgnHistogram(spec string) (*PgnHistogram, error) {
 
 	// Compute the sequence of criteria from the specification string
 	criteria := reHistogramCriteria.Split(spec, -1)
 
+	// compute the list of names, which has to be equal to the number of
+	// criteria
+	names := make([]string, len(criteria))
+	for idx, icriteria := range criteria {
+		name := reHistogramName.Split(icriteria, -1)
+
+		// In case a name is found, add it to the list of names
+		if len(name) == 2 {
+			names[idx] = name[0]
+
+			// and update the criteria to be the next item
+			criteria[idx] = name[1]
+		} else {
+
+			if len(name) == 1 {
+
+				// Otherwise the whole criteria is used as the name of this var/bool
+				// expression
+				names[idx] = icriteria
+			} else {
+
+				// if decomposing the criteria produced more than two values
+				// then an error should be returned
+				return nil, fmt.Errorf(" Wrong specification string '%v'\n", spec)
+			}
+		}
+	}
+
 	// finally, return a new histogram with the decision tree built above and no
 	// hits
-	return PgnHistogram{
+	return &PgnHistogram{
+		names:    names,
 		criteria: criteria,
 		data:     make(map[string]any),
 		nbhits:   0,
-	}
+	}, nil
 }
 
 // Return the nbhits that are reached by using all values in the given sequence.
@@ -170,10 +285,10 @@ func (histogram PgnHistogram) String() string {
 	}
 	tab, _ := table.NewTable(spec)
 
-	// The headers of the table are just the criteria
+	// Add next the headers of all columns
 	line := make([]any, 0)
-	for _, icriteria := range histogram.criteria {
-		line = append(line, icriteria)
+	for _, iname := range histogram.names {
+		line = append(line, iname)
 	}
 
 	// add the header for the last column and add this line to the table

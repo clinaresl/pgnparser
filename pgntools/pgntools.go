@@ -21,7 +21,6 @@
 package pgntools
 
 import (
-	"fmt"
 	"regexp"
 )
 
@@ -82,6 +81,10 @@ var reGroupOutcome = regexp.MustCompile(`(?P<score1>1/2|0|1)\-(?P<score2>1/2|0|1
 // The following simple regular expression is used to distinguish criteria given
 // for the creation of histograms
 var reHistogramCriteria = regexp.MustCompile(`\s*;\s*`)
+
+// The following regular expression is used to distinguish the name of a
+// var/bool expression from the var/bool expression
+var reHistogramName = regexp.MustCompile(`\s*:\s*`)
 
 // functions
 // ----------------------------------------------------------------------------
@@ -150,91 +153,6 @@ func init() {
 	utf8[WBISHOP] = '♗'
 	utf8[WKNIGHT] = '♘'
 	utf8[WPAWN] = '♙'
-}
-
-// return a slice of slices where each slice is a sequence of keys in the given
-// map.
-func flatMap(mapa map[string]any) [][]any {
-
-	// --initialization
-	result := make([][]any, 0)
-
-	// The function is implemented recusively
-	for k, v := range mapa {
-
-		// in case the value is a nested map then proceed recursively
-		if value, ok := v.(map[string]any); ok {
-			output := flatMap(value)
-
-			// and extend all slices in output with this key
-			for _, subslice := range output {
-
-				// prepend the values of the subslice with this keyword
-				result = append(result, append([]any{k}, subslice...))
-			}
-		} else {
-
-			// if the values at this level are not maps then just simply return
-			// this key
-			result = append(result, []any{k})
-		}
-	}
-
-	// and return the result computed so far
-	return result
-}
-
-// given two slices return the diff slice of them. The diff slice is defined as
-// the slice that results after removing the prefix of it which is equal to the
-// preceding slice, e.g., the diff slice of [A B C] and [A B D] is [” ” D]. Both
-// slices are assumed to have the same length
-func diffSlice(prec, next []any) []any {
-
-	var idx int
-	var val any
-	result := make([]any, 0)
-
-	for idx, val = range prec {
-
-		// If this location and the previous one are the same
-		if val == next[idx] {
-			result = append(result, "")
-		} else {
-
-			// Otherwise, the prefix is ended
-			break
-		}
-	}
-
-	// Next copy the rest of next into the result
-	for idx < len(next) {
-		result = append(result, next[idx])
-		idx += 1
-	}
-
-	// return the diff slice
-	return result
-}
-
-// Given two slices of any return true if the first one is less than the second
-// and false otherwise. Both slices are assumed to have the same length. It
-// implements lexicographic order on strings
-func Less(sl1, sl2 []any) bool {
-
-	// Proceed comparing items until one is different than the other
-	for idx := 0; idx < len(sl1); idx++ {
-		val1, val2 := fmt.Sprintf("%v", sl1[idx]), fmt.Sprintf("%v", sl2[idx])
-		if val1 < val2 {
-			return true
-		}
-		if val1 > val2 {
-			return false
-		}
-	}
-
-	// At this point, both slices are equal and thus, the first is not less than
-	// the second
-	return false
 }
 
 /* Local Variables: */

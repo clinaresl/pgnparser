@@ -288,7 +288,10 @@ func (c PgnCollection) GetPGN(writer io.Writer) error {
 func (c PgnCollection) GetHistogram(spec string) (*PgnHistogram, error) {
 
 	// Create a new GetHistogram
-	histogram := NewPgnHistogram(spec)
+	histogram, err := NewPgnHistogram(spec)
+	if err != nil {
+		return nil, err
+	}
 
 	// and update the histogram with the information of all games in this
 	// collection
@@ -299,7 +302,7 @@ func (c PgnCollection) GetHistogram(spec string) (*PgnHistogram, error) {
 	}
 
 	// and return the histogram computed so far
-	return &histogram, nil
+	return histogram, nil
 }
 
 // Templates
