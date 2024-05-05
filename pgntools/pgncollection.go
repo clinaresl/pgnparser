@@ -24,12 +24,7 @@ import (
 	"io"  // io streams
 	"log" // logging services
 
-	// access to file mgmt functions
-	// pgn files are parsed with a regexp
-	// to convert integers into strings
 	"text/template" // go facility for processing templates
-
-	// import the parser of propositional formulae
 
 	// import my favourite package to automatically create tables
 	"github.com/clinaresl/table"
