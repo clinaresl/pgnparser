@@ -151,6 +151,38 @@ func init() {
 	utf8[WPAWN] = '♙'
 }
 
+// return a slice of slices where each slice is a sequence of keys in the given
+// map.
+func flatMap(mapa map[string]any) [][]any {
+
+	// --initialization
+	result := make([][]any, 0)
+
+	// The function is implemented recusively
+	for k, v := range mapa {
+
+		// in case the value is a nested map then proceed recursively
+		if value, ok := v.(map[string]any); ok {
+			output := flatMap(value)
+
+			// and extend all slices in output with this key
+			for _, subslice := range output {
+
+				// prepend the values of the subslice with this keyword
+				result = append(result, append([]any{k}, subslice...))
+			}
+		} else {
+
+			// if the values at this level are not maps then just simply return
+			// this key
+			result = append(result, []any{k})
+		}
+	}
+
+	// and return the result computed so far
+	return result
+}
+
 /* Local Variables: */
 /* mode:go */
 /* fill-column:80 */

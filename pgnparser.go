@@ -369,12 +369,13 @@ func main() {
 	// Histogram
 	// ------------------------------------------------------------------------
 	if histogram != "" {
-		if histogram, err := games.GetHistogram(histogram); err != nil {
+		if pgnhistogram, err := games.GetHistogram(histogram); err != nil {
 			log.Fatalln(err)
 		} else {
-			log.Println(*histogram)
+			fmt.Println(*pgnhistogram)
 		}
 	}
+	fmt.Println()
 
 	// In case either sorting and/or filter has been requested, write the result
 	// in the output file

@@ -18,7 +18,11 @@
 
 package pgntools
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/clinaresl/table"
+)
 
 // typedefs
 // ----------------------------------------------------------------------------
@@ -39,6 +43,21 @@ type PgnHistogram struct {
 
 // Functions
 // ----------------------------------------------------------------------------
+
+// Return the result of executing the given criteria as a string with
+// information in the specified game and nil if no error happened.
+func getResult(criteria string, game PgnGame) (string, error) {
+
+	// execute the ith-criteria of this histogram
+	env := game.getEnv()
+	output, err := evaluateExpr(criteria, env)
+	if err != nil {
+		return "", err
+	}
+
+	// return the result casted as a string with success
+	return fmt.Sprintf("%v", output), nil
+}
 
 // Methods
 // ----------------------------------------------------------------------------
@@ -61,6 +80,23 @@ func NewPgnHistogram(spec string) PgnHistogram {
 	}
 }
 
+// Return the nbhits that are reached by using all values in the given sequence.
+// This function assumes that such value can be effectively achieved by using
+// the given sequence
+func (histogram PgnHistogram) getHits(sequence []any) uint64 {
+
+	// The implementation is performed iteratively
+	data := histogram.data
+
+	// Traverse all keys but the last one
+	for idx := 0; idx < len(sequence)-1; idx++ {
+		data = data[sequence[idx].(string)].(map[string]any)
+	}
+
+	// Once the last value has been found, just return it
+	return data[sequence[len(sequence)-1].(string)].(uint64)
+}
+
 // Updates this histogram with information in the given game, and nil if no
 // error was found
 func (histogram *PgnHistogram) Add(game PgnGame) error {
@@ -73,12 +109,10 @@ func (histogram *PgnHistogram) Add(game PgnGame) error {
 	for idx < len(histogram.criteria)-1 {
 
 		// execute the ith-criteria of this histogram
-		env := game.getEnv()
-		output, err := evaluateExpr(histogram.criteria[idx], env)
+		result, err := getResult(histogram.criteria[idx], game)
 		if err != nil {
 			return err
 		}
-		result := fmt.Sprintf("%v", output)
 
 		// Next verify whether this result is already stored in the current map
 		if value, ok := data[result]; !ok {
@@ -100,12 +134,10 @@ func (histogram *PgnHistogram) Add(game PgnGame) error {
 	// Once the leaf has been found, then add a new observation. Do as before,
 	// evaluate the last criteria and add data to the histogram adding a new
 	// keyword if necessary
-	env := game.getEnv()
-	output, err := evaluateExpr(histogram.criteria[idx], env)
+	result, err := getResult(histogram.criteria[idx], game)
 	if err != nil {
 		return err
 	}
-	result := fmt.Sprintf("%v", output)
 
 	// Next verify whether this result is already stored in the current map
 	if _, ok := data[result]; !ok {
@@ -123,6 +155,46 @@ func (histogram *PgnHistogram) Add(game PgnGame) error {
 	// success
 	histogram.nbhits += 1
 	return nil
+}
+
+// Histograms are stringers, so that they can be shown on any writer
+func (histogram PgnHistogram) String() string {
+
+	// create a table to show the data in this histogram where all columns but
+	// first are criteria, and the last is the number of observations
+	nocols := 0
+	spec := " c "
+	for ; nocols < len(histogram.criteria); nocols++ {
+		spec += "| c "
+	}
+	tab, _ := table.NewTable(spec)
+
+	// The headers of the table are just the criteria
+	line := make([]any, 0)
+	for _, icriteria := range histogram.criteria {
+		line = append(line, icriteria)
+	}
+
+	// add the header for the last column and add this line to the table
+	// followed by a horizontal rule
+	line = append(line, "# Obs.")
+	tab.AddRow(line...)
+	tab.AddThickRule()
+
+	// Next, add the data. For this, the data of this histogram is traversed to
+	// get all combinations of keys, each one representing a different line
+	for _, ikey := range flatMap(histogram.data) {
+
+		// And add the value of all criteria and, at the end, the number of hits
+		// for this specific combination
+		ikey = append(ikey, fmt.Sprintf("%v", histogram.getHits(ikey)))
+		tab.AddRow(ikey...)
+	}
+
+	// Add a bottom row and return the table
+	tab.AddThickRule()
+
+	return fmt.Sprintf("%v", tab)
 }
 
 /* Local Variables: */
