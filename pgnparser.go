@@ -366,14 +366,17 @@ func main() {
 	}
 	fmt.Println()
 
-	// Histogram
+	// Sort games
 	// ------------------------------------------------------------------------
-	if histogram != "" {
+	if sort != "" {
 		start = time.Now()
-		if pgnhistogram, err := games.GetHistogram(histogram); err != nil {
+		if sorted, err := games.Sort(sort); err != nil {
 			log.Fatalln(err)
 		} else {
-			fmt.Println(*pgnhistogram)
+			fmt.Printf(" %v games sorted\n", sorted.Len())
+
+			// and make the sorted collection the current one
+			games = sorted
 		}
 		fmt.Printf(" [%v]\n", time.Since(start))
 	}
@@ -400,6 +403,19 @@ func main() {
 			}
 		}
 	}
+
+	// Histogram
+	// ------------------------------------------------------------------------
+	if histogram != "" {
+		start = time.Now()
+		if pgnhistogram, err := games.GetHistogram(histogram); err != nil {
+			log.Fatalln(err)
+		} else {
+			fmt.Println(*pgnhistogram)
+		}
+		fmt.Printf(" [%v]\n", time.Since(start))
+	}
+	fmt.Println()
 
 	// // in case a LaTeX template has been given, then generate a LaTeX file
 	// // with the same name than the pgn file (and in the same location) with

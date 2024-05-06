@@ -202,6 +202,59 @@ func (game *PgnGame) getEnv() (env map[string]any) {
 	return
 }
 
+// Return the result of executing the given criteria as a string with
+// information in this game and nil if no error happened.
+func (game *PgnGame) getResult(criteria string) (string, error) {
+
+	// execute the ith-criteria of this histogram
+	env := game.getEnv()
+	output, err := evaluateExpr(criteria, env)
+	if err != nil {
+		return "", err
+	}
+
+	// return the result casted as a string with success
+	return fmt.Sprintf("%v", output), nil
+}
+
+// return true if the receiver must go before the other game and false otherwise
+// according to the given sorting criteria. If the evaluation of any criteria
+// produced an error it is returned and the boolean result is invalid
+func (game PgnGame) lessGame(other PgnGame, criteria criteriaSorting) (bool, error) {
+
+	// process all criteria given
+	for _, icriteria := range criteria {
+
+		// get the result of this criteria both in this game and the other
+		iresult, ierr := game.getResult(icriteria.criteria)
+		if ierr != nil {
+			return false, ierr
+		}
+		jresult, jerr := other.getResult(icriteria.criteria)
+		if jerr != nil {
+			return false, jerr
+		}
+
+		// The result of an execution could be anything. However sorting is done
+		// lexicographically on the given criteria and thus comparisons are done
+		// as strings (note that "false" < "true"). Next in case one of the
+		// values is either gt or lt than the other a comparison is performed.
+		// Otherwise, the next sorting criteria should be visited
+		if (iresult < jresult && icriteria.direction == increasing) ||
+			(iresult > jresult && icriteria.direction == decreasing) {
+			return true, nil
+		}
+		if (iresult > jresult && icriteria.direction == increasing) ||
+			(iresult < jresult && icriteria.direction == decreasing) {
+			return false, nil
+		}
+	}
+
+	// At this point, both games have been proven to be strinctly equal
+	// according to the given criteria
+	return false, nil
+}
+
 // Return the tags of this game
 func (game *PgnGame) Tags() (tags map[string]any) {
 	return game.tags

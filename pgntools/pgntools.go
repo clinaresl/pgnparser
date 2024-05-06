@@ -88,11 +88,15 @@ var reGroupOutcome = regexp.MustCompile(`(?P<score1>1/2|0|1)\-(?P<score2>1/2|0|1
 
 // The following simple regular expression is used to distinguish criteria given
 // for the creation of histograms
-var reHistogramCriteria = regexp.MustCompile(`\s*;\s*`)
+var reCriteria = regexp.MustCompile(`\s*;\s*`)
 
 // The following regular expression is used to distinguish the name of a
 // var/bool expression from the var/bool expression
 var reHistogramName = regexp.MustCompile(`\s*:\s*`)
+
+// The following regular expression is used to distinguish criteria from sorting
+// operands
+var reSorting = `\s*(?P<direction>[<>])\s*(?P<criteria>.+)\s*`
 
 // the following map stores the translation of literal coordinates to integers
 // used to access a PgnBoard

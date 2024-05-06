@@ -685,18 +685,14 @@ func (board *PgnBoard) getOrigin(piece content, target string, qualifier string,
 			log.Fatalf("It was not possible to get the origin location of a knight")
 		}
 		return origin
-	} else {
-
-		// --- Bishops, Rooks, Queens and Kings
-		origin = board.getOriginGeneric(piece, target, qualifier, capture)
-		if origin < 0 {
-			log.Fatalf("It was not possible to get the origin location of a generic piece")
-		}
-		return origin
 	}
 
-	// in case of failure return a negative number
-	return -1
+	// --- Bishops, Rooks, Queens and Kings
+	origin = board.getOriginGeneric(piece, target, qualifier, capture)
+	if origin < 0 {
+		log.Fatalf("It was not possible to get the origin location of a generic piece")
+	}
+	return origin
 }
 
 // determine whether a piece in the given location which moves to the given

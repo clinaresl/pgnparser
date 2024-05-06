@@ -46,21 +46,6 @@ type PgnHistogram struct {
 // Functions
 // ----------------------------------------------------------------------------
 
-// Return the result of executing the given criteria as a string with
-// information in the specified game and nil if no error happened.
-func getResult(criteria string, game PgnGame) (string, error) {
-
-	// execute the ith-criteria of this histogram
-	env := game.getEnv()
-	output, err := evaluateExpr(criteria, env)
-	if err != nil {
-		return "", err
-	}
-
-	// return the result casted as a string with success
-	return fmt.Sprintf("%v", output), nil
-}
-
 // return a slice of slices where each slice is a sequence of keys in the given
 // map.
 func flatMap(mapa map[string]any) [][]any {
@@ -128,7 +113,7 @@ func diffSlice(prec, next []any) []any {
 // Given two slices of any return true if the first one is less than the second
 // and false otherwise. Both slices are assumed to have the same length. It
 // implements lexicographic order on strings
-func less(sl1, sl2 []any) bool {
+func lessLine(sl1, sl2 []any) bool {
 
 	// Proceed comparing items until one is different than the other
 	for idx := 0; idx < len(sl1); idx++ {
@@ -156,7 +141,7 @@ func less(sl1, sl2 []any) bool {
 func NewPgnHistogram(spec string) (*PgnHistogram, error) {
 
 	// Compute the sequence of criteria from the specification string
-	criteria := reHistogramCriteria.Split(spec, -1)
+	criteria := reCriteria.Split(spec, -1)
 
 	// compute the list of names, which has to be equal to the number of
 	// criteria
@@ -225,7 +210,7 @@ func (histogram *PgnHistogram) Add(game PgnGame) error {
 	for idx < len(histogram.criteria)-1 {
 
 		// execute the ith-criteria of this histogram
-		result, err := getResult(histogram.criteria[idx], game)
+		result, err := game.getResult(histogram.criteria[idx])
 		if err != nil {
 			return err
 		}
@@ -250,7 +235,7 @@ func (histogram *PgnHistogram) Add(game PgnGame) error {
 	// Once the leaf has been found, then add a new observation. Do as before,
 	// evaluate the last criteria and add data to the histogram adding a new
 	// keyword if necessary
-	result, err := getResult(histogram.criteria[idx], game)
+	result, err := game.getResult(histogram.criteria[idx])
 	if err != nil {
 		return err
 	}
@@ -317,7 +302,7 @@ func (histogram PgnHistogram) String() string {
 	// Once the contents of the entire table have been computed, add the rows to
 	// the table after sorting it
 	sort.SliceStable(contents, func(i, j int) bool {
-		return less(contents[i], contents[j])
+		return lessLine(contents[i], contents[j])
 	})
 	for idx, iline := range contents {
 

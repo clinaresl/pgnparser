@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"io"  // io streams
 	"log" // logging services
+	"regexp"
+	"sort"
 
 	"text/template" // go facility for processing templates
 
@@ -33,40 +35,35 @@ import (
 // typedefs
 // ----------------------------------------------------------------------------
 
-// // PGN games can be sorted either in ascending or descending order. The
-// // direction is then defined as an integer
-// type sortingDirection int
+// PGN games can be sorted either in ascending or descending order. The
+// direction is then defined as an integer
+type sortingDirection int
 
-// // A pgnSorting consists of two items: a constant value for distinguishing
-// // ascending from descending order and a variable name used as a key for sorting
-// // pgn games
-// type pgnSorting struct {
-// 	direction sortingDirection
-// 	variable  string
-// }
+// A pgnSorting consists of two items: a constant value for distinguishing
+// ascending from descending order and a criteria (either a variable or a bool
+// expression) which is used for sorting elements
+type pgnSorting struct {
+	direction sortingDirection
+	criteria  string
+}
 
-// A PgnCollection consists of an arbitrary number of PgnGames along with a
-// count of the number of games stored in it ---this is given to check for
-// consistency so that the difference between nbGames and len (slice) shall be
-// always null.
-//
-// In addition, a PGN collection contains a sort descriptor which consists of a
-// slice of pairs that contain for each variable whether PGN games should be
-// sorted in increasing or decreasing order
+// So that a sorting criteria consists of a sequence of pgnSorting pairs
+type criteriaSorting []pgnSorting
+
+// A PgnCollection consists of an arbitrary number of PgnGames
 type PgnCollection struct {
-	slice []PgnGame
-	// sortDescriptor []pgnSorting
+	slice   []PgnGame
 	nbGames int
 }
 
 // consts
 // ----------------------------------------------------------------------------
 
-// // PGN games can be sorted either in ascending or descending order
-// const (
-// 	increasing sortingDirection = 1 << iota // increasing order
-// 	decreasing                              // decreasing order
-// )
+// PGN games can be sorted either in ascending or descending order
+const (
+	increasing sortingDirection = 1 << iota // increasing order
+	decreasing                              // decreasing order
+)
 
 // Methods
 // ----------------------------------------------------------------------------
@@ -261,6 +258,70 @@ func (c PgnCollection) GetHistogram(spec string) (*PgnHistogram, error) {
 
 	// and return the histogram computed so far
 	return histogram, nil
+}
+
+// Sort the games in this collection according to the specific criteria which
+// consists of a semicolon separated list of pairs (direction var/bool expr).
+// The direction can be either '<' (ascending order) or '>' (descending order),
+// next either a variable or a bool expression can be used so that games are
+// sorted according to the value of the variable or the result of the evaluation
+// of the bool expr
+//
+// The result is returned in a brand new collection of Pgn games
+func (c *PgnCollection) Sort(spec string) (*PgnCollection, error) {
+
+	// parse the given specification string. First, distinguish the different
+	// parts and get the sorting direction and criteria (either a variable or a
+	// bool expression) of each one
+	cmds := reCriteria.Split(spec, -1)
+	if len(cmds) == 0 {
+		return nil, fmt.Errorf(" Empty sorting string '%v'\n", spec)
+	}
+
+	// Process all chunks to get a sorting criteria to be used for sorting games
+	criteria := make(criteriaSorting, 0)
+	for _, icmd := range cmds {
+
+		// Next, process this specific chunk
+		if match, err := regexp.MatchString(reSorting, icmd); err != nil {
+			return nil, err
+		} else {
+
+			// In case no match is detected then return an error
+			if !match {
+				return nil, fmt.Errorf(" Syntax eerror in sorting command '%v'\n", icmd)
+			} else {
+
+				// Extract the groups
+				indices := regexp.MustCompile(reSorting).FindSubmatchIndex([]byte(icmd))
+
+				// Get the direction and the variable/bool expression
+				var sortingDirection = increasing
+				if icmd[indices[2]:indices[3]] == ">" {
+					sortingDirection = decreasing
+				}
+
+				// Create a sorting criteria and add it to the slice of sorting
+				// criteria to be used for sorting games
+				criteria = append(criteria,
+					pgnSorting{
+						direction: sortingDirection,
+						criteria:  icmd[indices[4]:indices[5]],
+					})
+			}
+		}
+	}
+
+	// Now, sort the slice of games in this collection
+	sort.SliceStable(c.slice, func(i, j int) bool {
+		result, err := c.GetGame(i).lessGame(c.GetGame(j), criteria)
+		if err != nil {
+			log.Fatalf(" Error while sorting games: '%v'\n", err)
+		}
+		return result
+	})
+
+	return c, nil
 }
 
 // Templates
