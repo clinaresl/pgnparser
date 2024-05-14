@@ -394,34 +394,28 @@ func (game *PgnGame) GetLaTeXMoves() (output string) {
 // different annotations.
 //
 // This method successively processes the moves in this PgnGame until a comment
-// is found. If a "literal" command is found, it is just added to the
-// output. Other "special" comments are:
-//
-// 1. %emt which show the elapsed move time
-//
-// 2. %show which generates a LaTeX command for showing the current board
+// is found.
 //
 // It is intended to be used in LaTeX templates
 func (game *PgnGame) GetLaTeXMovesWithComments() (output string) {
 
 	// the variable newMainLine is used to determine whether the next move
-	// should start with a LaTeX command \mainline. Obviously, this is
-	// initially true
+	// should start with a LaTeX command \mainline. Obviously, this is initially
+	// true
 	newMainLine := true
 
 	// Iterate over all moves
-	for _, move := range game.moves {
+	for idx, move := range game.moves {
 
-		// before printing this move, check if a new mainline has to be
-		// started (e.g., because the previous move ended with a
-		// comment
+		// before printing this move, check if a new mainline has to be started
+		// (e.g., because the previous move ended with a comment
 		if newMainLine {
-			output += `\mainline{ `
+			output += `\mainline{`
 		}
 
-		// now in case either we are starting a new mainline or it is
-		// white's move, then show all the details of the move including
-		// counter and color prefix
+		// now in case either we are starting a new mainline or it is white's
+		// move, then show all the details of the move including counter and
+		// color prefix
 		if newMainLine || move.color == 1 {
 
 			// now, show the actual move with all details
@@ -444,9 +438,13 @@ func (game *PgnGame) GetLaTeXMovesWithComments() (output string) {
 
 			// if a comment is present, show it as well
 			if move.comments != "" {
-
 				output += fmt.Sprintf("%v ", move.comments)
 			}
+		} else if idx == len(game.moves)-1 {
+
+			// if this is the last move of the game, and no emt/comments were
+			// produced, then close the mainline anyway
+			output += "} "
 		}
 
 		// and check whether a new mainline has to be started in the

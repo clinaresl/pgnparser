@@ -402,9 +402,10 @@ func (games *PgnCollection) GetTable(specline string, fields []any) table.Table 
 // the manual.
 func (games *PgnCollection) GamesToWriterFromTemplate(dst io.Writer, templateFile string) {
 
-	// access a template and parse its contents
+	// create a dictionary of meta-variables
 	variables := make(map[string]string)
-	variables["var"] = "2"
+
+	// access a template and parse its contents
 	template, err := metatemplate.ParseFiles(variables, templateFile)
 	if err != nil {
 		log.Fatal(err)
