@@ -9,8 +9,7 @@
 	"Time" is defined or not is taken into account to set up the
 	table to show accordingly
 	
-*/}}{{if ne (.GetTagValue "Time") ""}}
-{{.GetTable "| c c | l r | l r | c | c | c | c |" (.GetSlice "Date" "Time" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
-{{else}}
-{{.GetTable "| c | l r | l r | c | c | c | c |" (.GetSlice "Date" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
-{{end}}
+*/}}{{if ne (.GetTagValue "Time") ""}}{{.GetTable "| c c | l r | l r | c | c | c | c |" (.GetSlice "Date" "Time" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
+{{else}}{{.GetTable "| c | l r | l r | c | c | c | c |" (.GetSlice "Date" "White" "WhiteElo" "Black" "BlackElo" "ECO" "TimeControl" "Moves" "Result") }}
+{{end}} # Games found: {{.Len}}
+{{""}}

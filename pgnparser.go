@@ -27,8 +27,6 @@ import (
 	"os"   // operating system services
 	"time"
 
-	// import a package to manage paths
-
 	// also use several tools for handling games in pgn format
 	"github.com/clinaresl/pgnparser/pgntools"
 )
@@ -417,13 +415,22 @@ func main() {
 	}
 	fmt.Println()
 
-	// // in case a LaTeX template has been given, then generate a LaTeX file
-	// // with the same name than the pgn file (and in the same location) with
-	// // extension '.tex' from the contents given in the specified template
-	// if latexTemplate != "" {
+	// LaTeX
+	// ------------------------------------------------------------------------
 
-	// 	games.GamesToFileFromTemplate(pgnfile+".tex", latexTemplate)
-	// }
+	// in case a LaTeX template has been given, then generate a LaTeX file
+	// with the same name than the pgn file (and in the same location) with
+	// extension '.tex' from the contents given in the specified template
+	if latexTemplate != "" {
+
+		// Create a LaTeX file to write the output
+		if latexStream, err := os.Create(output + ".tex"); err != nil {
+			log.Fatalln(err)
+		} else {
+			games.GamesToWriterFromTemplate(latexStream, latexTemplate)
+		}
+
+	}
 }
 
 /* Local Variables: */
