@@ -21,6 +21,8 @@
 \usepackage{marvosym}
 \usepackage{FiraSans}
 
+\usepackage{array}
+\usepackage{longtable}
 \usepackage{fancyhdr}
 \pagestyle{fancy}
 
@@ -76,14 +78,9 @@
 {{/* -------------------------------- Moves ------------------------------ */}}
 
 \newchessgame
-{{.GetLaTeXMovesWithComments}}\hfill \textbf{ {{.GetTagValue ("Result")}}}\\
+{{.GetLaTeXMovesWithCommentsTabular "4.2in" "3.0in" 8}}\hfill \textbf{ {{.GetTagValue ("Result")}}}\\
 
-{{/* --------------------------- Final position -------------------------- */}}
-
-\begin{center}
-  \chessboard[print,showmover=true]
-\end{center}
-\noindent
+{{/* ------------------------------ Postface ----------------------------- */}}
 \hfill \textcolor{IndianRed}{Termination: {{.GetTagValue ("Termination")}}}
 
 \newpage

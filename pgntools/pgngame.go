@@ -21,7 +21,8 @@ package pgntools
 import (
 	"errors" // for signaling errors
 	"fmt"    // printing msgs
-	"log"    // logging services
+	"io"
+	"log" // logging services
 
 	"github.com/expr-lang/expr"
 )
@@ -390,6 +391,94 @@ func (game *PgnGame) GetLaTeXMoves() (output string) {
 	return
 }
 
+// Returns a closure that generates a \mainline{...} LaTeX command with the next
+// "nbplies" noves and the resulting chessboard, starting from the beginning. It
+// also shows other information for every single move. In case the game has been
+// exhausted it returns the empty string and io.EOF
+//
+// It is used as a helper function to be used in LaTeX templates
+func (game *PgnGame) GetMainLineWithComments(nbplies int) func() (string, error) {
+
+	// Initially, all moves are generated from the first one
+	start := 0
+
+	// return a closure which produces the LaTeX command for the next nbplies
+	// moves
+	return func() (string, error) {
+
+		// Ensure the game has not been fully reported yet
+		if start >= len(game.moves) {
+
+			// If so, return the empty string and io.EOF
+			return "", io.EOF
+		}
+
+		output := ""
+
+		// the variable newMainLine is used to determine whether the next move
+		// should start with a \mainline or not. Obviously, this is true at the
+		// beginning
+		newMainLine := true
+
+		// Iterate from the given position
+		last := min(start+nbplies, len(game.moves))
+		for idx, move := range game.moves[start:last] {
+
+			// if we are starting a new mainline (either because we are about to
+			// generate the first move or because a comment or other information
+			// was printed in the last iteration)
+			if newMainLine {
+				output += `\mainline{`
+			}
+
+			// now in case we are either starting a new mainline or it is
+			// white's move, then show all the details of the move including
+			// counter and color prefix
+			if newMainLine || move.color == 1 {
+
+				// now, show the actual move with all details
+				output += fmt.Sprintf("%v%v %v ", move.number, move.getColorPrefix(), move.moveValue)
+			} else {
+
+				// otherwise, just show the actual move
+				output += fmt.Sprintf("%v ", move.moveValue)
+			}
+
+			// if this move contains either a comment or the emt
+			if move.emt != -1 || move.comments != "" {
+
+				output += "} "
+
+				// now, in case emt is present, show it
+				if move.emt != -1 {
+					output += fmt.Sprintf(`({\it %v}) `, move.emt)
+				}
+
+				// if a comment is present, show it as well
+				if move.comments != "" {
+					output += fmt.Sprintf("\\textcolor{CadetBlue}{%v}", move.comments)
+				}
+			} else if idx == last-start-1 {
+
+				// if this is the last move to show in this mainline, and no
+				// emt/comments were produced, then make sure to close the mainline
+				// anyway
+				output += "} "
+			}
+
+			// and check whether a new mainline has to be started in the
+			// next iteration
+			newMainLine = (move.emt != -1 || move.comments != "")
+		}
+
+		// update the position of the next location to examine
+		start = last
+
+		// and return the string produced so far
+		return output, nil
+	}
+}
+
 // Produces a LaTeX string with the list of moves of this game along with the
 // different annotations.
 //
@@ -397,60 +486,53 @@ func (game *PgnGame) GetLaTeXMoves() (output string) {
 // is found.
 //
 // It is intended to be used in LaTeX templates
-func (game *PgnGame) GetLaTeXMovesWithComments() (output string) {
+func (game *PgnGame) GetLaTeXMovesWithComments() string {
 
-	// the variable newMainLine is used to determine whether the next move
-	// should start with a LaTeX command \mainline. Obviously, this is initially
-	// true
-	newMainLine := true
+	// capture the closure that generates the moves
+	result, _ := game.GetMainLineWithComments(len(game.moves))()
 
-	// Iterate over all moves
-	for idx, move := range game.moves {
+	// and return all moves of this game
+	return result
+}
 
-		// before printing this move, check if a new mainline has to be started
-		// (e.g., because the previous move ended with a comment
-		if newMainLine {
-			output += `\mainline{`
-		}
+// Produces a LaTeX string with a long table showing the moves every nbplies and
+// the chess board
+//
+// This method successively processes the moves in this PgnGame until a comment
+// is found.
+//
+// It is intended to be used in LaTeX templates
+func (game *PgnGame) GetLaTeXMovesWithCommentsTabular(width1, width2 string, nbplies int) (output string) {
 
-		// now in case either we are starting a new mainline or it is white's
-		// move, then show all the details of the move including counter and
-		// color prefix
-		if newMainLine || move.color == 1 {
+	// Declare a long table which can span over several pages to show the entire
+	// game
+	output += fmt.Sprintf(`\begin{longtable}{>{\centering\arraybackslash}m{%v} | >{\centering\arraybackslash}m{%v}}`, width1, width2)
+	output += "\n"
 
-			// now, show the actual move with all details
-			output += fmt.Sprintf("%v%v %v ", move.number, move.getColorPrefix(), move.moveValue)
+	// Get the generator of the mainlines that shows the chess board after
+	// nbplies plies
+	generator := game.GetMainLineWithComments(nbplies)
+
+	// Now, produce the lines of the table. Each line shows a mainline (along
+	// with comments and other information) in the left cell, and the resulting
+	// chess board to the right
+	for {
+
+		// get the next mainline to show and in case the game was exhausted,
+		// exit from the main loop
+		if mainline, err := generator(); err == io.EOF {
+			break
 		} else {
 
-			// otherwise, just show the actual move
-			output += fmt.Sprintf("%v ", move.moveValue)
+			// Otherwise, add a new line to the table
+			output += fmt.Sprintf("%v & \\chessboard[smallboard,print,showmover=true] \\\\ \n", mainline)
 		}
-
-		// if this move contains either a comment or the emt
-		if move.emt != -1 || move.comments != "" {
-
-			output += "} "
-
-			// now, in case emt is present, show it
-			if move.emt != -1 {
-				output += fmt.Sprintf(`({\it %v}) `, move.emt)
-			}
-
-			// if a comment is present, show it as well
-			if move.comments != "" {
-				output += fmt.Sprintf("%v ", move.comments)
-			}
-		} else if idx == len(game.moves)-1 {
-
-			// if this is the last move of the game, and no emt/comments were
-			// produced, then close the mainline anyway
-			output += "} "
-		}
-
-		// and check whether a new mainline has to be started in the
-		// next iteration
-		newMainLine = (move.emt != -1 || move.comments != "")
 	}
+
+	// Before leaving ensure the longtable environment is closed
+	output += "\n"
+	output += `\end{longtable}`
+	output += "\n"
 
 	// and return the string computed so far
 	return
