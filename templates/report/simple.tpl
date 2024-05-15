@@ -9,18 +9,27 @@
 
 */}}
 
-\documentclass{article}
+\documentclass[svgnames]{report}
+
+\usepackage[a4paper, total={6in, 8in}]{geometry}
 
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
-\usepackage{mathpazo}
+
+\usepackage{xcolor}
+
+\usepackage{FiraSans}
+
 \usepackage{skak}
+\usepackage{hyperref}
 
 \def\hrulefill{\leavevmode\leaders\hrule height 10pt\hfill\kern\z@}
 
 {{/* ----------------------------- Main Body ----------------------------- */}}
 
 \begin{document}
+
+\sffamily
 
 {{/*
 	For all games, just show the header and then the moves
@@ -32,14 +41,19 @@
 {{/* ------------------------------- Header ------------------------------ */}}
 
 \begin{center}
-  {\Large {{.GetTagValue ("Event")}} ({{.GetTagValue ("TimeControl")}})}
+  {\Large \href{%
+{{.GetTagValue ("Site")}}}{ {{.GetTagValue ("Event")}} ({{.GetTagValue ("TimeControl")}}) } }
 \end{center}
 
 \hrule
 \vspace{0.1cm}
 \noindent
-\raisebox{-5pt}{\WhiteKnightOnWhite} {{.GetTagValue ("White")}} ({{.GetTagValue ("WhiteElo")}}) \hfill {{.GetTagValue ("Date")}}\\
-\raisebox{-5pt}{\BlackKnightOnWhite} {{.GetTagValue ("Black")}} ({{.GetTagValue ("BlackElo")}}) \hfill {{.GetTagValue ("ECO")}}
+\raisebox{-5pt}{\WhiteKnightOnWhite} \textcolor{Olive}{%
+{{.GetTagValue ("White")}} ({{.GetTagValue ("WhiteElo")}})} \hfill \textcolor{Sienna}{%
+{{.GetTagValue ("Date")}}}\\
+\raisebox{-5pt}{\BlackKnightOnWhite} \textcolor{Olive}{%
+{{.GetTagValue ("Black")}} ({{.GetTagValue ("BlackElo")}})} \hfill \textcolor{IndianRed}{%
+{{.GetTagValue ("Opening")}} ({{.GetTagValue ("ECO")}})}
 \hrule
 
 \vspace{0.5cm}
@@ -47,13 +61,15 @@
 {{/* -------------------------------- Moves ------------------------------ */}}
 
 \newgame
-{{.GetLaTeXMovesWithComments}}\hfill \textbf{ {{.GetTagValue ("Result")}}}
+{{.GetLaTeXMovesWithComments}}\hfill \textbf{ {{.GetTagValue ("Result")}}}\\
 
 {{/* --------------------------- Final position -------------------------- */}}
 
 \begin{center}
   \showboard
 \end{center}
+\noindent
+\hfill \textcolor{IndianRed}{Termination: {{.GetTagValue ("Termination")}}}
 
 \clearpage
 
