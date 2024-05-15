@@ -9,20 +9,35 @@
 
 */}}
 
-\documentclass[svgnames]{report}
+\documentclass[oneside,svgnames]{report}
 
-\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage[a4paper, total={7.5in, 10in}]{geometry}
 
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 
 \usepackage{xcolor}
 
+\usepackage{marvosym}
 \usepackage{FiraSans}
 
-\usepackage{skak}
-\usepackage{hyperref}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
 
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\lfoot{\texttt{pgnparser}}\cfoot{}\rfoot{\thepage}
+
+\usepackage{skak}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    urlcolor=RoyalBlue,
+    pdfpagemode=FullScreen,
+}
+    
 \def\hrulefill{\leavevmode\leaders\hrule height 10pt\hfill\kern\z@}
 
 {{/* ----------------------------- Main Body ----------------------------- */}}
@@ -42,7 +57,7 @@
 
 \begin{center}
   {\Large \href{%
-{{.GetTagValue ("Site")}}}{ {{.GetTagValue ("Event")}} ({{.GetTagValue ("TimeControl")}}) } }
+{{.GetTagValue ("Site")}}}{\Mundus~}{{.GetTagValue ("Event")}} ({{.GetTagValue ("TimeControl")}})}
 \end{center}
 
 \hrule
@@ -71,7 +86,7 @@
 \noindent
 \hfill \textcolor{IndianRed}{Termination: {{.GetTagValue ("Termination")}}}
 
-\clearpage
+\newpage
 
 {{end}}
 
