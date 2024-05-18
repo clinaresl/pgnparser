@@ -162,7 +162,11 @@ produces an outcome like the following:
 
 ```
 
-for every game found in the input pgn file.
+for every game found in the input pgn file. 
+
+**Note**: All tables use UTF-8 characters which might not be rendered properly
+in this view, i.e., the view on your console might be more beautiful than the
+one rendered here.
 
 ## Filtering criteria ##
 
@@ -287,9 +291,25 @@ result use:
 ```
 providing the name of the output file given to the precedence invocation of `pgnparser`
 
+## Gerating LaTeX files ##
 
+If the argument `latex` is given along with a path to a latex template, then a
+LaTeX file is generated which is given the name in `outuput` (`output.pgn` by
+default) with suffix `.tex`. This release contains various templates. For
+example, to produce a detailed view of the contents of a pgn file use:
 
-## Example ##
+``` sh
+    $ pgnparser --file ... --latex templates/report/tabular.tpl
+```
+
+which generates a document with two parts. First, it shows an index to every
+game with a link shown in the first column. The second part shows the result of
+playing every game in tabular form showing the board every 8 plies. The
+transcription of the game contains all comments found in the input pgn file and
+it also recognizes other *special* comments such as the *emt* (elapsed move
+time) used in FICS which is shown separately.
+
+## Examples ##
 
 Using `list` to provide information about the games found in a pgn file:
 
@@ -374,79 +394,39 @@ produces a much more concise output:
  [308.763738ms]
 ```
 
+**Note**: All tables use UTF-8 characters which might not be rendered properly
+in this view, i.e., the view on your console might be more beautiful than the
+one rendered here.
 
-
-
-If `--template` is given then a LaTeX file using the specified
-template is automatically generated. For example (file
-`templates/simple.tex` is included in this distribution):
-
-```
-#!sh
-
-$ ./pgnparser --file examples/mygames.pgn
-              --select "%White = 'tsoymen' and %Black = 'clinares'"
-              --template templates/simple.tex
-```
-
-will generate a file called `mygames.pgn.tex` in the directory
-`examples/`. The following image shows the only page generated:
-
-![View of the PDF file](images/sample-1.png)
-
-Of course, LaTeX files reproduce an arbitrary number of games: all of
-those accepted by the filter given, if any, or all games in the PGN
-file if no filter is provided.
-
-If a different template is used (`templates/sample-comments.tex`) the
-output differs:
-
-![View of the PDF file](images/sample-2.png)
-
-To sort games with multiple keywords, just provide a single string
-with them, e.g.,
-
-```
-#!sh
-
-$ ./pgnparser --file examples/mygames.pgn --sort "<%White >%PlyCount"
-```
-
-sorts all games in ascending order of the name of the white player
-and, in case of a tie, it sorts games in decreasing order of the
-number of plies (half-moves) of the game. The output is shown below:
-
-```
-│ DBGameNo  │    Date       Time   │ White        ELO │ Black      ELO │ ECO │ Time  │ Moves │ Result │
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-│ 375458181 │ 2015.05.05  11:21:00 │ clinares    1514 │ walls     1532 │ C00 │ 180+0 │  67   │  ½-½   │
-│ 375529641 │ 2015.05.07  05:54:00 │ clinares    1517 │ tsoymen   1575 │ D00 │ 180+0 │  10   │  0-1   │
-│ 375505558 │ 2015.05.06  14:10:00 │ indianpool  1582 │ clinares  1524 │ A40 │ 180+0 │  26   │  1-0   │
-│ 375431273 │ 2015.05.04  17:18:00 │ samotnik    1618 │ clinares  1520 │ C20 │ 180+0 │  60   │  1-0   │
-│ 375529748 │ 2015.05.07  05:54:00 │ tsoymen     1582 │ clinares  1510 │ A40 │ 180+0 │  34   │  0-1   │
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
- # Games found: 5
-```
 
 # License #
 
-PGNparser is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your
-option) any later version.
+MIT License
 
-PGNparser is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-for more details.
+Copyright (c) 2015, 2024, Carlos Linares López
 
-You should have received a copy of the GNU General Public License
-along with PGNparser.  If not, see <http://www.gnu.org/licenses/>.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 
 # Author #
 
-Carlos Linares Lopez <carlos.linares@uc3m.es>
+Carlos Linares Lopez <carlos.linares@uc3m.es>  
+Computer Science Department <https://www.inf.uc3m.es/en>  
+Universidad Carlos III de Madrid <https://www.uc3m.es/home>
 
