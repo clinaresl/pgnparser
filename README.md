@@ -369,11 +369,41 @@ boolean expression can be preceded with a header and a colon just to be used in
 the output table:
 
 ``` sh
-    $ pgnparser --file ... --histogram ECO Opening: 'ECO;Win: ((White=="clinares") && (Result=="1-0")) || ((Black=="clinares") && (Result=="0-1"))'
+    $ pgnparser --file ... --histogram 'ECO Opening: ECO;Win: ((White=="clinares") && (Result=="1-0")) || ((Black=="clinares") && (Result=="0-1"))'
 ```
 
 produces a much more concise table with more comprehensive names for the
-headers.
+headers:
+
+``` asciidoc
+
+ ▶ Name    : examples/lichess_clinares_2024-05-15.pgn
+ ▶ Size    : 3341933 bytes                           
+ ▶ Mod Time: 2024-05-15 18:51:20.957491023 +0200 CEST
+ ════════════════════════════════════════════════════
+ [279.511µs]
+
+ 3845 games found
+ [2.17623463s]
+
+ Games verified!
+ [273.469723ms]
+
+
+ ECO Opening │  Win  │ # Obs. 
+ ━━━━━━━━━━━━┿━━━━━━━┿━━━━━━━━
+     A00     │ false │  125   
+             ├───────┼────────
+             │ true  │   83   
+ ────────────┼───────┼────────
+     A01     │ false │   12   
+             ├───────┼────────
+             │ true  │   19   
+ ────────────┼───────┼────────
+     A02     │ false │   25   
+             ├───────┼────────
+     ...        ...     ...
+```
 
 Note that the argument `--list` takes precedence over `histogram` so that no
 information is shown on the console of the result of a histogram. To see the
@@ -425,8 +455,8 @@ This page also contains various links:
 + The links shown in blue in the footer will take you to the homepages of each
   software project
 
-Of course, these links are specific of the template used, and different layouts
-can be considered with different templates.
+Of course, these links are specific to the template being used, and different
+layouts can be produced with different templates.
 
 Note that variables used in the templates might contain UTF-8 characters as they
 are read from the input pgn file. Fortunately, `xelatex` provides automatic
