@@ -116,7 +116,7 @@ For example, to play all games found in a pgn file every 30 plies:
 
 produces an outcome like the following:
 
-``` text
+``` asciidoc
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     Result      : 0-1                            
     WhiteElo    : 1842                           
