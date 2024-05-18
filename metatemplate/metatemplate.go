@@ -6,11 +6,51 @@
 // Carlos Linares López <carlos.linares@uc3m.es>
 //
 
-// Meta text/templates modify a few services from the text/template standard
-// library to allow the usage of variables that are properly substituted before
-// executing the template. The services provided in this package return ordinary
-// text/templates that can then be processed with functions from template
-// package.
+// Meta text/templates modifies a few services from the text/template standard
+// library to allow the usage of meta-variables that are properly substituted
+// before parsing and executing the template.
+//
+// Meta-variables are represented as ${varname}, e.g., "${name}" and they can
+// optionally come with a prompt and a default value both shown between square
+// brackets and preceded the words "prompt" or "default", e.g.,
+// "${age[prmopt:What's your age?][default:18]}". If both the prompt and the
+// default fields are given, prompt must appear before the default.
+//
+// In case the value of the meta-variable is unknown at the time substitution
+// takes place, then the default value is used. If prompt is given, then the
+// user is prompted the same text given in the meta-variable description to
+// provide a value for it. If both prompt and default are given, then the user
+// is requested with the same string given in the meta-variable description and
+// the default value is offered between parenthesis so that it can be
+// immediately accepted.
+//
+// Importantly, the name of the variable can consist of any combination of the
+// alphanumeric characters (both in lower and upper case) and the underscore
+// (_). However, the fields prompt and default accept any digits but the closing
+// square bracket (]) which is reserved. The following are examples of correct
+// meta-variables specification
+//
+//	${name}
+//	${name[default:Alan Turing]}
+//	${name[prompt:What's your name?][default:Alan Turing]}
+//
+// All services implemented in this package take a dictionary of strings to
+// strings which is used to properly substitute every meta-variable. For
+// example, given the following string:
+//
+//	Hi there! My name is ${name[default:Alan Turing]}
+//
+// is properly substituted by the string:
+//
+//	Hi there! My name is Ada Lovelace
+//
+// in case a dictionary is given with the value "Ada Lovelace" under the key
+// "name". If the given dictionary does not contain this key then the rules
+// following the usage of prompt and default apply. If they are not given, then
+// the substitution is not possible and an error is returned.
+//
+// The services provided in this package return ordinary text/templates that can
+// then be processed with functions from template package.
 package metatemplate
 
 import (
@@ -235,9 +275,14 @@ func getValues(values map[string]string, metavars metaVars) (substitutions map[s
 	return
 }
 
-// The following function provides a replacement of the function
-// regexp.ParseFiles () providing a service for substituting meta-variables with
-// the values in the given dictionary
+// Provides a replacement of the function text.ParseFiles () in the
+// text/template package. It actually returns the result of invoking that
+// function over temporal files where all meta-variables have been properly
+// substituted.
+//
+// In addition, the error can be specific of this service. For example, in case
+// it is not possible to substitute a specific meta-variable it returns an error
+// before invoking the text/template version of ParseFiles ().
 func ParseFiles(values map[string]string, filenames ...string) (*template.Template, error) {
 
 	// create a slice to store the processed files
@@ -305,9 +350,17 @@ func ParseFiles(values map[string]string, filenames ...string) (*template.Templa
 		}
 	}
 
-	// Finally, pass the processed files to the function in regexp and return
-	// its values
-	return template.ParseFiles(tmpfiles...)
+	// pass the processed files to the function in template/text and return its
+	// values and gather the results
+	result, err := template.ParseFiles(tmpfiles...)
+
+	// Before leaving, ensure the temporary files are removed
+	for _, itmp := range tmpfiles {
+		os.Remove(itmp)
+	}
+
+	// and return the results
+	return result, err
 }
 
 // Local Variables:
