@@ -363,31 +363,27 @@ func (move PgnMove) getColorPrefix() (prefix string) {
 	return
 }
 
-// Produces a LaTeX string with a plain list of the moves of this game. It is
-// intended to be used in LaTeX templates
-func (game *PgnGame) GetLaTeXMoves() (output string) {
+// Return a slice of strings with the values of all given fields. This method is
+// used to compute the fields of a game to be shown on an ascii table.
+//
+// Note that the returned slice contain instances of any. This is necessary
+// because []string is not a subtype of []any, i.e., slices are type-invariant
+// in Go (and other langs).
+func (game *PgnGame) getFields(fields []any) (result []any) {
 
-	// Initialization
-	output = `\mainline{`
+	// iterate over all fields
+	for _, field := range fields {
 
-	// Iterate over all moves
-	for _, move := range game.moves {
-
-		// in case it is white's turn then precede this move by the move
-		// counter and the prefix of the color
-		if move.color == 1 {
-			output += fmt.Sprintf("%v. %v", move.number, move)
-		} else {
-
-			// otherwise, just show the actual move
-			output += fmt.Sprintf(" %v", move)
+		// compute the value of the next field and add it to the slice
+		// to return
+		field_str, ok := field.(string)
+		if !ok {
+			log.Fatalf(fmt.Sprintf(" It was not possible to convert the field '%v' into a string", field))
 		}
+		result = append(result, game.GetField(field_str))
 	}
 
-	// close the mainline
-	output += `}`
-
-	// and return the string
+	// return the slice of strings computed so far
 	return
 }
 
@@ -395,9 +391,7 @@ func (game *PgnGame) GetLaTeXMoves() (output string) {
 // "nbplies" noves and the resulting chessboard, starting from the beginning. It
 // also shows other information for every single move. In case the game has been
 // exhausted it returns the empty string and io.EOF
-//
-// It is used as a helper function to be used in LaTeX templates
-func (game *PgnGame) GetMainLineWithComments(nbplies int) func() (string, error) {
+func (game *PgnGame) getMainLineWithComments(nbplies int) func() (string, error) {
 
 	// Initially, all moves are generated from the first one
 	start := 0
@@ -489,7 +483,7 @@ func (game *PgnGame) GetMainLineWithComments(nbplies int) func() (string, error)
 func (game *PgnGame) GetLaTeXMovesWithComments() string {
 
 	// capture the closure that generates the moves
-	result, _ := game.GetMainLineWithComments(len(game.moves))()
+	result, _ := game.getMainLineWithComments(len(game.moves))()
 
 	// and return all moves of this game
 	return result
@@ -511,7 +505,7 @@ func (game *PgnGame) GetLaTeXMovesWithCommentsTabular(width1, width2 string, nbp
 
 	// Get the generator of the mainlines that shows the chess board after
 	// nbplies plies
-	generator := game.GetMainLineWithComments(nbplies)
+	generator := game.getMainLineWithComments(nbplies)
 
 	// Now, produce the lines of the table. Each line shows a mainline (along
 	// with comments and other information) in the left cell, and the resulting
@@ -595,28 +589,16 @@ func (game *PgnGame) GetField(field string) string {
 	return fmt.Sprintf("%v", value)
 }
 
-// Return a slice of strings with the values of all given fields. This method is
-// used to compute the fields of a game to be shown on an ascii table.
+// Return the LaTeX command for setting a label
 //
-// Note that the returned slice contain instances of any. This is necessary
-// because []string is not a subtype of []any, i.e., slices are type-invariant
-// in Go (and other langs).
-func (game *PgnGame) getFields(fields []any) (result []any) {
+// It is intended to be used in LaTeX templates
+func (game *PgnGame) SetLabel() string {
 
-	// iterate over all fields
-	for _, field := range fields {
+	// Increment the counter
+	counter++
 
-		// compute the value of the next field and add it to the slice
-		// to return
-		field_str, ok := field.(string)
-		if !ok {
-			log.Fatalf(fmt.Sprintf(" It was not possible to convert the field '%v' into a string", field))
-		}
-		result = append(result, game.GetField(field_str))
-	}
-
-	// return the slice of strings computed so far
-	return
+	// and return the LaTeX command that sets the label
+	return fmt.Sprintf("\\label{game:%v}\n", counter)
 }
 
 /* Local Variables: */

@@ -18,6 +18,7 @@
 
 \usepackage{xcolor}
 
+\usepackage{booktabs}
 \usepackage{marvosym}
 \usepackage{FiraSans}
 
@@ -47,6 +48,14 @@
 \begin{document}
 
 \sffamily
+
+{{/*
+	Show an index of all games produced in this report along with
+    hyperrefs that can be used to jump to any game
+*/}}
+
+{{.ShowIndex}}
+\newpage
 
 {{/*
 	For all games, just show the header and then the moves
@@ -79,6 +88,7 @@
 
 \newchessgame
 {{.GetLaTeXMovesWithCommentsTabular "4.2in" "3.0in" 8}}\hfill \textbf{ {{.GetTagValue ("Result")}}}\\
+{{.SetLabel}}
 
 {{/* ------------------------------ Postface ----------------------------- */}}
 \hfill \textcolor{IndianRed}{Termination: {{.GetTagValue ("Termination")}}}

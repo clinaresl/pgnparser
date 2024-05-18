@@ -123,6 +123,9 @@ var threats map[string]map[content][][]int
 // The following map relates each content with its utf-8 representation
 var utf8 map[content]rune
 
+// The following counter is used to generate LaTeX references
+var counter int = 0
+
 // functions
 // ----------------------------------------------------------------------------
 
