@@ -405,6 +405,10 @@ headers:
      ...        ...     ...
 ```
 
+**Note**: All tables use UTF-8 characters which might not be rendered properly
+in this view, i.e., the view on your console might be more beautiful than the
+one rendered here.
+
 Note that the argument `--list` takes precedence over `histogram` so that no
 information is shown on the console of the result of a histogram. To see the
 result use:
