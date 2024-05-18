@@ -86,7 +86,11 @@ These options can be used simultaneously. If so:
 1. First, games found in the input pgn file are listed when using `list`, i.e.,
    `list` takes precedence over all the other arguments. If a value was given to
    `table` then the given template is used to generate the table.
-   
+  
+2. If `play` is given along with a strictly positive value, all games found in
+   the pgn file are played and the output is shown in tabular form on the output
+   console.
+  
 2. If `filter` is given, games satisfying the given criteria are selected for
    the next operations ---including the generation of an output pgn file.
    
@@ -99,6 +103,95 @@ These options can be used simultaneously. If so:
 
 5. Finally, in case `latex` is used, the current collection of games is used to
    generate a LaTeX file showing its contents.
+
+## Listing games ##
+
+Using `list` to provide information about the games found in a pgn file:
+
+``` sh
+    $ pgnparser --file ... --list
+```
+
+produces the following output:
+
+``` asciidoc
+
+ ▶ Name    : examples/lichess_clinares_2024-05-15.pgn
+ ▶ Size    : 3341933 bytes                           
+ ▶ Mod Time: 2024-05-15 18:51:20.957491023 +0200 CEST
+ ════════════════════════════════════════════════════
+ [1.091136ms]
+
+ 3845 games found
+ [2.303645721s]
+
+┍━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━┯━━━━━━━━━━━━━┯━━━━━━━┯━━━━━━━━┑
+│    Date    │ White                WhiteElo │ Black                BlackElo │ ECO │ TimeControl │ Moves │ Result │
+╞════════════╪═══════════════════════════════╪═══════════════════════════════╪═════╪═════════════╪═══════╪════════╡
+│ 2024.05.15 │ Don_jon10                1908 │ clinares                 1901 │ C40 │    180+0    │  55   │  1-0   │
+│ 2024.05.15 │ clinares                 1907 │ Don_jon10                1903 │ C02 │    180+0    │  60   │  0-1   │
+│ 2024.05.15 │ clinares                 1911 │ Simonenko                2022 │ C02 │    180+0    │  104  │  0-1   │
+│ 2024.05.15 │ clinares                 1905 │ Ikrom_Isayev             1893 │ C25 │    180+0    │  31   │  1-0   │
+│ 2024.05.15 │ clinares                 1900 │ behzadss                 1915 │ B23 │    180+0    │  67   │  1-0   │
+│ 2024.05.15 │ behzadss                 1909 │ clinares                 1905 │ C40 │    180+0    │  91   │  1-0   │
+│ 2024.05.14 │ Qsac                     1903 │ clinares                 1911 │ C63 │    180+0    │  53   │  1-0   │
+│ 2024.05.14 │ clinares                 1914 │ Revyakin_Andrey          2064 │ A00 │    180+0    │  48   │  0-1   │
+│ 2024.05.14 │ Revyakin_Andrey          2060 │ clinares                 1918 │ C40 │    180+0    │  43   │  1-0   │
+│ 2024.05.14 │ clinares                 1921 │ Revyakin_Andrey          2056 │ B23 │    180+0    │  70   │  0-1   │
+├────────────┼───────────────────────────────┼───────────────────────────────┼─────┼─────────────┼───────┼────────┤
+│ 2024.05.14 │ Khezman                  1890 │ clinares                 1916 │ C46 │    180+0    │  128  │  0-1   │
+│ 2024.05.14 │ clinares                 1911 │ Khezman                  1895 │ A00 │    180+0    │  113  │  1-0   │
+│
+      ...        ...                     ...      ...                    ...   ...       ...        ...     ...
+│ 2024.01.01 │ clinares                 1906 │ tat8866                  1955 │ C25 │    180+0    │  89   │  1-0   │
+│ 2024.01.01 │ clinares                 1901 │ Ks12345                  1845 │ C25 │    180+0    │  35   │  1-0   │
+│ 2024.01.01 │ BonbonTisoy              1941 │ clinares                 1906 │ C23 │    180+0    │  96   │  1-0   │
+┕━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━┷━━━━━━━━━━━━━┷━━━━━━━┷━━━━━━━━┙
+ # Games found: 3845
+
+ Games verified!
+ [286.922097ms]
+```
+
+and to change the appearance of the table use `table` with the path to the template to use to generate it:
+
+``` sh
+    $ pgnparser --file ... --table templates/table/bare.tpl --list
+```
+
+produces a much more concise output:
+
+``` asciidoc
+
+ ▶ Name    : examples/lichess_clinares_2024-05-15.pgn
+ ▶ Size    : 3341933 bytes                           
+ ▶ Mod Time: 2024-05-15 18:51:20.957491023 +0200 CEST
+ ════════════════════════════════════════════════════
+ [1.100194ms]
+
+ 3845 games found
+ [2.227093864s]
+
+ ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━┑
+ │ White                WhiteElo │ Black                BlackElo │ Result │
+ ╞═══════════════════════════════╪═══════════════════════════════╪════════╡
+ │ Don_jon10                1908 │ clinares                 1901 │  1-0   │
+ │ clinares                 1907 │ Don_jon10                1903 │  0-1   │
+ │ clinares                 1911 │ Simonenko                2022 │  0-1   │
+      ...        ...                     ...      ...                    ...   ...       ...        ...     ...
+ │ clinares                 1906 │ tat8866                  1955 │  1-0   │
+ │ clinares                 1901 │ Ks12345                  1845 │  1-0   │
+ │ BonbonTisoy              1941 │ clinares                 1906 │  1-0   │
+ ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━┙
+ # Games found: 3845
+
+ Games verified!
+ [308.763738ms]
+```
+
+**Note**: All tables use UTF-8 characters which might not be rendered properly
+in this view, i.e., the view on your console might be more beautiful than the
+one rendered here.
 
 ## Playing games ##
 
@@ -295,109 +388,24 @@ providing the name of the output file given to the precedence invocation of `pgn
 
 If the argument `latex` is given along with a path to a latex template, then a
 LaTeX file is generated which is given the name in `outuput` (`output.pgn` by
-default) with suffix `.tex`. This release contains various templates. For
-example, to produce a detailed view of the contents of a pgn file use:
+default) with suffix `.tex`. The latest release of `pgnparser` contains various
+templates. For example, to produce a detailed view of the contents of a pgn file
+use:
 
 ``` sh
     $ pgnparser --file ... --latex templates/report/tabular.tpl
 ```
 
 which generates a document with two parts. First, it shows an index to every
-game with a link shown in the first column. The second part shows the result of
-playing every game in tabular form showing the board every 8 plies. The
-transcription of the game contains all comments found in the input pgn file and
-it also recognizes other *special* comments such as the *emt* (elapsed move
-time) used in FICS which is shown separately.
+game (which might span several pages) with a link shown in the first column. The
+second part shows the result of playing every game in tabular form showing the
+board every 8 plies. The transcription of the game contains all comments found
+in the input pgn file and it also recognizes other *special* comments such as
+the *emt* (elapsed move time) used in FICS which is shown separately. The
+resulting LaTeX file when being processed twice shows first an index to all
+games in the pgn file:
 
-## Examples ##
-
-Using `list` to provide information about the games found in a pgn file:
-
-``` sh
-    $ pgnparser --file ... --list
-```
-
-produces the following output:
-
-``` asciidoc
-
- ▶ Name    : examples/lichess_clinares_2024-05-15.pgn
- ▶ Size    : 3341933 bytes                           
- ▶ Mod Time: 2024-05-15 18:51:20.957491023 +0200 CEST
- ════════════════════════════════════════════════════
- [1.091136ms]
-
- 3845 games found
- [2.303645721s]
-
-┍━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━┯━━━━━━━━━━━━━┯━━━━━━━┯━━━━━━━━┑
-│    Date    │ White                WhiteElo │ Black                BlackElo │ ECO │ TimeControl │ Moves │ Result │
-╞════════════╪═══════════════════════════════╪═══════════════════════════════╪═════╪═════════════╪═══════╪════════╡
-│ 2024.05.15 │ Don_jon10                1908 │ clinares                 1901 │ C40 │    180+0    │  55   │  1-0   │
-│ 2024.05.15 │ clinares                 1907 │ Don_jon10                1903 │ C02 │    180+0    │  60   │  0-1   │
-│ 2024.05.15 │ clinares                 1911 │ Simonenko                2022 │ C02 │    180+0    │  104  │  0-1   │
-│ 2024.05.15 │ clinares                 1905 │ Ikrom_Isayev             1893 │ C25 │    180+0    │  31   │  1-0   │
-│ 2024.05.15 │ clinares                 1900 │ behzadss                 1915 │ B23 │    180+0    │  67   │  1-0   │
-│ 2024.05.15 │ behzadss                 1909 │ clinares                 1905 │ C40 │    180+0    │  91   │  1-0   │
-│ 2024.05.14 │ Qsac                     1903 │ clinares                 1911 │ C63 │    180+0    │  53   │  1-0   │
-│ 2024.05.14 │ clinares                 1914 │ Revyakin_Andrey          2064 │ A00 │    180+0    │  48   │  0-1   │
-│ 2024.05.14 │ Revyakin_Andrey          2060 │ clinares                 1918 │ C40 │    180+0    │  43   │  1-0   │
-│ 2024.05.14 │ clinares                 1921 │ Revyakin_Andrey          2056 │ B23 │    180+0    │  70   │  0-1   │
-├────────────┼───────────────────────────────┼───────────────────────────────┼─────┼─────────────┼───────┼────────┤
-│ 2024.05.14 │ Khezman                  1890 │ clinares                 1916 │ C46 │    180+0    │  128  │  0-1   │
-│ 2024.05.14 │ clinares                 1911 │ Khezman                  1895 │ A00 │    180+0    │  113  │  1-0   │
-│
-      ...        ...                     ...      ...                    ...   ...       ...        ...     ...
-│ 2024.01.01 │ clinares                 1906 │ tat8866                  1955 │ C25 │    180+0    │  89   │  1-0   │
-│ 2024.01.01 │ clinares                 1901 │ Ks12345                  1845 │ C25 │    180+0    │  35   │  1-0   │
-│ 2024.01.01 │ BonbonTisoy              1941 │ clinares                 1906 │ C23 │    180+0    │  96   │  1-0   │
-┕━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━┷━━━━━━━━━━━━━┷━━━━━━━┷━━━━━━━━┙
- # Games found: 3845
-
- Games verified!
- [286.922097ms]
-```
-
-and to change the appearance of the table use `table` with the path to the template to use to generate it:
-
-``` sh
-    $ pgnparser --file ... --table templates/table/bare.tpl --list
-```
-
-produces a much more concise output:
-
-``` asciidoc
-
- ▶ Name    : examples/lichess_clinares_2024-05-15.pgn
- ▶ Size    : 3341933 bytes                           
- ▶ Mod Time: 2024-05-15 18:51:20.957491023 +0200 CEST
- ════════════════════════════════════════════════════
- [1.100194ms]
-
- 3845 games found
- [2.227093864s]
-
- ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━┑
- │ White                WhiteElo │ Black                BlackElo │ Result │
- ╞═══════════════════════════════╪═══════════════════════════════╪════════╡
- │ Don_jon10                1908 │ clinares                 1901 │  1-0   │
- │ clinares                 1907 │ Don_jon10                1903 │  0-1   │
- │ clinares                 1911 │ Simonenko                2022 │  0-1   │
-      ...        ...                     ...      ...                    ...   ...       ...        ...     ...
- │ clinares                 1906 │ tat8866                  1955 │  1-0   │
- │ clinares                 1901 │ Ks12345                  1845 │  1-0   │
- │ BonbonTisoy              1941 │ clinares                 1906 │  1-0   │
- ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━┙
- # Games found: 3845
-
- Games verified!
- [308.763738ms]
-```
-
-**Note**: All tables use UTF-8 characters which might not be rendered properly
-in this view, i.e., the view on your console might be more beautiful than the
-one rendered here.
-
+![image info](./images/sample-1.png)
 
 # License #
 
