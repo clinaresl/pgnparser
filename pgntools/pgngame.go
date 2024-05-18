@@ -19,10 +19,11 @@
 package pgntools
 
 import (
-	"errors" // for signaling errors
-	"fmt"    // printing msgs
+	// for signaling errors
+	"fmt" // printing msgs
 	"io"
 	"log" // logging services
+	"strings"
 
 	"github.com/expr-lang/expr"
 )
@@ -349,6 +350,27 @@ func (game *PgnGame) GetPGN() (output string) {
 // ascii and LaTeX output
 // ----------------------------------------------------------------------------
 
+// The following function returns the input string after substituting all the
+// special LaTeX characters so that they can be correctly processed
+func substituteLaTeX(input string) (output string) {
+
+	// Just substitute the special LaTeX characters one after the other. Note
+	// that because most replacements start with a backslash and this is,
+	// indeed, a special LaTeX character, backslash substitution takes
+	// precedence
+	output = strings.Replace(input, `\`, `\textbackslash `, -1)
+	output = strings.Replace(output, "#", `\#`, -1)
+	output = strings.Replace(output, "$", `\$`, -1)
+	output = strings.Replace(output, "%", `\%`, -1)
+	output = strings.Replace(output, "&", `\&`, -1)
+	output = strings.Replace(output, "~", `\~`, -1)
+	output = strings.Replace(output, "_", `\_`, -1)
+	output = strings.Replace(output, "^", `\^`, -1)
+	output = strings.Replace(output, "{", `\{`, -1)
+	output = strings.Replace(output, "}", `\}`, -1)
+	return
+}
+
 // getColorPrefix is a helper function that returns the prefix of the color of
 // the receiving move. In case it is white's turn then '.' is returned;
 // otherwise '...' is returned
@@ -390,7 +412,10 @@ func (game *PgnGame) getFields(fields []any) (result []any) {
 // Returns a closure that generates a \mainline{...} LaTeX command with the next
 // "nbplies" noves and the resulting chessboard, starting from the beginning. It
 // also shows other information for every single move. In case the game has been
-// exhausted it returns the empty string and io.EOF
+// exhausted it returns the empty string and io.EOF.
+//
+// This function specifically takes care of special LaTeX character appearing in
+// any comment
 func (game *PgnGame) getMainLineWithComments(nbplies int) func() (string, error) {
 
 	// Initially, all moves are generated from the first one
@@ -450,7 +475,7 @@ func (game *PgnGame) getMainLineWithComments(nbplies int) func() (string, error)
 
 				// if a comment is present, show it as well
 				if move.comments != "" {
-					output += fmt.Sprintf("\\textcolor{CadetBlue}{%v}", move.comments)
+					output += fmt.Sprintf("\\textcolor{CadetBlue}{%v}", substituteLaTeX(move.comments))
 				}
 			} else if idx == last-start-1 {
 
@@ -532,22 +557,15 @@ func (game *PgnGame) GetLaTeXMovesWithCommentsTabular(width1, width2 string, nbp
 	return
 }
 
-// Return the value of a specific tag. In case the tag is not found in this
-// game, an error is return along with any data.
-//
-// It is intended to be used in LaTeX templates
-func (game *PgnGame) GetTagValue(name string) (value string, err error) {
-
-	if value, ok := game.tags[name]; ok {
-		return fmt.Sprintf("%v", value), nil
-	}
-
-	// when getting here, the required tag has not been found
-	return "", errors.New(fmt.Sprintf("tag '%s' not found!", name))
-}
-
 // A field is either a tag of the receiver game, or a value that can be
 // extracted from it (such as "Moves" or "Result")
+//
+// This function specifically takes care of special LaTeX character appearing in
+// any comment
+//
+// This function does not perform any error checking. In case a field does not
+// exist it returns the empty string and it should be the author of the template
+// who should handle such cases
 //
 // This function is to be used in LaTeX templates
 func (game *PgnGame) GetField(field string) string {
@@ -582,11 +600,12 @@ func (game *PgnGame) GetField(field string) string {
 
 	// after trying special fields, then tags defined in this game are
 	// tried. In case they do not exist, an error is automatically raisedx
-	value, err := game.GetTagValue(field)
-	if err != nil {
-		log.Fatalf(" Uknown field '%v'\n", field)
+	if value, ok := game.tags[field]; ok {
+		return substituteLaTeX(fmt.Sprintf("%v", value))
 	}
-	return fmt.Sprintf("%v", value)
+
+	// at this point, the field is known to not exist
+	return ""
 }
 
 // Return the LaTeX command for setting a label

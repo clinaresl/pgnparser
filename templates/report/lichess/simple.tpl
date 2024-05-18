@@ -57,18 +57,18 @@
 
 \begin{center}
   {\Large \href{%
-{{.GetTagValue ("Site")}}}{\Mundus~}{{.GetTagValue ("Event")}} ({{.GetTagValue ("TimeControl")}})}
+{{.GetField ("Site")}}}{\Mundus~}{{.GetField ("Event")}} ({{.GetField ("TimeControl")}})}
 \end{center}
 
 \hrule
 \vspace{0.1cm}
 \noindent
 \raisebox{-5pt}{\WhiteKnightOnWhite} \textcolor{Olive}{%
-{{.GetTagValue ("White")}} ({{.GetTagValue ("WhiteElo")}})} \hfill \textcolor{Sienna}{%
-{{.GetTagValue ("Date")}}}\\
+{{.GetField ("White")}} ({{.GetField ("WhiteElo")}})} \hfill \textcolor{Sienna}{%
+{{.GetField ("Date")}}}\\
 \raisebox{-5pt}{\BlackKnightOnWhite} \textcolor{Olive}{%
-{{.GetTagValue ("Black")}} ({{.GetTagValue ("BlackElo")}})} \hfill \textcolor{IndianRed}{%
-{{.GetTagValue ("Opening")}} ({{.GetTagValue ("ECO")}})}
+{{.GetField ("Black")}} ({{.GetField ("BlackElo")}})} \hfill \textcolor{IndianRed}{%
+{{.GetField ("Opening")}} ({{.GetField ("ECO")}})}
 \hrule
 
 \vspace{0.5cm}
@@ -76,7 +76,7 @@
 {{/* -------------------------------- Moves ------------------------------ */}}
 
 \newchessgame
-{{.GetLaTeXMovesWithComments}}\hfill \textbf{ {{.GetTagValue ("Result")}}}\\
+{{.GetLaTeXMovesWithComments}}\hfill \textbf{ {{.GetField ("Result")}}}\\
 
 {{/* --------------------------- Final position -------------------------- */}}
 
@@ -84,7 +84,7 @@
   \chessboard[print,showmover=true]
 \end{center}
 \noindent
-\hfill \textcolor{IndianRed}{Termination: {{.GetTagValue ("Termination")}}}
+\hfill \textcolor{IndianRed}{Termination: {{.GetField ("Termination")}}}
 
 \newpage
 

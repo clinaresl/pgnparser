@@ -342,16 +342,12 @@ func (c *PgnCollection) Sort(spec string) (*PgnCollection, error) {
 // share the same tags.
 //
 // It is intended to be used in LaTeX templates
-func (games *PgnCollection) GetTagValue(name string) string {
+func (games *PgnCollection) GetField(name string) string {
 
-	// first, attempt at reading the specified tag from the first game of
-	// the collection
-	val, err := games.slice[0].GetTagValue(name)
-
-	// if such tag does not exist, then return the empty string
-	if err != nil {
-		return ""
-	}
+	// first, attempt at reading the specified tag from the first game of the
+	// collection. Note that because GetField is intended to be used in
+	// templates, no error is captured (and a Fatalf is issued in such case)
+	val := games.slice[0].GetField(name)
 
 	// otherwise, return its value
 	return val

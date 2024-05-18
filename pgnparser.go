@@ -37,6 +37,8 @@ const VERSION string = "0.1.0" // current version
 const AUTHOR string = "Carlos Linares López"
 const EMAIL string = "carlos.linares@uc3m.es"
 
+const TABLE_TEMPLATE = "templates/table/simple.tpl"
+
 var EXIT_SUCCESS int = 0 // exit with success
 var EXIT_FAILURE int = 1 // exit with failure
 
@@ -82,7 +84,7 @@ func init() {
 	flag.StringVar(&output, "output", "output.pgn", "name of the file where the result of any manipulations is stored. It is used only in case any of the directives --filter or --sort is given. By default, 'output.pgn'")
 
 	// Flag to store the template to use to generate the ascii table
-	flag.StringVar(&tableTemplate, "table", "templates/table/simple.tpl", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
+	flag.StringVar(&tableTemplate, "table", "", "file with an ASCII template that can be used to override the output shown by default. For more information on how to create and use these templates see the documentation")
 
 	// Flag to store the file with the LaTeX template
 	flag.StringVar(&latexTemplate, "latex", "", "file with a LaTeX template to use. If given, a file with the same name used in 'file' and extension '.tex' is automatically generated in the same directory where the pgn file resides. For more information on how to create and use LaTeX templates see the documentation")
@@ -160,6 +162,12 @@ func main() {
 	// a template is used: tableTemplate contains the location of a default
 	// template to use; others can be defined with --table
 	if list || len(tableTemplate) > 0 {
+
+		// In case a list was requested but no template is given to produce it,
+		// use the default one
+		if len(tableTemplate) == 0 {
+			tableTemplate = TABLE_TEMPLATE
+		}
 		games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
 	}
 
@@ -188,8 +196,8 @@ func main() {
 			games = filtered
 		}
 		fmt.Printf(" [%v]\n", time.Since(start))
+		fmt.Println()
 	}
-	fmt.Println()
 
 	// Sort games
 	// ------------------------------------------------------------------------
@@ -204,8 +212,8 @@ func main() {
 			games = sorted
 		}
 		fmt.Printf(" [%v]\n", time.Since(start))
+		fmt.Println()
 	}
-	fmt.Println()
 
 	// In case either sorting and/or filter has been requested, write the result
 	// in the output file
@@ -239,8 +247,8 @@ func main() {
 			fmt.Println(*pgnhistogram)
 		}
 		fmt.Printf(" [%v]\n", time.Since(start))
+		fmt.Println()
 	}
-	fmt.Println()
 
 	// LaTeX
 	// ------------------------------------------------------------------------
