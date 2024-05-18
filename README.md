@@ -1,6 +1,3 @@
-PGNparser -- May, 2015
-
-
 # Introduction #
 
 This tool parses PGN files, shows a summary review of its contents, sort and
