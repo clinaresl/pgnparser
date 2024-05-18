@@ -159,7 +159,7 @@ func main() {
 	// show a table with information of the games been processed. For this,
 	// a template is used: tableTemplate contains the location of a default
 	// template to use; others can be defined with --table
-	if list {
+	if list || len(tableTemplate) > 0 {
 		games.GamesToWriterFromTemplate(os.Stdout, tableTemplate)
 	}
 

@@ -155,11 +155,13 @@ produces the following output:
  [286.922097ms]
 ```
 
-and to change the appearance of the table use `table` with the path to the template to use to generate it:
+and to change the appearance of the table use `table` with the path to the template to use:
 
 ``` sh
-    $ pgnparser --file ... --table templates/table/bare.tpl --list
+    $ pgnparser --file ... --table templates/table/bare.tpl
 ```
+
+(note that when using `table`there is no need to provide also `list` though it can be done)
 
 produces a much more concise output:
 
