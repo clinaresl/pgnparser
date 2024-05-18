@@ -69,6 +69,15 @@ func init() {
 	// Flag to store the number of moves between boards
 	flag.IntVar(&play, "play", 0, "if given, each game in the PGN file is played, and the chess board is shown between the number of consecutive plies given. The board is not shown by default")
 
+	// Flag to request filtering games by some criteria
+	flag.StringVar(&filter, "filter", "", "generates a new pgn file with those games satisfying the given filtering criteria. For information about the filtering criteria see the documentation.")
+
+	// Flag to request sorting games by some criteria
+	flag.StringVar(&sort, "sort", "", "generates a new pgn file with games sorted according to the given criteria. For information about the sorting criteria see the documentation.")
+
+	// Flag to request generating histograms
+	flag.StringVar(&histogram, "histogram", "", "generates a table with a summary about the given variables. For information about the histogram variables see the documentation.")
+
 	// Flag to store the output filename
 	flag.StringVar(&output, "output", "output.pgn", "name of the file where the result of any manipulations is stored. It is used only in case any of the directives --filter or --sort is given. By default, 'output.pgn'")
 
