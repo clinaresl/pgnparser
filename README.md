@@ -460,7 +460,11 @@ This page also contains various links:
   software project
 
 Of course, these links are specific to the template being used, and different
-layouts can be produced with different templates.
+layouts can be produced with different templates. Importantly, some templates
+might require external files as in the case of the template used in the example
+above (`lichess/tabular.tpl`) which requires an image of the lichess icon. In
+case any template requires any external file these are given under the directory
+`latex` ---and can be freely replaced by others if needed.
 
 Note that variables used in the templates might contain UTF-8 characters as they
 are read from the input pgn file. Fortunately, `xelatex` provides automatic
