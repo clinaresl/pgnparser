@@ -322,6 +322,21 @@ func New(name string) *MetaTemplate {
 // Methods
 // ----------------------------------------------------------------------------
 
+// Execute applies a parsed template to the specified data object, and writes
+// the output to wr. If an error occurs executing the template or writing its
+// output, execution stops, but partial results may already have been written to
+// the output writer. A template may be executed safely in parallel, although if
+// parallel executions share a Writer the output may be interleaved.
+//
+// If data is a reflect.Value, the template applies to the concrete value that
+// the reflect.Value holds, as in fmt.Print.
+func (mt *MetaTemplate) Execute(wr io.Writer, data any) error {
+
+	// Execute the same method over the ordinary template/text
+	txtTpl := (*template.Template)(mt)
+	return txtTpl.Execute(wr, data)
+}
+
 // ExecuteTemplate applies the template associated with mt that has the given
 // name to the specified data object and writes the output to wr. If an error
 // occurs executing the template or writing its output, execution stops, but

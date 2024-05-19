@@ -21,8 +21,8 @@ package pgntools
 
 import (
 	"fmt"
-	"io"  // io streams
-	"log" // logging services
+	"io"
+	"log"
 	"path"
 	"regexp"
 	"sort"
@@ -407,7 +407,7 @@ func (games *PgnCollection) GamesToWriterFromTemplate(dst io.Writer, templateFil
 	}
 
 	// and now execute the template
-	err = tpl.ExecuteTemplate(dst, tpl.Name(), games)
+	err = tpl.Execute(dst, games)
 	if err != nil {
 		log.Fatal(err)
 	}
