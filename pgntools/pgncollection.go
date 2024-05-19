@@ -418,47 +418,6 @@ func (games *PgnCollection) GamesToWriterFromTemplate(dst io.Writer, templateFil
 	}
 }
 
-// Return an index of the games in this collection. It assumes that each game is
-// properly indexed with labels (with the usage of game.SetLabel ())
-//
-// It is intended to be used in LaTeX templates
-func (games *PgnCollection) ShowIndex() string {
-
-	// Start the long table
-	output := `\begin{longtable}{c | l c | l c | c | c | c}`
-	output += "\n"
-
-	// Show the names of the columns
-	output += `ID & White & WhiteElo & Black & BlackElo & ECO & Moves & Result\\ \toprule`
-	output += "\n"
-
-	// for each game in this collection
-	for idx, igame := range games.slice {
-
-		output += fmt.Sprintf("\\hyperref[game:%v]{\\#%v} &", 1+idx, 1+idx)
-		output += fmt.Sprintf(" %v &", igame.GetField("White"))
-		output += fmt.Sprintf(" %v &", igame.GetField("WhiteElo"))
-		output += fmt.Sprintf(" %v &", igame.GetField("Black"))
-		output += fmt.Sprintf(" %v &", igame.GetField("BlackElo"))
-		output += fmt.Sprintf(" %v &", igame.GetField("ECO"))
-		output += fmt.Sprintf(" %v &", igame.GetField("Moves"))
-		output += fmt.Sprintf(" %v ", igame.GetField("Result"))
-		output += "\\\\"
-
-		// if this is the last game, then add a bottomrule
-		if idx == len(games.slice)-1 {
-			output += "\\bottomrule"
-		}
-		output += "\n"
-	}
-
-	// and close the longtable
-	output += `\end{longtable}`
-
-	// and return the output
-	return output
-}
-
 /* Local Variables: */
 /* mode:go */
 /* fill-column:80 */

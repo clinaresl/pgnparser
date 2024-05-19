@@ -384,6 +384,7 @@ func (f PgnFile) Games() (*PgnCollection, error) {
 	games := make([]PgnGame, 0)
 
 	// Next, scan the lines of the input file using a buffered input stream
+	var id int
 	var text string
 	scanner := bufio.NewScanner(stream)
 
@@ -403,6 +404,10 @@ func (f PgnFile) Games() (*PgnCollection, error) {
 			if err != nil {
 				return nil, err
 			}
+
+			// give it a unique id
+			id++
+			game.id = id
 
 			// add this game to the collection of games to return
 			games = append(games, *game)

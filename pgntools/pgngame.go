@@ -56,11 +56,13 @@ type PgnOutcome struct {
 }
 
 // A game consists just of a map that stores information of all PGN tags, the
-// sequence of moves and finally the outcome.
+// sequence of moves and the outcome. For various purposes it contains also an
+// id which is an integer index and is used to uniquely refer to each game.
 type PgnGame struct {
 	tags    map[string]any
 	moves   []PgnMove
 	outcome PgnOutcome
+	id      int
 }
 
 // Functions
@@ -498,6 +500,12 @@ func (game *PgnGame) getMainLineWithComments(nbplies int) func() (string, error)
 	}
 }
 
+// This is an auxiliary function used in text/templates to generate slices of
+// strings to be given as argument to other methods
+func (game *PgnGame) GetSlice(fields ...any) []any {
+	return fields
+}
+
 // Produces a LaTeX string with the list of moves of this game along with the
 // different annotations.
 //
@@ -570,6 +578,13 @@ func (game *PgnGame) GetLaTeXMovesWithCommentsTabular(width1, width2 string, nbp
 // This function is to be used in LaTeX templates
 func (game *PgnGame) GetField(field string) string {
 
+	// -- Id
+	if field == "Id" {
+
+		// In case the id of this game is requested just return it as a string
+		return fmt.Sprintf("%d", game.id)
+	}
+
 	// -- Moves
 	if field == "Moves" {
 
@@ -608,16 +623,53 @@ func (game *PgnGame) GetField(field string) string {
 	return ""
 }
 
-// Return the LaTeX command for setting a label
+// Return an index entry of a specific game for any slice of fields. The first
+// argument serves to determine where to add a horizontal single rule so that
+// every block consists of sep entries.
+//
+// It assumes that each game is properly indexed with labels (with the usage of
+// game.SetLabel ())
 //
 // It is intended to be used in LaTeX templates
-func (game *PgnGame) SetLabel() string {
+func (game *PgnGame) GetIndexEntry(sep int, fields []any) (output string) {
 
-	// Increment the counter
-	counter++
+	// for all requested fields
+	for idx, field := range fields {
 
-	// and return the LaTeX command that sets the label
-	return fmt.Sprintf("\\label{game:%v}\n", counter)
+		// cast this field into a string
+		if value, ok := field.(string); !ok {
+			log.Fatalf(" It was not possible to cast field '%v' into a string\n", field)
+		} else {
+
+			// Ids are slightly different because they have to be generated with
+			// a hyperref
+			if value == "Id" {
+				output += fmt.Sprintf("\\hyperref[game:%v]{\\#%v}", game.id, game.id)
+			} else {
+
+				// Otherwise just reteurn the value of the given field
+				output += game.GetField(value)
+			}
+		}
+
+		// in case this is not the last entry add a column separator
+		if idx < len(fields)-1 {
+			output += ` & `
+		}
+
+	}
+
+	// And end this entry
+	output += `\\`
+
+	// in case a block has been ended with this entry then add a single
+	// horizontal rule
+	if game.id%sep == 0 {
+		output += `\midrule`
+	}
+
+	// and return the output
+	return
 }
 
 /* Local Variables: */

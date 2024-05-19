@@ -38,8 +38,6 @@
     pdfpagemode=FullScreen,
 }
     
-\def\hrulefill{\leavevmode\leaders\hrule height 10pt\hfill\kern\z@}
-
 {{/* ----------------------------- Main Body ----------------------------- */}}
 
 \begin{document}

@@ -7,9 +7,7 @@
 	administrative information about the game including players'
 	names, their ELO, the winner, ECO, ... 
 
-*/}}
-
-\documentclass[oneside,svgnames]{report}
+*/}}\documentclass[oneside,svgnames]{report}
 
 \usepackage[a4paper, total={7.5in, 10in}]{geometry}
 
@@ -19,6 +17,7 @@
 \usepackage{xcolor}
 
 \usepackage{booktabs}
+\usepackage{latexsym}
 \usepackage{marvosym}
 \usepackage{FiraSans}
 
@@ -37,38 +36,46 @@
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
+    linkcolor=FireBrick,
     urlcolor=RoyalBlue,
     pdfpagemode=FullScreen,
 }
     
-\def\hrulefill{\leavevmode\leaders\hrule height 10pt\hfill\kern\z@}
-
 {{/* ----------------------------- Main Body ----------------------------- */}}
-
 \begin{document}
 
 \sffamily
-
+\pagenumbering{gobble}
 {{/*
-	Show an index of all games produced in this report along with
-    hyperrefs that can be used to jump to any game
+
+	Show an index of all games produced in this report along with hyperrefs that
+    can be used to jump to any game. Importantly, a label is created here so
+    that every game can add a link to jump to the index
+
 */}}
+\begin{center}
+  {\Large \textbf{Index}}
+\end{center}
 
-{{.ShowIndex}}
+\label{index}
+\begin{longtable}{c | l c | l c | c | c | c}
+Id & White & WhiteElo & Black & BlackElo & ECO & Moves & Result\\ \toprule
+{{range .GetGames}}
+{{.GetIndexEntry 3 (.GetSlice "Id" "White" "WhiteElo" "Black" "BlackElo" "ECO" "Moves" "Result")}}
+{{end}} \bottomrule
+\end{longtable}
+
 \newpage
-
+\pagenumbering{arabic}
 {{/*
 	For all games, just show the header and then the moves
 	Finally, show a diagram with the final position of the game
 */}}
-
-{{range .GetGames}} 
-
+{{range .GetGames}}
 {{/* ------------------------------- Header ------------------------------ */}}
-
 \begin{center}
-  {\Large \href{%
-{{.GetField ("Site")}}}{\Mundus~}{{.GetField ("Event")}} ({{.GetField ("TimeControl")}})}
+  \makebox[0pt][l]{\hyperref[index]{$\hookleftarrow$ Index}}\hfill \makebox[0pt][c]{\Large \href{%
+{{.GetField ("Site")}}}{\Mundus~}{{.GetField ("Event")}} ({{.GetField ("TimeControl")}})}\hfill \makebox[0pt][r]{\#{{.GetField "Id"}}}
 \end{center}
 
 \hrule
@@ -83,18 +90,13 @@
 \hrule
 
 \vspace{0.5cm}
-
 {{/* -------------------------------- Moves ------------------------------ */}}
-
 \newchessgame
 {{.GetLaTeXMovesWithCommentsTabular "4.2in" "3.0in" 8}}\hfill \textbf{ {{.GetField ("Result")}}}\\
-{{.SetLabel}}
-
+\label{game:{{.GetField ("Id")}}}
 {{/* ------------------------------ Postface ----------------------------- */}}
 \hfill \textcolor{IndianRed}{Termination: {{.GetField ("Termination")}}}
 
 \newpage
-
 {{end}}
-
 \end{document}
