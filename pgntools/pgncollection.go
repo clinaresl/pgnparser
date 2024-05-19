@@ -26,15 +26,9 @@ import (
 	"path"
 	"regexp"
 	"sort"
-	"text/template"
-
-	// go facility for processing templates
-
-	// import my favourite package to automatically create tables
 
 	"github.com/clinaresl/pgnparser/metatemplate"
 	"github.com/clinaresl/table"
-	// and also the replacement of text/templates known as multi-template
 )
 
 // typedefs
@@ -402,7 +396,7 @@ func (games *PgnCollection) GamesToWriterFromTemplate(dst io.Writer, templateFil
 	variables := make(map[string]string)
 
 	// access a template and parse its contents
-	tpl, err := metatemplate.New(path.Base(templateFile)).Funcs(template.FuncMap{
+	tpl, err := metatemplate.New(path.Base(templateFile)).Funcs(metatemplate.FuncMap{
 		"getSlice": func(fields ...interface{}) []interface{} {
 			return fields
 		},

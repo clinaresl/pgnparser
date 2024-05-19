@@ -71,6 +71,26 @@ import (
 // A metatemplate is just an ordinary template/text
 type MetaTemplate template.Template
 
+// FuncMap is a redefinition of the analagous type in template/text. It is
+// provided only for the sake of completeness so that users of this package do
+// not need to import also the template/text package
+//
+// FuncMap is the type of the map defining the mapping from names to functions.
+// Each function must have either a single return value, or two return values of
+// which the second has type error. In that case, if the second (error) return
+// value evaluates to non-nil during execution, execution terminates and Execute
+// returns that error.
+//
+// Errors returned by Execute wrap the underlying error; call errors.As to
+// unwrap them.
+//
+// When template execution invokes a function with an argument list, that list
+// must be assignable to the function's parameter types. Functions meant to
+// apply to arguments of arbitrary type can use parameters of type interface{} or
+// of type reflect.Value. Similarly, functions meant to return a result of arbitrary
+// type can return interface{} or reflect.Value.
+type FuncMap map[string]any
+
 // globals
 // ----------------------------------------------------------------------------
 
@@ -302,31 +322,63 @@ func New(name string) *MetaTemplate {
 // Methods
 // ----------------------------------------------------------------------------
 
+// ExecuteTemplate applies the template associated with mt that has the given
+// name to the specified data object and writes the output to wr. If an error
+// occurs executing the template or writing its output, execution stops, but
+// partial results may already have been written to the output writer. A
+// template may be executed safely in parallel, although if parallel executions
+// share a Writer the output may be interleaved.
+func (mt *MetaTemplate) ExecuteTemplate(wr io.Writer, name string, data any) error {
+
+	// Execute the same method over the ordinary template/text
+	txtTpl := (*template.Template)(mt)
+	return txtTpl.ExecuteTemplate(wr, name, data)
+}
+
 // Funcs adds the elements of the argument map to the template's function map.
 // It must be called before the template is parsed. It panics if a value in the
 // map is not a function with appropriate return type or if the name cannot be
 // used syntactically as a function in a template. It is legal to overwrite
 // elements of the map. The return value is the template, so calls can be
 // chained.
-func (mt *MetaTemplate) Funcs(funcMap template.FuncMap) *MetaTemplate {
+func (mt *MetaTemplate) Funcs(funcMap FuncMap) *MetaTemplate {
 
 	// Execute the same method over the ordinary template/text
 	txtTpl := (*template.Template)(mt)
-	txtTpl = txtTpl.Funcs(funcMap)
+	txtTpl = txtTpl.Funcs(template.FuncMap(funcMap))
 
 	// and return the updated MetaTemplate
 	return (*MetaTemplate)(txtTpl)
 }
 
+// Name returns the name of the metatemplate.
+func (mt *MetaTemplate) Name() string {
+
+	// Execute the same method over the ordinary template/text
+	txtTpl := (*template.Template)(mt)
+	return txtTpl.Name()
+}
+
 // Provides a replacement of the function text.ParseFiles () in the
-// text/template package. It actually returns the result of invoking that
-// function over temporal files where all meta-variables have been properly
-// substituted.
-//
-// In addition, the error can be specific of this service. For example, in case
-// it is not possible to substitute a specific meta-variable it returns an error
-// before invoking the text/template version of ParseFiles ().
-func (mt *MetaTemplate) ParseFiles(values map[string]string, filenames ...string) (*template.Template, error) {
+// text/template package with the added functionality of substituting all
+// metavars found in every file with the values given the dictionary values. In
+// addition, the returned error can be specific of this service. For example, in
+// case it is not possible to substitute a specific meta-variable it returns an
+// error before invoking the text/template version of ParseFiles ().
+
+// ParseFiles parses the named files and associates the resulting templates with
+// mt. If an error occurs, parsing stops and the returned template is nil;
+// otherwise it is mt. There must be at least one file. Since the templates
+// created by ParseFiles are named by the base names of the argument files, t
+// should usually have the name of one of the (base) names of the files. If it
+// does not, depending on mt's contents before calling ParseFiles, mt.Execute
+// may fail. In that case use mt.ExecuteTemplate to execute a valid template.
+
+// When parsing multiple files with the same name in different directories, the
+// last one mentioned will be the one that results. It actually returns the
+// result of invoking that function over temporal files where all meta-variables
+// have been properly substituted.
+func (mt *MetaTemplate) ParseFiles(values map[string]string, filenames ...string) (*MetaTemplate, error) {
 
 	// create a slice to store the processed files
 	tmpfiles := make([]string, 0)
@@ -417,7 +469,7 @@ func (mt *MetaTemplate) ParseFiles(values map[string]string, filenames ...string
 	}
 
 	// and return the results
-	return result, err
+	return (*MetaTemplate)(result), err
 }
 
 // Local Variables:

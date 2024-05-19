@@ -92,7 +92,7 @@ Id & White & WhiteElo & Black & BlackElo & ECO & Moves & Result\\ \toprule
 \vspace{0.5cm}
 {{/* -------------------------------- Moves ------------------------------ */}}
 \newchessgame
-{{.GetLaTeXMovesWithCommentsTabular "4.2in" "3.0in" 8}}\hfill \textbf{ {{.GetField ("Result")}}}\\
+{{.GetLaTeXMovesWithCommentsTabular "4.2in" "3.0in" ${nbplies[prompt: Introduce the number of plies between consecutive chess boards][default:8]}}}\hfill \textbf{ {{.GetField ("Result")}}}\\
 \label{game:{{.GetField ("Id")}}}
 {{/* ------------------------------ Postface ----------------------------- */}}
 \hfill \textcolor{IndianRed}{Termination: {{.GetField ("Termination")}}}
