@@ -61,7 +61,7 @@
 \begin{longtable}{c | l c | l c | c | c | c}
 Id & White & WhiteElo & Black & BlackElo & ECO & Moves & Result\\ \toprule
 {{range .GetGames}}
-{{.GetIndexEntry 3 (.GetSlice "Id" "White" "WhiteElo" "Black" "BlackElo" "ECO" "Moves" "Result")}}
+{{.GetIndexEntry 3 (getSlice "Id" "White" "WhiteElo" "Black" "BlackElo" "ECO" "Moves" "Result")}}
 {{end}} \bottomrule
 \end{longtable}
 

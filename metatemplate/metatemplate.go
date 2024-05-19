@@ -65,6 +65,12 @@ import (
 	"text/template"
 )
 
+// types
+// ----------------------------------------------------------------------------
+
+// A metatemplate is just an ordinary template/text
+type MetaTemplate template.Template
+
 // globals
 // ----------------------------------------------------------------------------
 
@@ -275,6 +281,43 @@ func getValues(values map[string]string, metavars metaVars) (substitutions map[s
 	return
 }
 
+// New allocates a new, undefined template with the given name.
+func New(name string) *MetaTemplate {
+
+	// Create an ordinary template/text
+	txtTpl := template.New(name)
+
+	// In case the result is not nil cast it into a pointer to a MetaTemplate
+	if txtTpl != nil {
+
+		// Allocate memory to store the meta template and return its address
+		metaTpl := (*MetaTemplate)(txtTpl)
+		return metaTpl
+	}
+
+	// otherwise, return nil
+	return nil
+}
+
+// Methods
+// ----------------------------------------------------------------------------
+
+// Funcs adds the elements of the argument map to the template's function map.
+// It must be called before the template is parsed. It panics if a value in the
+// map is not a function with appropriate return type or if the name cannot be
+// used syntactically as a function in a template. It is legal to overwrite
+// elements of the map. The return value is the template, so calls can be
+// chained.
+func (mt *MetaTemplate) Funcs(funcMap template.FuncMap) *MetaTemplate {
+
+	// Execute the same method over the ordinary template/text
+	txtTpl := (*template.Template)(mt)
+	txtTpl = txtTpl.Funcs(funcMap)
+
+	// and return the updated MetaTemplate
+	return (*MetaTemplate)(txtTpl)
+}
+
 // Provides a replacement of the function text.ParseFiles () in the
 // text/template package. It actually returns the result of invoking that
 // function over temporal files where all meta-variables have been properly
@@ -283,7 +326,7 @@ func getValues(values map[string]string, metavars metaVars) (substitutions map[s
 // In addition, the error can be specific of this service. For example, in case
 // it is not possible to substitute a specific meta-variable it returns an error
 // before invoking the text/template version of ParseFiles ().
-func ParseFiles(values map[string]string, filenames ...string) (*template.Template, error) {
+func (mt *MetaTemplate) ParseFiles(values map[string]string, filenames ...string) (*template.Template, error) {
 
 	// create a slice to store the processed files
 	tmpfiles := make([]string, 0)
@@ -308,8 +351,18 @@ func ParseFiles(values map[string]string, filenames ...string) (*template.Templa
 			}
 
 			// And now process the entire file to write the result of performing
-			// all substitutions in a temporary file
-			if ostream, oerr := os.CreateTemp("", filepath.Base(ifile)); oerr != nil {
+			// all substitutions in a temporary file. Dunno why the core Google
+			// dev team decided that template.ParseFiles rewrites the name of
+			// the template. This is truly problematic here since we have to
+			// process a template written in a temporary file. The only solution
+			// is to create a tempdir and to create there a file with the same
+			// name, but all this would have been absolutely unnecessary if
+			// ParseFiles would not be *rewritting* the template's name :(
+			tmpdir, terr := os.MkdirTemp("", filepath.Base(ifile))
+			if terr != nil {
+				return nil, terr
+			}
+			if ostream, err := os.Create(filepath.Join(tmpdir, filepath.Base(ifile))); err != nil {
 				return nil, fmt.Errorf(" It was not possible to create a temp file for '%v'\n", filepath.Base(ifile))
 			} else {
 
@@ -350,13 +403,17 @@ func ParseFiles(values map[string]string, filenames ...string) (*template.Templa
 		}
 	}
 
-	// pass the processed files to the function in template/text and return its
-	// values and gather the results
-	result, err := template.ParseFiles(tmpfiles...)
+	// pass the processed files to the method corresponding to the ordinary
+	// template/tex of this metatemplate and gather the results
+	txtTpl := (*template.Template)(mt)
+	result, err := txtTpl.ParseFiles(tmpfiles...)
 
-	// Before leaving, ensure the temporary files are removed
+	// Before leaving, ensure the temporary files and directories are removed
 	for _, itmp := range tmpfiles {
-		os.Remove(itmp)
+		dirname, _ := filepath.Split(itmp)
+		if err := os.RemoveAll(dirname); err != nil {
+			return nil, fmt.Errorf(" Error while removing the temporary file '%v'\n", itmp)
+		}
 	}
 
 	// and return the results

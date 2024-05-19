@@ -23,16 +23,18 @@ import (
 	"fmt"
 	"io"  // io streams
 	"log" // logging services
+	"path"
 	"regexp"
 	"sort"
+	"text/template"
 
 	// go facility for processing templates
 
 	// import my favourite package to automatically create tables
-	"github.com/clinaresl/table"
 
-	// and also the replacement of text/templates known as multi-template
 	"github.com/clinaresl/pgnparser/metatemplate"
+	"github.com/clinaresl/table"
+	// and also the replacement of text/templates known as multi-template
 )
 
 // typedefs
@@ -353,12 +355,6 @@ func (games *PgnCollection) GetField(name string) string {
 	return val
 }
 
-// This is an auxiliary function used in text/templates to generate slices of
-// strings to be given as argument to other methods
-func (games *PgnCollection) GetSlice(fields ...any) []any {
-	return fields
-}
-
 // Returns a table according to the specification given in first place. Columns
 // are populated with the tags given in fields. It is intended to be used in
 // ascii table templates
@@ -406,13 +402,18 @@ func (games *PgnCollection) GamesToWriterFromTemplate(dst io.Writer, templateFil
 	variables := make(map[string]string)
 
 	// access a template and parse its contents
-	template, err := metatemplate.ParseFiles(variables, templateFile)
+	tpl, err := metatemplate.New(path.Base(templateFile)).Funcs(template.FuncMap{
+		"getSlice": func(fields ...interface{}) []interface{} {
+			return fields
+		},
+	}).ParseFiles(variables, templateFile)
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// and now execute the template
-	err = template.Execute(dst, games)
+	err = tpl.ExecuteTemplate(dst, tpl.Name(), games)
 	if err != nil {
 		log.Fatal(err)
 	}

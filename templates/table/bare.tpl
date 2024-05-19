@@ -7,6 +7,6 @@
 	In other words, it provides ONLY bare information about each
 	game
 
-*/}}{{.GetTable " | l r | l r | c |" (.GetSlice "White" "WhiteElo" "Black" "BlackElo" "Result") }}
+*/}}{{.GetTable " | l r | l r | c |" (getSlice "White" "WhiteElo" "Black" "BlackElo" "Result") }}
  # Games found: {{.Len}}
 {{""}}

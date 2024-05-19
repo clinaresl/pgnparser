@@ -500,12 +500,6 @@ func (game *PgnGame) getMainLineWithComments(nbplies int) func() (string, error)
 	}
 }
 
-// This is an auxiliary function used in text/templates to generate slices of
-// strings to be given as argument to other methods
-func (game *PgnGame) GetSlice(fields ...any) []any {
-	return fields
-}
-
 // Produces a LaTeX string with the list of moves of this game along with the
 // different annotations.
 //
