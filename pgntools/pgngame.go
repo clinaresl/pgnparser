@@ -33,18 +33,26 @@ import (
 
 // A PGN move consist of a single ply. For each move the move number, color
 // (with -1 representing black and +1 representing white) and actual move value
-// (in algebraic form) is stored. Additionally, in case that the elapsed move
-// time was present in the PGN file, it is also stored here.
+// (both in short and long algebraic notation) is stored. Additionally, in case
+// that the elapsed move time was present in the PGN file, it is also stored
+// here.
 //
 // Finally, any combination of moves after the move are combined into the
 // same field (comments). In case various comments were given they are then
 // separated by '\n'.
 type PgnMove struct {
-	number    int
-	color     int
-	moveValue string
-	emt       float32
-	comments  string
+	number         int
+	color          int
+	shortAlgebraic string
+	longAlgebraic
+	emt      float32
+	comments string
+}
+
+// A move in the long algebraic notation consists of a explicity description of
+// the starting and end positions of the move
+type longAlgebraic struct {
+	from, to string
 }
 
 // The outcome of a chess game consists of the score obtained by every player as
@@ -56,11 +64,13 @@ type PgnOutcome struct {
 }
 
 // A game consists just of a map that stores information of all PGN tags, the
-// sequence of moves and the outcome. For various purposes it contains also an
-// id which is an integer index and is used to uniquely refer to each game.
+// sequence of moves and successive boards and the outcome. For various purposes
+// it contains also an id which is an integer index and is used to uniquely
+// refer to each game.
 type PgnGame struct {
 	tags    map[string]any
 	moves   []PgnMove
+	boards  []PgnBoard
 	outcome PgnOutcome
 	id      int
 }
@@ -98,9 +108,9 @@ func (move PgnMove) Color() int {
 	return move.color
 }
 
-// Return the actual move of the given PgnMove
+// Return the actual move in short algebraic notation
 func (move PgnMove) Move() string {
-	return move.moveValue
+	return move.shortAlgebraic
 }
 
 // Return comments of the given PgnMove
@@ -119,7 +129,7 @@ func (move PgnMove) String() string {
 		output += fmt.Sprintf("%v. ... ", move.number)
 	}
 
-	output += fmt.Sprintf("%v ", move.moveValue)
+	output += fmt.Sprintf("%v ", move.shortAlgebraic)
 	return output
 }
 
@@ -269,6 +279,11 @@ func (game *PgnGame) Moves() []PgnMove {
 	return game.moves
 }
 
+// Return a list of the boards of this game as a slice of PgnBoards
+func (game *PgnGame) Boards() []PgnBoard {
+	return game.boards
+}
+
 // Return an instance of PgnOutcome with the result of this game
 func (game *PgnGame) Outcome() PgnOutcome {
 	return game.outcome
@@ -310,7 +325,7 @@ func (game *PgnGame) GetPGN() (output string) {
 	for idx < len(game.moves) {
 
 		// Write the move number and the white's move
-		output += fmt.Sprintf("%v. %v ", game.moves[idx].number, game.moves[idx].moveValue)
+		output += fmt.Sprintf("%v. %v ", game.moves[idx].number, game.moves[idx].shortAlgebraic)
 
 		// and in case this move has an emt/ comments add them
 		if game.moves[idx].emt > 0.0 {
@@ -323,7 +338,7 @@ func (game *PgnGame) GetPGN() (output string) {
 
 		// in case there is a move for black, then add it immediately after
 		if idx < len(game.moves) {
-			output += fmt.Sprintf("%v ", game.moves[idx].moveValue)
+			output += fmt.Sprintf("%v ", game.moves[idx].shortAlgebraic)
 
 			// and in case this move has any emt/comments add them
 			if game.moves[idx].emt > 0.0 {
@@ -458,11 +473,11 @@ func (game *PgnGame) getMainLineWithComments(nbplies int) func() (string, error)
 			if newMainLine || move.color == 1 {
 
 				// now, show the actual move with all details
-				output += fmt.Sprintf("%v%v %v ", move.number, move.getColorPrefix(), move.moveValue)
+				output += fmt.Sprintf("%v%v %v ", move.number, move.getColorPrefix(), move.shortAlgebraic)
 			} else {
 
 				// otherwise, just show the actual move
-				output += fmt.Sprintf("%v ", move.moveValue)
+				output += fmt.Sprintf("%v ", move.shortAlgebraic)
 			}
 
 			// if this move contains either a comment or the emt

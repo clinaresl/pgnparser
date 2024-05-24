@@ -177,7 +177,9 @@ func main() {
 	// transcription of all games is correct. In case a strictly positive value
 	// is given then the board is shown on the standard output
 	start = time.Now()
-	games.Play(play, os.Stdout)
+	if err := games.Play(play, os.Stdout); err != nil {
+		log.Fatalln(err)
+	}
 	fmt.Printf(" Games verified!\n")
 	fmt.Printf(" [%v]\n", time.Since(start))
 	fmt.Println()

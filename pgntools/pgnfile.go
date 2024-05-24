@@ -126,11 +126,11 @@ func getTags(pgn string) (tags map[string]any) {
 // returns all moves processed so far
 func getMoves(pgn string) (moves []PgnMove, err error) {
 
-	moveNumber := -1     // initialize the move counter to unknown
-	color := 0           // initialize the color to unknown
-	var moveValue string // move actually parsed in PGN format
-	var emt float64      // elapsed move time
-	var comments string  // comments of each move
+	moveNumber := -1          // initialize the move counter to unknown
+	color := 0                // initialize the color to unknown
+	var shortAlgebraic string // move actually parsed in PGN format
+	var emt float64           // elapsed move time
+	var comments string       // comments of each move
 
 	// process plies in sequence until the whole string is exhausted
 	for len(pgn) > 0 {
@@ -166,7 +166,7 @@ func getMoves(pgn string) (moves []PgnMove, err error) {
 			}
 
 			// and in any case extract the move value
-			moveValue = pgn[tag[6]:tag[7]]
+			shortAlgebraic = pgn[tag[6]:tag[7]]
 		}
 
 		// and move forward
@@ -192,7 +192,7 @@ func getMoves(pgn string) (moves []PgnMove, err error) {
 				// if not, then just add these comments. In case some comments
 				// were already written, make sure to add this in a new line
 				if len(comments) > 0 {
-					comments += "\r\n"
+					comments += "\n"
 				}
 				comments += pgn[1+tag[2] : tag[3]-1]
 			}
@@ -204,7 +204,9 @@ func getMoves(pgn string) (moves []PgnMove, err error) {
 		if moveNumber == -1 || color == 0 {
 			return moves, errors.New(" Either the move number or the color were incorrect")
 		}
-		moves = append(moves, PgnMove{moveNumber, color, moveValue, float32(emt), comments})
+
+		// Note that the move is initialized in long algebraic notation as empty
+		moves = append(moves, PgnMove{moveNumber, color, shortAlgebraic, longAlgebraic{}, float32(emt), comments})
 	}
 
 	return
@@ -256,15 +258,19 @@ func getOutcome(pgn string) (outcome *PgnOutcome, err error) {
 }
 
 // Return the contents of a chess game from the full transcription of a chess
-// game given as a string in PGN format. In case it was not possible to process
-// the string, or the information in the game is incorrect (i.e., it could not
-// be executed on a chess board) an error is returned
+// game given as a string in PGN format. The game returned by this service does
+// not include the successive boards of the game, but just the moves. To get the
+// boards it is necessary to "Play" the game
+//
+// In case it was not possible to process the string, or the information in the
+// game is incorrect (i.e., it could not be executed on a chess board) an error
+// is returned
 func getGameFromString(pgn string) (*PgnGame, error) {
 
 	// create variables to store different sections of a single PGN game
 	var strTags, strMoves, strOutcome string
 
-	// find the tags of the first game in pgn
+	// The game must start with tags. Extract them
 	endpoints := reTags.FindStringIndex(pgn)
 	if endpoints == nil {
 		return nil, fmt.Errorf(" No tags were found in the chunk: %v", pgn)
@@ -369,7 +375,10 @@ func (f PgnFile) ModTime() time.Time {
 	return f.modtime
 }
 
-// Return all games stored in the PgnFile f as a collection of PgnGames
+// Return all games stored in the PgnFile f as a collection of PgnGames. The
+// games returned by this service do not include the successive boards of each
+// game, but just the moves. To get the boards it is necessary to "Play" the
+// game
 func (f PgnFile) Games() (*PgnCollection, error) {
 
 	// Open the PgnFile
