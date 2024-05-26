@@ -23,6 +23,7 @@ import (
 	"fmt" // printing msgs
 	"io"
 	"log" // logging services
+	"sort"
 	"strings"
 
 	"github.com/expr-lang/expr"
@@ -95,6 +96,122 @@ func evaluateExpr(expression string, env map[string]any) (any, error) {
 	return output, nil
 }
 
+// Return true if and only if the FEN piece placement of the first string
+// matches the FEN piece placement of the second, and false otherwise. Both
+// strings are supposed to contain only the piece placement of the FEN code and
+// not the entire FEN code
+func matchFENPiecePlacement(expr, code string) bool {
+
+	// The piece placement is the same if and only if they are exactly equal and
+	// false otherwise
+	return expr == code
+}
+
+// Return true if and only if the FEN active color of the first string matches
+// the FEN active color of the second, and false otherwise. Both strings are
+// supposed to contain only the active color of the FEN code and not the
+// entire FEN code
+func matchFENActiveColor(expr, code string) bool {
+
+	// The active color is the same if and only if they are exactly equal and
+	// false otherwise
+	return expr == code
+}
+
+// Return true if and only if the FEN castling rights of the first string
+// matches the FEN castling rights of the second, and false otherwise. Both
+// strings are supposed to contain only the castling rights of the FEN code and
+// not the entire FEN code
+func matchFENCastlingRights(expr, code string) bool {
+
+	// The castling rights are the same if and only if they contain exactly the
+	// same characters, even if they are in different order. Thus, sort each
+	// string
+	sexpr, scode := strings.Split(expr, ""), strings.Split(code, "")
+	sort.Strings(sexpr)
+	sort.Strings(scode)
+
+	// and check now if they are the same
+	return strings.Join(sexpr, "") == strings.Join(scode, "")
+}
+
+// Return true if and only if the FEN en passant targets of the first string
+// matches the FEN en passant targets of the second, and false otherwise. Both
+// strings are supposed to contain only the en passant targets of the FEN code
+// and not the entire FEN code
+func matchFENEnPassantTargets(expr, code string) bool {
+
+	// The en passant target consists of a square in short algebraic notation
+	// and thus, being equal they should be given exactly in the same way
+	return expr == code
+}
+
+// Return true if and only if the FEN halfmove clock of the first string matches
+// the FEN halfmove clock of the second, and false otherwise. Both strings are
+// supposed to contain only the halfmove clock of the FEN code and not the
+// entire FEN code
+func matchFENHalfMoveClock(expr, code string) bool {
+
+	// The halfmove clock consists of an integer, so they both should be the
+	// same
+	return expr == code
+}
+
+// Return true if and only if the FEN fullmove number of the first string
+// matches the FEN fullmove number of the second, and false otherwise. Both
+// strings are supposed to contain only the fullmove number of the FEN code and
+// not the entire FEN code
+func matchFENFullMoveNumber(expr, code string) bool {
+
+	// The fullmove number consists of an integer, so they both should be the
+	// same
+	return expr == code
+}
+
+// Return true if and only if the first fen code matches the second. Matching
+// means that they are actually the same even if they are written in different
+// ways
+func matchFEN(expr, code string) bool {
+
+	// split both fen codes into their fields. Since they are assumed to be
+	// correct, it just suffices splitting with the blank
+	exprFields := strings.Split(expr, " ")
+	codeFields := strings.Split(code, " ")
+
+	// Piece placement
+	if !matchFENPiecePlacement(exprFields[0], codeFields[0]) {
+		return false
+	}
+
+	// Active Color
+	if !matchFENActiveColor(exprFields[1], codeFields[1]) {
+		return false
+	}
+
+	// Castling rights
+	if !matchFENCastlingRights(exprFields[2], codeFields[2]) {
+		return false
+	}
+
+	// En passant targets
+	if !matchFENEnPassantTargets(exprFields[3], codeFields[3]) {
+		return false
+	}
+
+	// Half move clock
+	if !matchFENHalfMoveClock(exprFields[4], codeFields[4]) {
+		return false
+	}
+
+	// Fullmove number
+	if !matchFENFullMoveNumber(exprFields[4], codeFields[4]) {
+		return false
+	}
+
+	// at this point, they are proven to be equal
+	return true
+}
+
 // Methods
 // ----------------------------------------------------------------------------
 
@@ -151,8 +268,25 @@ func (outcome PgnOutcome) String() string {
 	return fmt.Sprintf("%v-%v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
+// Return true if and only if a board in this game contains a position with the
+// given fen code
+func (game *PgnGame) checkFEN(fencode string) bool {
+
+	// Examine all positions in this game
+	for _, iboard := range game.boards {
+
+		// if this board has the given fen code immediately return true
+		if matchFEN(fencode, iboard.fen) {
+			return true
+		}
+	}
+
+	// At this point, no position in this game has the given fen fencode
+	return false
+}
+
 // return a string showing all moves in the specified interval in vertical mode,
-// i.e. from move number from until move number to not included.
+// i.e. from move number 'from' until move number 'to' not included.
 func (game *PgnGame) prettyMoves(from, to int) (output string) {
 
 	// in case no moves were given just return the empty string
@@ -210,6 +344,11 @@ func (game *PgnGame) getEnv() (env map[string]any) {
 		env["Moves"] = len(game.moves) / 2
 	} else {
 		env["Moves"] = 1 + len(game.moves)/2
+	}
+
+	// And also, add all the available functions
+	env["FEN"] = func(fen string) bool {
+		return game.checkFEN(fen)
 	}
 
 	// and return the environment
