@@ -272,6 +272,11 @@ func (outcome PgnOutcome) String() string {
 // given fen code
 func (game *PgnGame) checkFEN(fencode string) bool {
 
+	// First of all, verify the given fencode is syntactically correct
+	if !reFEN.MatchString(fencode) {
+		log.Fatalf(" Syntax error in FEN code: '%v'\n", fencode)
+	}
+
 	// Examine all positions in this game
 	for _, iboard := range game.boards {
 

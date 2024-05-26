@@ -27,6 +27,9 @@ import (
 // global variables (to the package)
 // ----------------------------------------------------------------------------
 
+// Regular expressions
+// ----------------------------------------------------------------------------
+
 // ungrouped regexps -- they are used just to recognize different chunks of a
 // string
 // ----------------------------------------------------------------------------
@@ -97,6 +100,13 @@ var reHistogramName = regexp.MustCompile(`\s*:\s*`)
 // The following regular expression is used to distinguish criteria from sorting
 // operands
 var reSorting = `\s*(?P<direction>[<>])\s*(?P<criteria>.+)\s*`
+
+// The following regexp is used to verify whether a fen code is syntactially
+// correct
+var reFEN = regexp.MustCompile(`^(?P<piece>\*|[0-8pnbrqkPNBRQK\/\*]+) (?P<color>\*|[wb]) (?P<castling>-|\*|[kqKQ]+\*?) (?P<enpassant>-|[a-h]\*|\*[0-8]|[a-h][0-8]|\*) (?P<halfmove>\*|\d+) (?P<fullmove>\*|\d+)$`)
+
+// Package variables
+// ----------------------------------------------------------------------------
 
 // the following map stores the translation of literal coordinates to integers
 // used to access a PgnBoard
