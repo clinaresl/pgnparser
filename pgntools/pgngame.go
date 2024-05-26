@@ -23,6 +23,7 @@ import (
 	"fmt" // printing msgs
 	"io"
 	"log" // logging services
+	"sort"
 	"strings"
 
 	"github.com/expr-lang/expr"
@@ -33,18 +34,26 @@ import (
 
 // A PGN move consist of a single ply. For each move the move number, color
 // (with -1 representing black and +1 representing white) and actual move value
-// (in algebraic form) is stored. Additionally, in case that the elapsed move
-// time was present in the PGN file, it is also stored here.
+// (both in short and long algebraic notation) is stored. Additionally, in case
+// that the elapsed move time was present in the PGN file, it is also stored
+// here.
 //
 // Finally, any combination of moves after the move are combined into the
 // same field (comments). In case various comments were given they are then
 // separated by '\n'.
 type PgnMove struct {
-	number    int
-	color     int
-	moveValue string
-	emt       float32
-	comments  string
+	number         int
+	color          int
+	shortAlgebraic string
+	longAlgebraic
+	emt      float32
+	comments string
+}
+
+// A move in the long algebraic notation consists of a explicity description of
+// the starting and end positions of the move
+type longAlgebraic struct {
+	from, to string
 }
 
 // The outcome of a chess game consists of the score obtained by every player as
@@ -56,11 +65,13 @@ type PgnOutcome struct {
 }
 
 // A game consists just of a map that stores information of all PGN tags, the
-// sequence of moves and the outcome. For various purposes it contains also an
-// id which is an integer index and is used to uniquely refer to each game.
+// sequence of moves and successive boards and the outcome. For various purposes
+// it contains also an id which is an integer index and is used to uniquely
+// refer to each game.
 type PgnGame struct {
 	tags    map[string]any
 	moves   []PgnMove
+	boards  []PgnBoard
 	outcome PgnOutcome
 	id      int
 }
@@ -85,6 +96,122 @@ func evaluateExpr(expression string, env map[string]any) (any, error) {
 	return output, nil
 }
 
+// Return true if and only if the FEN piece placement of the first string
+// matches the FEN piece placement of the second, and false otherwise. Both
+// strings are supposed to contain only the piece placement of the FEN code and
+// not the entire FEN code
+func matchFENPiecePlacement(expr, code string) bool {
+
+	// The piece placement is the same if and only if they are exactly equal and
+	// false otherwise
+	return expr == code
+}
+
+// Return true if and only if the FEN active color of the first string matches
+// the FEN active color of the second, and false otherwise. Both strings are
+// supposed to contain only the active color of the FEN code and not the
+// entire FEN code
+func matchFENActiveColor(expr, code string) bool {
+
+	// The active color is the same if and only if they are exactly equal and
+	// false otherwise
+	return expr == code
+}
+
+// Return true if and only if the FEN castling rights of the first string
+// matches the FEN castling rights of the second, and false otherwise. Both
+// strings are supposed to contain only the castling rights of the FEN code and
+// not the entire FEN code
+func matchFENCastlingRights(expr, code string) bool {
+
+	// The castling rights are the same if and only if they contain exactly the
+	// same characters, even if they are in different order. Thus, sort each
+	// string
+	sexpr, scode := strings.Split(expr, ""), strings.Split(code, "")
+	sort.Strings(sexpr)
+	sort.Strings(scode)
+
+	// and check now if they are the same
+	return strings.Join(sexpr, "") == strings.Join(scode, "")
+}
+
+// Return true if and only if the FEN en passant targets of the first string
+// matches the FEN en passant targets of the second, and false otherwise. Both
+// strings are supposed to contain only the en passant targets of the FEN code
+// and not the entire FEN code
+func matchFENEnPassantTargets(expr, code string) bool {
+
+	// The en passant target consists of a square in short algebraic notation
+	// and thus, being equal they should be given exactly in the same way
+	return expr == code
+}
+
+// Return true if and only if the FEN halfmove clock of the first string matches
+// the FEN halfmove clock of the second, and false otherwise. Both strings are
+// supposed to contain only the halfmove clock of the FEN code and not the
+// entire FEN code
+func matchFENHalfMoveClock(expr, code string) bool {
+
+	// The halfmove clock consists of an integer, so they both should be the
+	// same
+	return expr == code
+}
+
+// Return true if and only if the FEN fullmove number of the first string
+// matches the FEN fullmove number of the second, and false otherwise. Both
+// strings are supposed to contain only the fullmove number of the FEN code and
+// not the entire FEN code
+func matchFENFullMoveNumber(expr, code string) bool {
+
+	// The fullmove number consists of an integer, so they both should be the
+	// same
+	return expr == code
+}
+
+// Return true if and only if the first fen code matches the second. Matching
+// means that they are actually the same even if they are written in different
+// ways
+func matchFEN(expr, code string) bool {
+
+	// split both fen codes into their fields. Since they are assumed to be
+	// correct, it just suffices splitting with the blank
+	exprFields := strings.Split(expr, " ")
+	codeFields := strings.Split(code, " ")
+
+	// Piece placement
+	if !matchFENPiecePlacement(exprFields[0], codeFields[0]) {
+		return false
+	}
+
+	// Active Color
+	if !matchFENActiveColor(exprFields[1], codeFields[1]) {
+		return false
+	}
+
+	// Castling rights
+	if !matchFENCastlingRights(exprFields[2], codeFields[2]) {
+		return false
+	}
+
+	// En passant targets
+	if !matchFENEnPassantTargets(exprFields[3], codeFields[3]) {
+		return false
+	}
+
+	// Half move clock
+	if !matchFENHalfMoveClock(exprFields[4], codeFields[4]) {
+		return false
+	}
+
+	// Fullmove number
+	if !matchFENFullMoveNumber(exprFields[4], codeFields[4]) {
+		return false
+	}
+
+	// at this point, they are proven to be equal
+	return true
+}
+
 // Methods
 // ----------------------------------------------------------------------------
 
@@ -98,9 +225,9 @@ func (move PgnMove) Color() int {
 	return move.color
 }
 
-// Return the actual move of the given PgnMove
+// Return the actual move in short algebraic notation
 func (move PgnMove) Move() string {
-	return move.moveValue
+	return move.shortAlgebraic
 }
 
 // Return comments of the given PgnMove
@@ -119,7 +246,7 @@ func (move PgnMove) String() string {
 		output += fmt.Sprintf("%v. ... ", move.number)
 	}
 
-	output += fmt.Sprintf("%v ", move.moveValue)
+	output += fmt.Sprintf("%v ", move.shortAlgebraic)
 	return output
 }
 
@@ -141,8 +268,25 @@ func (outcome PgnOutcome) String() string {
 	return fmt.Sprintf("%v-%v", outcome.scoreWhite, outcome.scoreBlack)
 }
 
+// Return true if and only if a board in this game contains a position with the
+// given fen code
+func (game *PgnGame) checkFEN(fencode string) bool {
+
+	// Examine all positions in this game
+	for _, iboard := range game.boards {
+
+		// if this board has the given fen code immediately return true
+		if matchFEN(fencode, iboard.fen) {
+			return true
+		}
+	}
+
+	// At this point, no position in this game has the given fen fencode
+	return false
+}
+
 // return a string showing all moves in the specified interval in vertical mode,
-// i.e. from move number from until move number to not included.
+// i.e. from move number 'from' until move number 'to' not included.
 func (game *PgnGame) prettyMoves(from, to int) (output string) {
 
 	// in case no moves were given just return the empty string
@@ -200,6 +344,11 @@ func (game *PgnGame) getEnv() (env map[string]any) {
 		env["Moves"] = len(game.moves) / 2
 	} else {
 		env["Moves"] = 1 + len(game.moves)/2
+	}
+
+	// And also, add all the available functions
+	env["FEN"] = func(fen string) bool {
+		return game.checkFEN(fen)
 	}
 
 	// and return the environment
@@ -269,6 +418,11 @@ func (game *PgnGame) Moves() []PgnMove {
 	return game.moves
 }
 
+// Return a list of the boards of this game as a slice of PgnBoards
+func (game *PgnGame) Boards() []PgnBoard {
+	return game.boards
+}
+
 // Return an instance of PgnOutcome with the result of this game
 func (game *PgnGame) Outcome() PgnOutcome {
 	return game.outcome
@@ -310,7 +464,7 @@ func (game *PgnGame) GetPGN() (output string) {
 	for idx < len(game.moves) {
 
 		// Write the move number and the white's move
-		output += fmt.Sprintf("%v. %v ", game.moves[idx].number, game.moves[idx].moveValue)
+		output += fmt.Sprintf("%v. %v ", game.moves[idx].number, game.moves[idx].shortAlgebraic)
 
 		// and in case this move has an emt/ comments add them
 		if game.moves[idx].emt > 0.0 {
@@ -323,7 +477,7 @@ func (game *PgnGame) GetPGN() (output string) {
 
 		// in case there is a move for black, then add it immediately after
 		if idx < len(game.moves) {
-			output += fmt.Sprintf("%v ", game.moves[idx].moveValue)
+			output += fmt.Sprintf("%v ", game.moves[idx].shortAlgebraic)
 
 			// and in case this move has any emt/comments add them
 			if game.moves[idx].emt > 0.0 {
@@ -458,11 +612,11 @@ func (game *PgnGame) getMainLineWithComments(nbplies int) func() (string, error)
 			if newMainLine || move.color == 1 {
 
 				// now, show the actual move with all details
-				output += fmt.Sprintf("%v%v %v ", move.number, move.getColorPrefix(), move.moveValue)
+				output += fmt.Sprintf("%v%v %v ", move.number, move.getColorPrefix(), move.shortAlgebraic)
 			} else {
 
 				// otherwise, just show the actual move
-				output += fmt.Sprintf("%v ", move.moveValue)
+				output += fmt.Sprintf("%v ", move.shortAlgebraic)
 			}
 
 			// if this move contains either a comment or the emt

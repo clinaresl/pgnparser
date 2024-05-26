@@ -23,6 +23,9 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/clinaresl/table"
 )
@@ -58,10 +61,12 @@ const (
 
 // A PgnBoard consists simply of an array of 64 integers. In addition, the
 // location of both kings has to be updated. This information is used to
-// determine whether a piece is pinned or not
+// determine whether a piece is pinned or not. Finally, every board (or
+// position) is characterized by a unique FEN code.
 type PgnBoard struct {
 	squares      [64]content // contents of each square
 	wking, bking int         // location of the white and black king
+	fen          string
 }
 
 // Functions
@@ -482,21 +487,6 @@ func getQualifier(square int) (string, string) {
 // Methods
 // ----------------------------------------------------------------------------
 
-// Create a new board initialized with Caissa
-func NewPgnBoard() PgnBoard {
-	return PgnBoard{
-		[64]content{WROOK, WKNIGHT, WBISHOP, WQUEEN, WKING, WBISHOP, WKNIGHT, WROOK,
-			WPAWN, WPAWN, WPAWN, WPAWN, WPAWN, WPAWN, WPAWN, WPAWN,
-			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
-			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
-			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
-			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
-			BPAWN, BPAWN, BPAWN, BPAWN, BPAWN, BPAWN, BPAWN, BPAWN,
-			BROOK, BKNIGHT, BBISHOP, BQUEEN, BKING, BBISHOP, BKNIGHT, BROOK},
-		4,  // initial location of the white king
-		60} // initial location of the black king
-}
-
 // return the square from which a pawn has been moved to reach the given
 // location
 //
@@ -775,8 +765,10 @@ func (board *PgnBoard) isPinned(location int, dest int) bool {
 }
 
 // update the contents of this board after the side of the given color makes a
-// short castling
-func (board *PgnBoard) updateShortCastling(color int) {
+// short castling. Return the move actually played in long algebraic notation
+// (which is described simply with the starting and ending locations of the
+// king)
+func (board *PgnBoard) updateShortCastling(color int) longAlgebraic {
 
 	if color < 0 {
 		board.squares[coords["e8"]] = BLANK // remove the king
@@ -785,19 +777,27 @@ func (board *PgnBoard) updateShortCastling(color int) {
 		board.squares[coords["g8"]] = BKING // relocate the king
 
 		board.bking = coords["g8"]
-	} else {
-		board.squares[coords["e1"]] = BLANK // remove the king
-		board.squares[coords["h1"]] = BLANK // remove the rook
-		board.squares[coords["f1"]] = WROOK // relocate the rook
-		board.squares[coords["g1"]] = WKING // relocate the king
 
-		board.wking = coords["g1"]
+		// and return the move played in long algebraic notation
+		return longAlgebraic{"e8", "g8"}
 	}
+
+	board.squares[coords["e1"]] = BLANK // remove the king
+	board.squares[coords["h1"]] = BLANK // remove the rook
+	board.squares[coords["f1"]] = WROOK // relocate the rook
+	board.squares[coords["g1"]] = WKING // relocate the king
+
+	board.wking = coords["g1"]
+
+	// and return the move played in long algebraic notation
+	return longAlgebraic{"e1", "g1"}
 }
 
 // update the contents of this board after the side of the given color makes a
-// long castling
-func (board *PgnBoard) updateLongCastling(color int) {
+// long castling. Return the move actually played in long algebraic notation
+// (which is described simply with the starting and ending locations of the
+// king)
+func (board *PgnBoard) updateLongCastling(color int) longAlgebraic {
 
 	if color < 0 {
 		board.squares[coords["e8"]] = BLANK // remove the king
@@ -806,35 +806,326 @@ func (board *PgnBoard) updateLongCastling(color int) {
 		board.squares[coords["c8"]] = BKING // relocate the king
 
 		board.bking = coords["c8"]
-	} else {
-		board.squares[coords["e1"]] = BLANK // remove the king
-		board.squares[coords["a1"]] = BLANK // remove the rook
-		board.squares[coords["d1"]] = WROOK // relocate the rook
-		board.squares[coords["c1"]] = WKING // relocate the king
 
-		board.wking = coords["c1"]
+		// and return the move played in long algebraic notation
+		return longAlgebraic{"e8", "c8"}
 	}
+
+	board.squares[coords["e1"]] = BLANK // remove the king
+	board.squares[coords["a1"]] = BLANK // remove the rook
+	board.squares[coords["d1"]] = WROOK // relocate the rook
+	board.squares[coords["c1"]] = WKING // relocate the king
+
+	board.wking = coords["c1"]
+
+	// and return the move played in long algebraic notation
+	return longAlgebraic{"e1", "c1"}
 }
 
-// The following method updates the contents of the current board after making
-// the given move. In case it is not possible to execute the given move, then an
-// error is returned
-func (board *PgnBoard) UpdateBoard(move PgnMove) (err error) {
+// Compute the segment of the FEN code which describes the contents of the given
+// board
+func (board *PgnBoard) updateFENPiecePlacement() (fen string) {
 
-	if reTextualMove.MatchString(move.moveValue) {
+	// For all rows, from the top to the bottom
+	for irow := 7; irow >= 0; irow-- {
+
+		// In every row count the number of consecutive empty squares
+		nbEmpty := 0
+		for jcol := 0; jcol < 8; jcol++ {
+
+			// if this square is not empty
+			if board.squares[irow*8+jcol] != BLANK {
+
+				// First of all, in case some consecutive empty cells were found
+				// before this one, then add it to the contents
+				if nbEmpty > 0 {
+					fen += fmt.Sprintf("%v", nbEmpty)
+
+					// and restart the count
+					nbEmpty = 0
+				}
+
+				// In any case add this piece to the FEN notation
+				switch board.squares[irow*8+jcol] {
+				case BKING:
+					fen += "k"
+				case BQUEEN:
+					fen += "q"
+				case BROOK:
+					fen += "r"
+				case BBISHOP:
+					fen += "b"
+				case BKNIGHT:
+					fen += "n"
+				case BPAWN:
+					fen += "p"
+				case WPAWN:
+					fen += "P"
+				case WKNIGHT:
+					fen += "N"
+				case WBISHOP:
+					fen += "B"
+				case WROOK:
+					fen += "R"
+				case WQUEEN:
+					fen += "Q"
+				case WKING:
+					fen += "K"
+				}
+			} else {
+
+				// If this square is empty, then count the number of them which
+				// are adjacent
+				nbEmpty++
+			}
+		}
+
+		// In case this row is ended and there are a positive number of adjacent
+		// empty squares, add it to the fen code
+		if nbEmpty > 0 {
+			fen += fmt.Sprintf("%v", nbEmpty)
+		}
+
+		// and now add a slash to distinguish ranks unless this is the last row
+		if irow > 0 {
+			fen += "/"
+		}
+	}
+
+	return
+}
+
+// Given the segment of the FEN code describing the castling rights of a
+// preceding position, determine the castling rights of the position after
+// making the given move in long algebraic notation.
+func updateFENCastingRights(castling string, prec PgnBoard, extended longAlgebraic) (fen string) {
+
+	// Read the contents of the starting square
+	src := prec.squares[coords[extended.from]]
+
+	// If black lost the king side castling rights then there is no need to
+	// consider it
+	if strings.Contains(castling, "k") {
+
+		// Then ensure that the last move was not made either by the king or the
+		// king's rook
+		if src != BKING && src != BROOK {
+			fen += "k"
+		}
+	}
+
+	// If black lost the queen side castling rights then there is no need to
+	// consider it
+	if strings.Contains(castling, "q") {
+
+		// Then ensure that the last move was not made either by the king or the
+		// king's rook
+		if src != BKING && src != BROOK {
+			fen += "q"
+		}
+	}
+
+	// And anagously for white
+	if strings.Contains(castling, "K") {
+
+		if src != WKING && src != WROOK {
+			fen += "K"
+		}
+	}
+
+	if strings.Contains(castling, "Q") {
+
+		if src != WKING && src != WROOK {
+			fen += "Q"
+		}
+	}
+
+	// In case no side has any castling rights use a dash
+	if len(fen) == 0 {
+		fen = "-"
+	}
+
+	return
+}
+
+// Update the segment of the FEN code describing en passant targets of the board
+// resulting after executing the given move in the given board
+func updateFENEnPassant(prec PgnBoard, extended longAlgebraic) (fen string) {
+
+	// Read the contents of the starting square
+	src := prec.squares[coords[extended.from]]
+
+	// Just in case the last move was done by a black pawn
+	if src == BPAWN {
+
+		// If and only if the pawn advanced two squares ...
+		if coords[extended.from]-coords[extended.to] == 16 {
+
+			// then declare the position behind the pawn as an en passant target
+			fen = literal[coords[extended.from]-8]
+		}
+	}
+
+	// Likewise for white
+	if src == WPAWN {
+
+		// If and only if the pawn advanced two squares ...
+		if coords[extended.from]-coords[extended.to] == -16 {
+
+			// then declare the position behind the pawn as an en passant target
+			fen = literal[coords[extended.from]+8]
+		}
+	}
+
+	// In case the fen code is empty use a dash
+	if len(fen) == 0 {
+		fen = "-"
+	}
+
+	return
+}
+
+// Update the segment of the FEN code describing the half move clock of the
+// board resulting after executing the given move in the given board. This is
+// computed incrementally from the halfmove clock of the preceding board which
+// has to be given first
+func updateFENHalfMove(halfmove string, prec PgnBoard, extended longAlgebraic) (fen string) {
+
+	// Get the previous halfmove clock. Note that there is no need to check the
+	// error because the previous FEN is assumed to be correct and thus this
+	// should be a positive number
+	prev, _ := strconv.Atoi(halfmove)
+
+	// Read the contents of the starting and destination squares
+	src := prec.squares[coords[extended.from]]
+	dst := prec.squares[coords[extended.to]]
+
+	// If and only if the last move changes the location of a pawn or if it is a
+	// capture
+	if src == BPAWN || src == WPAWN || dst != BLANK {
+
+		// then the count is restarted
+		fen = "0"
+	} else {
+
+		// otherwise increment the counter
+		fen = fmt.Sprintf("%v", 1+prev)
+	}
+
+	return
+}
+
+// updates the FEN code of the receiver taking into account that this board was
+// generated from the preceding (prec) one with the move given long algebraic
+// notation
+func (board *PgnBoard) updateFEN(prec PgnBoard, extended longAlgebraic) {
+
+	// The new FEN code is computed incrementally from the preceding one. Split
+	// the FEN of the preceding board in its fields
+	fields := regexp.MustCompile(" ").Split(prec.fen, -1)
+
+	// Piece placement
+	// ------------------------------------------------------------------------
+	// The first field describes the contents of this board. The previous FEN is
+	// not used for this purpose
+	fen := board.updateFENPiecePlacement() + " "
+
+	// Active color
+	// ------------------------------------------------------------------------
+	// The active color is computed from the FEN of the preceding chessobard
+	// just by taking the opposite
+	switch fields[1] {
+	case "w":
+		fen += "b "
+	case "b":
+		fen += "w "
+	}
+
+	// Castling rights
+	// ------------------------------------------------------------------------
+	// Castling rights are computed incrementally. If either side lost the
+	// possibility of castling either king or queen side there is no possibility
+	// to do in the future.
+	fen += updateFENCastingRights(fields[2], prec, extended) + " "
+
+	// En passant targets
+	// ------------------------------------------------------------------------
+	// These are computed considering only the preceding board and the move
+	// executed
+	fen += updateFENEnPassant(prec, extended) + " "
+
+	// Halfmove clock
+	// ------------------------------------------------------------------------
+	// The halfmove clock is incremented with every ply unless a pawn has been
+	// moved or the last move was a capture
+	fen += updateFENHalfMove(fields[4], prec, extended) + " "
+
+	// Fullmove number
+	// ------------------------------------------------------------------------
+	// In case it is white's turn then increment the fullmove number
+	switch fields[1] {
+	case "w":
+		fen += fields[5]
+	case "b":
+		prev, _ := strconv.Atoi(fields[5])
+		fen += fmt.Sprintf("%v", 1+prev)
+	}
+
+	// Finally set the FEN code of this chessboard
+	board.fen = fen
+}
+
+// Create a new board initialized with Caissa
+func NewPgnBoard() PgnBoard {
+	return PgnBoard{
+		[64]content{WROOK, WKNIGHT, WBISHOP, WQUEEN, WKING, WBISHOP, WKNIGHT, WROOK,
+			WPAWN, WPAWN, WPAWN, WPAWN, WPAWN, WPAWN, WPAWN, WPAWN,
+			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
+			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
+			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
+			BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK,
+			BPAWN, BPAWN, BPAWN, BPAWN, BPAWN, BPAWN, BPAWN, BPAWN,
+			BROOK, BKNIGHT, BBISHOP, BQUEEN, BKING, BBISHOP, BKNIGHT, BROOK},
+		4,  // initial location of the white king
+		60, // initial location of the black king
+		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"} // fen of the starting position
+}
+
+// Return the FEN code of a specific board or chess position. The FEN of a
+// chessboard is available only after invoking UpdateBoard
+func (board *PgnBoard) FEN() string {
+	return board.fen
+}
+
+// Updates the contents of the current board using the short algebraic
+// description of the move and computes the FEN code of the resulting board. In
+// addition, it returns the move in long algebraic notation and an error, if any
+// occurred, or nil otherwise.
+func (board *PgnBoard) UpdateBoard(move PgnMove) (extended longAlgebraic, err error) {
+
+	// Before making any changes, make a copy of the current board which will be
+	// needed to compute the FEN code of the resulting chessboard
+	prec := PgnBoard{
+		squares: board.squares,
+		wking:   board.wking,
+		bking:   board.bking,
+		fen:     board.fen,
+	}
+
+	if reTextualMove.MatchString(move.shortAlgebraic) {
 
 		// get the different parts of this move necessary to reproduce it on the
 		// board
-		matches := reTextualMove.FindStringSubmatch(move.moveValue)
+		matches := reTextualMove.FindStringSubmatch(move.shortAlgebraic)
 
 		if matches[6] == "O-O" {
 
 			// -- Short castling
-			board.updateShortCastling(move.color)
+			extended = board.updateShortCastling(move.color)
 		} else if matches[6] == "O-O-O" {
 
 			// -- Long castling
-			board.updateLongCastling(move.color)
+			extended = board.updateLongCastling(move.color)
 		} else {
 
 			// -- Other moves
@@ -846,7 +1137,7 @@ func (board *PgnBoard) UpdateBoard(move PgnMove) (err error) {
 				matches[2],        // qualifier
 				matches[3] == "x") // capture flag
 			if origin < 0 {
-				return fmt.Errorf("It was not possible to reproduce the move '%v'\n", move)
+				return longAlgebraic{}, fmt.Errorf("It was not possible to reproduce the move '%v'\n", move)
 			} else {
 
 				// First, remove the piece from its origin
@@ -887,13 +1178,19 @@ func (board *PgnBoard) UpdateBoard(move PgnMove) (err error) {
 					}
 				}
 			}
+
+			// Annotate the move in long algebraic notation
+			extended = longAlgebraic{literal[origin], matches[4]}
 		}
 	} else {
-		return fmt.Errorf(" '%v' not parsed!\n", move.moveValue)
+		return longAlgebraic{}, fmt.Errorf(" '%v' not parsed!\n", move.shortAlgebraic)
 	}
 
+	// Before leaving, update the FEN code of this chessboard
+	board.updateFEN(prec, extended)
+
 	// Otherwise the move was properly executed without error
-	return nil
+	return extended, nil
 }
 
 // show a graphical view of this chess board

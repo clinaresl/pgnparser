@@ -107,7 +107,15 @@ func (c *PgnCollection) Add(game PgnGame) {
 // Play this collection of games on the given writer showing the board
 // repeteadly after the given number of plies on the specified writer, in case
 // it is strictly positive.
-func (c PgnCollection) Play(plies int, writer io.Writer) {
+//
+// Importantly, play updates all moves storing them also in long algebraic
+// notation. Likewise, when playing the games the successive boards of each game
+// are computed and stored within each game. If this service is not used, the
+// long algebraic notation of every move is empty, and no boards are recorded.
+//
+// In case any error is detected it is returned and the state of the writer is
+// undefined
+func (c PgnCollection) Play(plies int, writer io.Writer) error {
 
 	// the table has to be shown if an only if plies is greater than zero
 	showBoard := (plies > 0)
@@ -125,7 +133,7 @@ func (c PgnCollection) Play(plies int, writer io.Writer) {
 	}
 
 	// For each game
-	for _, igame := range c.slice {
+	for pos, igame := range c.slice {
 
 		// Only in case the board is to be shown, create a table, otherwise,
 		// skip the process
@@ -143,8 +151,11 @@ func (c PgnCollection) Play(plies int, writer io.Writer) {
 			tab.AddSingleRule()
 		}
 
-		// Create a new board and access the list of moves to show
+		// Create a new board and add it to the list of boards of this game
 		board := NewPgnBoard()
+		igame.boards = append(igame.boards, board)
+
+		// Access the list of moves and boards to update
 		imoves := igame.Moves()
 
 		// and now show the requested number of plies along with the resulting
@@ -154,7 +165,15 @@ func (c PgnCollection) Play(plies int, writer io.Writer) {
 
 			// compute the resulting board
 			for jdx := idx * plies; jdx < (idx+1)*plies; jdx += 1 {
-				board.UpdateBoard(imoves[jdx])
+				extended, err := board.UpdateBoard(imoves[jdx])
+				if err != nil {
+					return err
+				}
+
+				// Update this move in long algebraic notation and also the
+				// board
+				igame.boards = append(igame.boards, board)
+				imoves[idx].longAlgebraic = extended
 			}
 
 			if showBoard {
@@ -174,19 +193,32 @@ func (c PgnCollection) Play(plies int, writer io.Writer) {
 
 			// update the board with those additional moves
 			for jdx := idx * plies; jdx < len(imoves); jdx += 1 {
-				board.UpdateBoard(imoves[jdx])
+				extended, err := board.UpdateBoard(imoves[jdx])
+				if err != nil {
+					return err
+				}
+
+				// Update this move in long algebraic notation and also the
+				// board
+				igame.boards = append(igame.boards, board)
+				imoves[idx].longAlgebraic = extended
 			}
 
 			if showBoard {
+
 				// and add the last row
 				tab.AddRow(igame.prettyMoves(idx*plies, len(imoves)), board)
 			}
 		}
 
 		if showBoard {
+
 			// and add a separator with the next game
 			tab.AddThickRule()
 		}
+
+		// and update the information of this game
+		c.slice[pos] = igame
 	}
 
 	// and write the result of the execution in the given writer only in case it
@@ -194,6 +226,8 @@ func (c PgnCollection) Play(plies int, writer io.Writer) {
 	if showBoard {
 		io.WriteString(writer, fmt.Sprintf("%v\n", tab))
 	}
+
+	return nil
 }
 
 // Create a brand new PgnCollection with games found in this collection which
