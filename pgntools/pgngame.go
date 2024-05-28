@@ -23,7 +23,6 @@ import (
 	"fmt" // printing msgs
 	"io"
 	"log" // logging services
-	"sort"
 	"strings"
 
 	"github.com/expr-lang/expr"
@@ -113,8 +112,13 @@ func matchFENPiecePlacement(expr, code string) bool {
 // entire FEN code
 func matchFENActiveColor(expr, code string) bool {
 
-	// The active color is the same if and only if they are exactly equal and
-	// false otherwise
+	// If the expression given consists of a wildcard then immediately return
+	// true
+	if expr == "*" {
+		return true
+	}
+
+	// Otherwise, verify they are exactly the same
 	return expr == code
 }
 
@@ -124,15 +128,46 @@ func matchFENActiveColor(expr, code string) bool {
 // not the entire FEN code
 func matchFENCastlingRights(expr, code string) bool {
 
-	// The castling rights are the same if and only if they contain exactly the
-	// same characters, even if they are in different order. Thus, sort each
-	// string
-	sexpr, scode := strings.Split(expr, ""), strings.Split(code, "")
-	sort.Strings(sexpr)
-	sort.Strings(scode)
+	// this case is solved recursively. While the first character in expr is
+	// found in code the match proceeds recursively
 
-	// and check now if they are the same
-	return strings.Join(sexpr, "") == strings.Join(scode, "")
+	// Base cases
+	//
+	// if expr is the wildcard then there is a match
+	if expr == "*" {
+		return true
+	}
+
+	// If expr is the empty string, then there is a match if and only if code
+	// has been exhausted too
+	if len(expr) == 0 {
+		return len(code) == 0
+	}
+
+	// General case
+	//
+	// Look for the first character of expr in code
+	idx := strings.Index(code, string(expr[0]))
+	if idx == -1 {
+
+		// if the first character in expr is not found in code, then there is no
+		// match
+		return false
+	}
+
+	// Otherwise, proceed recursively removing the first character of expr both
+	// in expr and code
+	return matchFENCastlingRights(expr[1:], code[:idx]+code[idx+1:])
+
+	// // The castling rights are the same if and only if they contain exactly the
+	// // same characters, even if they are in different order. Thus, sort each
+	// // string
+	// sexpr, scode := strings.Split(expr, ""), strings.Split(code, "")
+	// sort.Strings(sexpr)
+	// sort.Strings(scode)
+
+	// // and check now if they are the same
+	// return strings.Join(sexpr, "") == strings.Join(scode, "")
 }
 
 // Return true if and only if the FEN en passant targets of the first string
@@ -141,9 +176,41 @@ func matchFENCastlingRights(expr, code string) bool {
 // and not the entire FEN code
 func matchFENEnPassantTargets(expr, code string) bool {
 
-	// The en passant target consists of a square in short algebraic notation
-	// and thus, being equal they should be given exactly in the same way
-	return expr == code
+	// The expression might consist of either one character ('-', '*') or two
+	// characters ('e*', '*3', 'e3'). The following code considers all these
+	// cases
+	if len(expr) == 2 {
+
+		// In case the first character is the wildcard
+		if expr[0] == '*' {
+
+			// then both match if and only if the second byte is the same
+			return expr[1] == code[1]
+		} else {
+
+			// otherwise, if the second character is the wildcard
+			if expr[1] == '*' {
+
+				// then there is a match iff the first character is the same
+				return expr[0] == code[0]
+			} else {
+
+				// if none is the wildcard then there is a match if and only if
+				// they are the same
+				return expr == code
+			}
+		}
+	}
+
+	// At this point, expr is known to consist of only one byte
+	if expr == "-" {
+
+		// In this case, there is a match only if code is also '-'
+		return expr == code
+	}
+
+	// Here, it is known the user provided a wildcard which matches anything
+	return true
 }
 
 // Return true if and only if the FEN halfmove clock of the first string matches
@@ -152,8 +219,12 @@ func matchFENEnPassantTargets(expr, code string) bool {
 // entire FEN code
 func matchFENHalfMoveClock(expr, code string) bool {
 
-	// The halfmove clock consists of an integer, so they both should be the
-	// same
+	// If the expression given contains a wildcard then immediately return true
+	if expr == "*" {
+		return true
+	}
+
+	// Otherwise, verify they are exactly the same
 	return expr == code
 }
 
@@ -163,8 +234,12 @@ func matchFENHalfMoveClock(expr, code string) bool {
 // not the entire FEN code
 func matchFENFullMoveNumber(expr, code string) bool {
 
-	// The fullmove number consists of an integer, so they both should be the
-	// same
+	// If the expression given contains a wildcard then immediately return true
+	if expr == "*" {
+		return true
+	}
+
+	// Otherwise, verify they are exactly the same
 	return expr == code
 }
 
@@ -173,38 +248,43 @@ func matchFENFullMoveNumber(expr, code string) bool {
 // ways
 func matchFEN(expr, code string) bool {
 
-	// split both fen codes into their fields. Since they are assumed to be
-	// correct, it just suffices splitting with the blank
-	exprFields := strings.Split(expr, " ")
-	codeFields := strings.Split(code, " ")
+	// split both fen codes into their fields
+	exprIndex := reFEN.FindStringSubmatchIndex(expr)
+	codeIndex := reFEN.FindStringSubmatchIndex(code)
 
 	// Piece placement
-	if !matchFENPiecePlacement(exprFields[0], codeFields[0]) {
+	if !matchFENPiecePlacement(expr[exprIndex[2]:exprIndex[3]],
+		code[codeIndex[2]:codeIndex[3]]) {
 		return false
 	}
 
 	// Active Color
-	if !matchFENActiveColor(exprFields[1], codeFields[1]) {
+	if !matchFENActiveColor(expr[exprIndex[4]:exprIndex[5]],
+		code[codeIndex[4]:codeIndex[5]]) {
 		return false
 	}
 
 	// Castling rights
-	if !matchFENCastlingRights(exprFields[2], codeFields[2]) {
+	if !matchFENCastlingRights(expr[exprIndex[6]:exprIndex[7]],
+		code[codeIndex[6]:codeIndex[7]]) {
 		return false
 	}
 
 	// En passant targets
-	if !matchFENEnPassantTargets(exprFields[3], codeFields[3]) {
+	if !matchFENEnPassantTargets(expr[exprIndex[8]:exprIndex[9]],
+		code[codeIndex[8]:codeIndex[9]]) {
 		return false
 	}
 
 	// Half move clock
-	if !matchFENHalfMoveClock(exprFields[4], codeFields[4]) {
+	if !matchFENHalfMoveClock(expr[exprIndex[10]:exprIndex[11]],
+		code[codeIndex[10]:codeIndex[11]]) {
 		return false
 	}
 
 	// Fullmove number
-	if !matchFENFullMoveNumber(exprFields[4], codeFields[4]) {
+	if !matchFENFullMoveNumber(expr[exprIndex[12]:exprIndex[13]],
+		code[codeIndex[12]:codeIndex[13]]) {
 		return false
 	}
 
