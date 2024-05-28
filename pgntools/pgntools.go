@@ -103,7 +103,7 @@ var reSorting = `\s*(?P<direction>[<>])\s*(?P<criteria>.+)\s*`
 
 // The following regexp is used to verify whether a fen code is syntactially
 // correct
-var reFEN = regexp.MustCompile(`^(?P<piece>\*|[0-8pnbrqkPNBRQK\/\*]+) (?P<color>\*|[wb]) (?P<castling>-|\*|[kqKQ]+\*?) (?P<enpassant>-|[a-h]\*|\*[0-8]|[a-h][0-8]|\*) (?P<halfmove>\*|\d+) (?P<fullmove>\*|\d+)$`)
+var reFEN = regexp.MustCompile(`^(?P<piece>\*|[0-8pnbrqkPNBRQK\/\*]+) (?P<color>\*|[wb]) (?P<castling>-|\*|[kqKQ]+\*?) (?P<enpassant>-|[a-h]\*|\*[0-8]|[a-h][0-8]|\*) (?P<halfmove>\*|\d+) (?P<fullmove>\*|\d+)$`0)
 
 // Package variables
 // ----------------------------------------------------------------------------
