@@ -20,9 +20,12 @@ package pgntools
 
 import (
 	// for signaling errors
+	"errors"
 	"fmt" // printing msgs
 	"io"
 	"log" // logging services
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/expr-lang/expr"
@@ -95,15 +98,314 @@ func evaluateExpr(expression string, env map[string]any) (any, error) {
 	return output, nil
 }
 
+// Return the number of undefined characters appearing at the beginning of the
+// given pattern and the number of bytes consumed to process it. If none is
+// given, it must return 0
+func cardinalityUndefined(expr string) (int, int) {
+
+	// Undefined squares are qualified with a star '*'
+	if len(expr) == 0 || expr[0] != '*' {
+		return 0, 0
+	} else if len(expr) == 1 {
+
+		// If there is only one * then return 1
+		return 1, 1
+	}
+
+	// At this point, we know the pattern consists of at least two characters,
+	// the first one being a *. Determine whether the second element is a digit
+	// or not
+	if match, _ := regexp.MatchString(`^\d.*`, expr[1:]); match {
+
+		// then convert the digit to a number and return it
+		cardinality, _ := strconv.Atoi(expr[1:2])
+		return 2, cardinality
+	}
+
+	// If no digit was given there, then return 1
+	return 1, 1
+}
+
+// Consume n characters from the fen code given last and return the number of
+// bytes consumed from the fen code, and the digits to consume in the next
+// iteration, if any. It can reeturn an error in case the current line is
+// exceeded
+func consumeUndefined(n int, code string) (int, int, error) {
+
+	consumed := 0
+	for n > 0 {
+
+		// First of all, verify there are characters in the fen code
+		if len(code) == 0 {
+
+			// then it is not possible to consume the requested number of
+			// characters
+			return consumed, 0, errors.New(" The FEN code was exhausted")
+		}
+
+		// If the first character in code is a digit, then it represents a number of
+		// consecutive cells
+		if match, _ := regexp.MatchString(`^\d.*`, code); match {
+
+			// Annotate one position has been consumed
+			consumed++
+
+			// Note that there can be only one digit in the given fen code. On
+			// one hand, because there are only 8 consecutive squares in a row;
+			// on the other hand, because the fen code is assumed to be
+			// correctly computed, i.e, it should say 3 instead of 12
+			spaces, _ := strconv.Atoi(string(code[0]))
+
+			// If there are still spaces to consume, then return it
+			if spaces > n {
+				return consumed, spaces - n, nil
+			}
+
+			// Otherwise, decrement the number of characters to consume by the
+			// number of consecutive empty cells and move forward in the FEN
+			// code
+			code = code[1:]
+			n -= spaces
+
+		} else if code[0] == '/' {
+
+			// If a slash is found, then we are exceeding the current row and an
+			// error should be reported
+			return consumed, 0, errors.New(" The current row has been exhausted")
+		} else {
+
+			// In any other case, just simply consume the character and decrement
+			// the count of characters to consume
+			code = code[1:]
+			consumed++
+			n--
+		}
+	}
+
+	// At this point, all characters have been correctly consumed
+	return consumed, 0, nil
+}
+
+// Consume n consecutive empty squares of the board from the given expr fen
+// code. It returns whether the operation could be successfully performed, the
+// number of bytes consumed from the fen code, the number of undefined contents
+// to consume in the next iteration, and an error in case one has been found. If
+// the operation was not feasible it returns an error
+func consumeDigits(n int, expr string) (bool, int, int, error) {
+
+	consumed := 0
+	for n > 0 {
+
+		// First of all, verify there are characters in the fen code
+		if len(expr) == 0 {
+
+			// then it is not possible to consume the requested number of
+			// characters
+			return false, 0, 0, errors.New("The FEN code was exhausted")
+		}
+
+		// If the first character is a digit, then consme it
+		if match, _ := regexp.MatchString(`^\d.*`, expr); match {
+
+			// Annotate one position has been consumed
+			consumed++
+
+			// And get the number of consecutive empty squares in expr
+			spaces, _ := strconv.Atoi(string(expr[0]))
+
+			// Now, if there are more spaces in expr than those required, then
+			// return an error. The reason is because the FEN code computed by
+			// pgnparser is correct and thus, no more than the number of
+			// consecutive empty cells given there should be found.
+			if spaces > n {
+
+				return false, 0, 0, errors.New(" The number of consecutive empty squares has been exceeded")
+			}
+
+			// Otherwise, decrement the number of consecutive empty squares to
+			// consume
+			expr = expr[1:]
+			n -= spaces
+		} else if expr[0] == '*' {
+
+			// Consecutive empty squares can be consumed also using wildcards.
+			// Firstly, determine the cardinality of the wildcard
+			advance, cardinality := cardinalityUndefined(expr)
+
+			// annotate how many positions were consumed
+			consumed += advance
+
+			// The wildcard can consume all the consecutive empty squares and
+			// still to consume other characters coming after. To signal this,
+			// we return the number of undefined characters still to be
+			// processed in the next iterations
+			if cardinality > n {
+				return true, consumed, cardinality - n, nil
+			}
+
+			// In any other case, move forward in the fen code
+			expr = expr[advance:]
+			n -= cardinality
+		} else if expr[0] == '/' {
+
+			// In case the end of the row has been found then return an error
+			return false, consumed, 0, errors.New(" The current row has been exhausted")
+		} else {
+
+			// In case any other character is found, then it is not possible to
+			// consume the given number of digits
+			return false, 0, 0, nil
+		}
+	}
+
+	// At this point, all positions have been correctly consumed
+	return true, consumed, 0, nil
+}
+
 // Return true if and only if the FEN piece placement of the first string
 // matches the FEN piece placement of the second, and false otherwise. Both
 // strings are supposed to contain only the piece placement of the FEN code and
 // not the entire FEN code
-func matchFENPiecePlacement(expr, code string) bool {
+func matchFENPiecePlacement(expr, code string, digits, undefined int) bool {
 
-	// The piece placement is the same if and only if they are exactly equal and
-	// false otherwise
-	return expr == code
+	// This algorithm is implemented recursively. The base case is reached when
+	// both strings become empty
+	if len(expr) == 0 && len(code) == 0 {
+		return true
+	}
+
+	// The general case considers all different cases
+
+	// First, if there are still consecutive empty squares to process from the
+	// pattern
+	if digits > 0 {
+		success, advance, undefined, err := consumeDigits(digits, expr)
+
+		// In case they were successfully processed then move the pattern
+		// forward the number of bytes consumed and continue
+		if success {
+			return matchFENPiecePlacement(expr[advance:], code, 0, undefined)
+		} else {
+
+			// Otherwise, if an error occurred then immediately stop
+			if err != nil {
+				log.Fatalf(" Error while consuming consecutive empty squares: %v\n", err)
+			} else {
+
+				// If there was no matching then return false
+				return false
+			}
+		}
+	}
+
+	// If now, any of the input strings is empty there is no match
+	if len(expr) == 0 || len(code) == 0 {
+		return false
+	}
+
+	// In case there are some undefined characters to consume in the FEN code
+	if undefined > 0 {
+
+		advance, digits, err := consumeUndefined(undefined, code)
+
+		// Note this operation always succeeds unless an error happened (e.g., a
+		// row was exhausted) in which case the process must stop immediately
+		if err != nil {
+			log.Fatalf(" Error while consuming undefined characters: %v\n", err)
+		} else {
+
+			// If no error happened, then move forward the number of characters
+			// consumed in the fen code and continue recursively
+			return matchFENPiecePlacement(expr, code[advance:], digits, 0)
+		}
+	}
+
+	// In case any of the fen codes start with an end of row, then verify they
+	// both do
+	nexpr := expr[0]
+	ncode := code[0]
+	if nexpr == '/' || ncode == '/' {
+
+		if nexpr == ncode {
+
+			// In case they both start with an end of row, then continue
+			// recursively matching the rest
+			return matchFENPiecePlacement(expr[1:], code[1:], 0, 0)
+		}
+
+		// Otherwise there is no match
+		return false
+	}
+
+	// If a piece is given in the pattern, then make sure it appears in the FEN
+	// code
+	if strings.Index("prnbqkPRNBQK", string(nexpr)) >= 0 {
+
+		// Then return whether both codes start with the same piece
+		if nexpr == ncode {
+			return matchFENPiecePlacement(expr[1:], code[1:], 0, 0)
+		}
+
+		// otherwise, there is no match between both codes
+		return false
+	}
+
+	// In case the pattern contains a wildcard, then try to consume characters
+	// from the FEN code
+	if advexpr, cardinality := cardinalityUndefined(expr); cardinality > 0 {
+
+		// then consume the given number of characters from the FEN code
+		advcode, digits, err := consumeUndefined(cardinality, code)
+		if err != nil {
+			log.Fatalf(" Error while consuming undefined characters: %v\n", err)
+		} else {
+
+			// At this point, compute the number of empty cells awaiting to be
+			// processed in the code in the next iterations
+			return matchFENPiecePlacement(expr[advexpr:], code[advcode:], digits, 0)
+		}
+	}
+
+	// Finally, check whether the pattern starts with a number of consecutive
+	// empty squares
+	if match, _ := regexp.MatchString(`^\d.*`, expr); match {
+
+		// There is a match if and only if the code also starts with a number of
+		// consecutive empty cells
+		match, _ := regexp.MatchString(`^\d.*`, code)
+		if !match {
+			return false
+		}
+
+		// The number of empty cells in the code has to be greater or equal than
+		// the number of empty cells given in the pattern. If they contain the
+		// same number then there is a match and the matching process can
+		// continue
+		nbexpr, _ := strconv.Atoi(string(nexpr))
+		nbcode, _ := strconv.Atoi(string(ncode))
+		if nbcode == nbexpr {
+			return matchFENPiecePlacement(expr[1:], code[1:], 0, 0)
+		}
+
+		// Otherwise, verify the number of consecutive empty squares given in
+		// the code is strictly greater than the number in the pattern
+		if nbcode > nbexpr {
+
+			// In this case, update the number of empty squares in the code to
+			// be equal to the number of those pending to be matched in another
+			// iteration
+			code = fmt.Sprintf("%d", nbcode-nbexpr) + code[1:]
+			return matchFENPiecePlacement(expr[1:], code, 0, 0)
+		}
+
+		// If the number given in the code is strictly less than the number of
+		// empty squares given in the pattern, then there is no match
+		return false
+	}
+
+	// This case should never happen, but anyway to avoid compiler errors ...
+	log.Println(" Warning: Unreachable code ... reached!")
+	return true
 }
 
 // Return true if and only if the FEN active color of the first string matches
@@ -158,16 +460,6 @@ func matchFENCastlingRights(expr, code string) bool {
 	// Otherwise, proceed recursively removing the first character of expr both
 	// in expr and code
 	return matchFENCastlingRights(expr[1:], code[:idx]+code[idx+1:])
-
-	// // The castling rights are the same if and only if they contain exactly the
-	// // same characters, even if they are in different order. Thus, sort each
-	// // string
-	// sexpr, scode := strings.Split(expr, ""), strings.Split(code, "")
-	// sort.Strings(sexpr)
-	// sort.Strings(scode)
-
-	// // and check now if they are the same
-	// return strings.Join(sexpr, "") == strings.Join(scode, "")
 }
 
 // Return true if and only if the FEN en passant targets of the first string
@@ -254,7 +546,7 @@ func matchFEN(expr, code string) bool {
 
 	// Piece placement
 	if !matchFENPiecePlacement(expr[exprIndex[2]:exprIndex[3]],
-		code[codeIndex[2]:codeIndex[3]]) {
+		code[codeIndex[2]:codeIndex[3]], 0, 0) {
 		return false
 	}
 

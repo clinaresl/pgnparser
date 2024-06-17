@@ -1222,7 +1222,7 @@ func (board PgnBoard) String() (output string) {
 			} else {
 
 				// Otherwise, show the chess piece
-				line[column] = string(utf8[board.squares[row*8+column]])
+				line[column] = string(utf8repr[board.squares[row*8+column]])
 			}
 		}
 

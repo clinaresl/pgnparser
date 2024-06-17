@@ -103,7 +103,7 @@ var reSorting = `\s*(?P<direction>[<>])\s*(?P<criteria>.+)\s*`
 
 // The following regexp is used to verify whether a fen code is syntactially
 // correct
-var reFEN = regexp.MustCompile(`^(?P<piece>\*|[0-8pnbrqkPNBRQK\/\*]+) (?P<color>\*|[wb]) (?P<castling>-|\*|[kqKQ]+\*?) (?P<enpassant>-|[a-h]\*|\*[0-8]|[a-h][0-8]|\*) (?P<halfmove>\*|\d+) (?P<fullmove>\*|\d+)$`0)
+var reFEN = regexp.MustCompile(`^(?P<piece>\*|[0-8pnbrqkPNBRQK\/\*]+) (?P<color>\*|[wb]) (?P<castling>-|\*|[kqKQ]+\*?) (?P<enpassant>-|[a-h]\*|\*[0-8]|[a-h][0-8]|\*) (?P<halfmove>\*|\d+) (?P<fullmove>\*|\d+)$`)
 
 // Package variables
 // ----------------------------------------------------------------------------
@@ -131,7 +131,7 @@ var literal map[int]string
 var threats map[string]map[content][][]int
 
 // The following map relates each content with its utf-8 representation
-var utf8 map[content]rune
+var utf8repr map[content]rune
 
 // The following counter is used to generate LaTeX references
 var counter int = 0
@@ -189,20 +189,20 @@ func init() {
 	}
 
 	// utf-8 representation of contents
-	utf8 = make(map[content]rune)
-	utf8[BKING] = '♚'
-	utf8[BQUEEN] = '♛'
-	utf8[BROOK] = '♜'
-	utf8[BBISHOP] = '♝'
-	utf8[BKNIGHT] = '♞'
-	utf8[BPAWN] = '♟'
-	utf8[BLANK] = ' '
-	utf8[WKING] = '♔'
-	utf8[WQUEEN] = '♕'
-	utf8[WROOK] = '♖'
-	utf8[WBISHOP] = '♗'
-	utf8[WKNIGHT] = '♘'
-	utf8[WPAWN] = '♙'
+	utf8repr = make(map[content]rune)
+	utf8repr[BKING] = '♚'
+	utf8repr[BQUEEN] = '♛'
+	utf8repr[BROOK] = '♜'
+	utf8repr[BBISHOP] = '♝'
+	utf8repr[BKNIGHT] = '♞'
+	utf8repr[BPAWN] = '♟'
+	utf8repr[BLANK] = ' '
+	utf8repr[WKING] = '♔'
+	utf8repr[WQUEEN] = '♕'
+	utf8repr[WROOK] = '♖'
+	utf8repr[WBISHOP] = '♗'
+	utf8repr[WKNIGHT] = '♘'
+	utf8repr[WPAWN] = '♙'
 }
 
 /* Local Variables: */
